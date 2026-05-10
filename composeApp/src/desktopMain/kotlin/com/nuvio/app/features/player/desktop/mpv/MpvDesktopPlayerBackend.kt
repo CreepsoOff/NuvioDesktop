@@ -76,6 +76,7 @@ internal class MpvDesktopPlayerBackend private constructor(
     @Volatile private var nativeClosed = false
     @Volatile private var currentRequest: DesktopPlayerRequest? = null
     @Volatile private var lastKnownPositionMs: Long = 0L
+    @Volatile private var pendingSeekMs: Long = 0L
     @Volatile private var externalSubtitleActive = false
     @Volatile private var latestSubtitleStyle = SubtitleStyleState.DEFAULT
     private val externalSubtitleRequestCounter = AtomicInteger(0)
@@ -111,11 +112,12 @@ internal class MpvDesktopPlayerBackend private constructor(
             )
             resetExternalSubtitleState("load")
                         player.setMediaData(UriMediaData(request.sourceUrl, headers))
-            // Seek to saved position after source switch
+            // Defer seek to after vo-configured (duration > 0)
             if (request.seekTargetMs > 0L) {
-                runCatching { player.impl.command("seek", (request.seekTargetMs / 1000.0).toString(), "absolute") }
-                    .onFailure { DesktopRuntimeLog.error("MPV seek after load failed target=${request.seekTargetMs}ms", it) }
-                DesktopRuntimeLog.info("MPV seek after load target=${request.seekTargetMs}ms")
+                pendingSeekMs = request.seekTargetMs
+                DesktopRuntimeLog.info("MPV deferred seek target=${request.seekTargetMs}ms")
+            } else {
+                pendingSeekMs = 0L
             }
             request.sourceAudioUrl?.takeIf { it.isNotBlank() }?.let { audioUrl ->
                 runCatching { player.impl.command("audio-add", audioUrl, "auto") }
@@ -201,6 +203,17 @@ internal class MpvDesktopPlayerBackend private constructor(
         }.onEach { mapped ->
             if (mapped.phase == DesktopPlayerPhase.Playing && mapped.positionMs > 0L) {
                 lastKnownPositionMs = mapped.positionMs
+            }
+            if (pendingSeekMs > 0L && mapped.durationMs > 0L) {
+                val seekMs = pendingSeekMs
+                pendingSeekMs = 0L
+                val seekSec = seekMs / 1000.0
+                val ok = runCatching { player.impl.command("seek", seekSec.toString(), "absolute") }
+                    .getOrNull() == true
+                if (ok) {
+                    player.currentPositionMillis.value = seekMs
+                }
+                DesktopRuntimeLog.info("MPV seek after load executed target=${seekMs}ms ok=$ok duration=${mapped.durationMs}")
             }
             if (!nativeClosed) {
                 stateFlow.value = mapped

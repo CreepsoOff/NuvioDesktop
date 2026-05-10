@@ -1537,9 +1537,18 @@ fun PlayerScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .onPreviewKeyEvent { event ->
-                    if (event.type == KeyEventType.KeyUp && event.key == Key.F) {
-                        toggleFullscreen()
-                        true
+                    if (event.type == KeyEventType.KeyUp) {
+                        when (event.key) {
+                            Key.F -> { toggleFullscreen(); true }
+                            Key.Spacebar -> {
+                                if (playbackSnapshot.isPlaying) playerController?.pause()
+                                else playerController?.play()
+                                true
+                            }
+                            Key.DirectionRight -> { playerController?.seekBy(10_000L); true }
+                            Key.DirectionLeft -> { playerController?.seekBy(-10_000L); true }
+                            else -> false
+                        }
                     } else {
                         false
                     }
@@ -1725,7 +1734,8 @@ fun PlayerScreen(
                     if (
                         !snapshot.isLoading &&
                         playerControllerSourceUrl == activeSourceUrl &&
-                        snapshot.indicatesReadyPlaybackFrame()
+                        snapshot.indicatesReadyPlaybackFrame() &&
+                        snapshot.durationMs > 0L
                     ) {
                         if (!initialLoadCompleted) {
                             PlayerRuntimeTrace.info(

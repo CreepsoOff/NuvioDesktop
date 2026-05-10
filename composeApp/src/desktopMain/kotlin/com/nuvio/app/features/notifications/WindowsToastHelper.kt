@@ -207,7 +207,15 @@ object WindowsToastHelper {
     }
 
     private fun releaseComObject(p: Pointer) {
-        Unknown.INSTANCE.Release(p)
+        try {
+            // Release is a COM vtable method, not a DLL export.
+            // Call via IUnknown vtable: offset 2 (0=QueryInterface, 1=AddRef, 2=Release)
+            val vtable = p.getPointer(0)
+            val releaseFunc = com.sun.jna.Function.getFunction(vtable.getPointer(2 * com.sun.jna.Native.POINTER_SIZE.toLong()))
+            releaseFunc.invoke(Int::class.java, arrayOf(p))
+        } catch (_: Exception) {
+            // Release failures at shutdown are non-fatal
+        }
     }
 
     private fun setShellLinkPath(link: Pointer, path: String) {
@@ -254,7 +262,7 @@ object WindowsToastHelper {
                 DesktopRuntimeLog.warn("Toast: IPropertyStore.SetValue failed hr=0x${setHr.toUInt().toString(16)}")
             }
         } finally {
-            Unknown.INSTANCE.Release(propStore)
+            releaseComObject(propStore)
         }
     }
 
@@ -278,13 +286,6 @@ object WindowsToastHelper {
             rclsid: GUID, pUnkOuter: Pointer?, dwClsContext: Int,
             riid: GUID, ppv: PointerByReference,
         ): HRESULT
-    }
-
-    private interface Unknown : com.sun.jna.Library {
-        companion object {
-            val INSTANCE: Unknown = Native.load("ole32", Unknown::class.java)
-        }
-        fun Release(pUnknown: Pointer): Int
     }
 
     private interface IShellLinkW : com.sun.jna.Library {
