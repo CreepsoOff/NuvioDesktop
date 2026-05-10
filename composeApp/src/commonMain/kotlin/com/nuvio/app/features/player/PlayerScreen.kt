@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.features.addons.AddonRepository
+import com.nuvio.app.isDesktop
 import com.nuvio.app.features.details.MetaDetailsRepository
 import com.nuvio.app.features.details.MetaScreenSettingsRepository
 import com.nuvio.app.features.details.MetaVideo
@@ -249,6 +250,19 @@ fun PlayerScreen(
         var accumulatedSeekResetJob by remember { mutableStateOf<Job?>(null) }
         var accumulatedSeekState by remember { mutableStateOf<PlayerAccumulatedSeekState?>(null) }
         var initialLoadCompleted by remember(activeSourceUrl) { mutableStateOf(false) }
+        var loadCompletionReady by remember(activeSourceUrl) { mutableStateOf(false) }
+
+        // Desktop: enforce minimum 300ms overlay display to prevent
+        // the loading screen from disappearing instantly due to MPV's
+        // fast state transition (Idle -> Playing in one frame).
+        LaunchedEffect(loadCompletionReady) {
+            if (loadCompletionReady) {
+                if (isDesktop) {
+                    delay(300)
+                }
+                initialLoadCompleted = true
+            }
+        }
         var speedBoostRestoreSpeed by remember(activeSourceUrl) { mutableStateOf<Float?>(null) }
         var isHoldToSpeedGestureActive by remember(activeSourceUrl) { mutableStateOf(false) }
         var initialSeekApplied by remember(activeSourceUrl, activeInitialPositionMs, activeInitialProgressFraction) {
@@ -1733,7 +1747,11 @@ fun PlayerScreen(
                                     "reason=${snapshot.readyPlaybackReason()}",
                             )
                         }
-                        initialLoadCompleted = true
+                        if (isDesktop) {
+                            loadCompletionReady = true
+                        } else {
+                            initialLoadCompleted = true
+                        }
                     }
                     if (snapshot.isEnded) {
                         shouldPlay = false
