@@ -50,3 +50,13 @@ composeApp/scripts/package-release-inno.ps1
 .env
 composeApp/runtime-config/release.properties
 Nuvio-*-x64-portable.zip
+CONTEXT_REPORT.md
+GIF_IMPLEMENTATION_REPORT.md
+MPV_IMPLEMENTATION_REPORT.md
+MPV_REWORK.md
+MPV_REWORK_2.md
+NEXT_STEPS.md
+NOTIFICATIONS_AND_TOASTS_IMPLEMENTATION_REPORT.md
+.commandcode/taste/
+*.tmp
+*.py
