@@ -199,28 +199,23 @@ internal class MpvDesktopPlayerBackend private constructor(
 
     
     /**
-     * Applies Desktop decoder preferences (hwdec mode, GPU API) to the running MPV player.
-     * Settings are read from DesktopPreferences under the "nuvio_decoder_settings" namespace.
-     * Some options like gpu-context require native layer rebuild to take effect;
-     * these are noted as experimental.
+     * Applies Desktop decoder preferences (hwdec mode) to the running MPV player.
+     * Settings are read from DesktopPreferences under "nuvio_decoder_settings".
+     *
+     * Only hwdec is configurable at runtime. The GPU rendering backend is fixed
+     * to OpenGL because mpv's vo=libmpv render API only supports OpenGL contexts.
+     * For D3D11/Vulkan rendering, a native HWND-based approach (vo=gpu-next+wid)
+     * would be required — see stremio-community-v5 for an example of this pattern.
      */
     private fun applyDecoderSettings() {
         if (nativeClosed) return
-        val prefsName = "nuvio_decoder_settings"
-        val hwdecMode = DesktopPreferences.getString(prefsName, "hwdec_mode")
-            ?: DesktopPreferences.getString("nuvio_player_settings", "hwdec_mode")
-            ?: "auto"
+        val hwdecMode = DesktopPreferences.getString("nuvio_decoder_settings", "hwdec_mode") ?: "auto"
         runCatching {
             player.impl.command("set", "hwdec", hwdecMode)
-            DesktopRuntimeLog.info("MPV decoder: hwdec=")
+            DesktopRuntimeLog.info("MPV decoder: hwdec=$hwdecMode")
         }.onFailure {
-            DesktopRuntimeLog.warn("MPV decoder: failed to set hwdec= message={it.message}")
+            DesktopRuntimeLog.warn("MPV decoder: failed to set hwdec=$hwdecMode message=${it.message}")
         }
-        // Note: gpu-context and vo are set at player initialization time via
-        // MpvMediampPlayer.init. Changing them at runtime is not supported
-        // because the native render context (OpenGL FBO) is already created.
-        // To use D3D11 or Vulkan, the mediampv native layer would need to be
-        // rebuilt with the corresponding interop backend.
     }
 
     private fun fail(error: DesktopPlayerError) {
