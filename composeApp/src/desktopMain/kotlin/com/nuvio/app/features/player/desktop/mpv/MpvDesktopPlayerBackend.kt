@@ -75,6 +75,7 @@ internal class MpvDesktopPlayerBackend private constructor(
     @Volatile private var stopped = false
     @Volatile private var nativeClosed = false
     @Volatile private var currentRequest: DesktopPlayerRequest? = null
+    @Volatile private var lastKnownPositionMs: Long = 0L
     @Volatile private var externalSubtitleActive = false
     @Volatile private var latestSubtitleStyle = SubtitleStyleState.DEFAULT
     private val externalSubtitleRequestCounter = AtomicInteger(0)
@@ -111,6 +112,12 @@ internal class MpvDesktopPlayerBackend private constructor(
             // Apply user-configured decoder settings from Desktop preferences
             applyDecoderSettings()
                         player.setMediaData(UriMediaData(request.sourceUrl, headers))
+            // Seek to saved position after source switch
+            if (request.seekTargetMs > 0L) {
+                runCatching { player.impl.command("seek", (request.seekTargetMs / 1000.0).toString(), "absolute") }
+                    .onFailure { DesktopRuntimeLog.error("MPV seek after load failed target=${request.seekTargetMs}ms", it) }
+                DesktopRuntimeLog.info("MPV seek after load target=${request.seekTargetMs}ms")
+            }
             request.sourceAudioUrl?.takeIf { it.isNotBlank() }?.let { audioUrl ->
                 runCatching { player.impl.command("audio-add", audioUrl, "auto") }
                     .onFailure { DesktopRuntimeLog.error("MPV audio-add failed audio=${audioUrl.redactedMediaUrl()}", it) }
@@ -193,6 +200,9 @@ internal class MpvDesktopPlayerBackend private constructor(
                 },
             )
         }.onEach { mapped ->
+            if (mapped.phase == DesktopPlayerPhase.Playing && mapped.positionMs > 0L) {
+                lastKnownPositionMs = mapped.positionMs
+            }
             if (!nativeClosed) {
                 stateFlow.value = mapped
             }

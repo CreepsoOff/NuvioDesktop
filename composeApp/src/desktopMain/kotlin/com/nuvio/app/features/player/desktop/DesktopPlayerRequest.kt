@@ -10,4 +10,5 @@ internal data class DesktopPlayerRequest(
     val sourceResponseHeaders: Map<String, String>,
     val playWhenReady: Boolean,
     val resizeMode: PlayerResizeMode,
+    val seekTargetMs: Long = 0L,
 )

@@ -40,6 +40,7 @@ internal fun DesktopPlayerSurfaceHost(
     val latestOnError by rememberUpdatedState(onError)
 
     var activeSessionKey by remember { mutableStateOf<String?>(null) }
+    var lastPositionMs by remember { mutableStateOf(0L) }
     val backend = remember {
         DesktopPlayerBackendFactory.createWindowsBackend()
     }
@@ -74,6 +75,7 @@ internal fun DesktopPlayerSurfaceHost(
             sourceResponseHeaders = sourceResponseHeaders,
             playWhenReady = playWhenReady,
             resizeMode = resizeMode,
+            seekTargetMs = lastPositionMs,
         )
         backend.load(request)
     }
@@ -85,6 +87,7 @@ internal fun DesktopPlayerSurfaceHost(
                 return@collectLatest
             }
             latestOnSnapshot(state.toSnapshot())
+            lastPositionMs = state.positionMs
             latestOnError(state.error?.uiMessage)
         }
     }
