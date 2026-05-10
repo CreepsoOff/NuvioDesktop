@@ -964,7 +964,6 @@ actual fun rememberPlayerFullscreenController(): PlayerFullscreenController {
 }
 
 @Composable
-@Composable
 actual fun ManageFullscreenKeyboardShortcuts(isHomeRouteActive: Boolean) {
     val window = LocalDesktopWindow.current as? ComposeWindow
     val currentIsHomeRouteActive by rememberUpdatedState(isHomeRouteActive)

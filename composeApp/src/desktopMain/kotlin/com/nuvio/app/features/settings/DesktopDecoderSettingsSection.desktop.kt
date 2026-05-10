@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BasicAlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -24,6 +25,7 @@ import com.nuvio.app.desktop.DesktopPreferences
 private const val preferencesName = "nuvio_decoder_settings"
 private const val hwdecModeKey = "hwdec_mode"
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal actual fun DesktopDecoderSettingsSection(isTablet: Boolean) {
     var hwdecMode by remember {

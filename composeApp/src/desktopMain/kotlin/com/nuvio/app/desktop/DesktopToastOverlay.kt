@@ -29,18 +29,19 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun DesktopToastOverlay(modifier: Modifier = Modifier) {
-    val currentToast by androidx.compose.runtime.collectAsState(NuvioToastController.currentToast)
+    val currentToast by NuvioToastController.currentToast.collectAsState()
     var renderedToast by remember { mutableStateOf<NuvioToastMessage?>(null) }
     var visibility by remember { mutableStateOf(false) }
 
     LaunchedEffect(currentToast) {
-        if (currentToast != null) {
-            renderedToast = currentToast
+        val toast = currentToast
+        if (toast != null) {
+            renderedToast = toast
             visibility = true
-            delay(currentToast.durationMillis)
+            delay(toast.durationMillis)
             visibility = false
             delay(300)
-            if (NuvioToastController.currentToast.value?.id == currentToast.id) {
+            if (NuvioToastController.currentToast.value?.id == toast.id) {
                 renderedToast = null
             }
         }
