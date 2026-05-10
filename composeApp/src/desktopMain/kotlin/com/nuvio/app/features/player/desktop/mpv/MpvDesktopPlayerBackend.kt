@@ -232,6 +232,7 @@ internal class MpvDesktopPlayerBackend private constructor(
             }
             if (!nativeClosed) {
                 stateFlow.value = mapped
+                DesktopRuntimeLog.info("[WP-STATE] phase=${mapped.phase} pos=${mapped.positionMs}ms dur=${mapped.durationMs}ms")
             }
         }.launchIn(scope)
     }

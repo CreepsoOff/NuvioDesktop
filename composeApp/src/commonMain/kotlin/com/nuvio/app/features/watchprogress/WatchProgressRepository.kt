@@ -350,8 +350,10 @@ object WatchProgressRepository {
             isEnded = snapshot.isEnded,
         )
         if (!isCompleted && !shouldStoreWatchProgress(positionMs = positionMs, durationMs = durationMs)) {
+            println("[WP-UPSERT] REJECTED videoId=${session.videoId} pos=${positionMs}ms dur=${durationMs}ms persist=$persist")
             return
         }
+        println("[WP-UPSERT] SAVED videoId=${session.videoId} pos=${positionMs}ms dur=${durationMs}ms persist=$persist")
 
         val entry = WatchProgressEntry(
             contentType = session.contentType,
