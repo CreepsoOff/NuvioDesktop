@@ -27,8 +27,8 @@ internal actual object EpisodeReleaseNotificationsStorage {
 internal actual object EpisodeReleaseNotificationPlatform {
     actual suspend fun notificationsAuthorized(): Boolean = withContext(Dispatchers.IO) {
         if (!WindowsToastHelper.systemToastsSupported) {
-            DesktopRuntimeLog.info("Toast: system toasts not supported (portable build or non-Windows)")
-            return@withContext false
+            DesktopRuntimeLog.info("Toast: system toasts not supported (portable build or non-Windows), using in-app fallback")
+            return@withContext true  // do NOT block — use in-app fallback
         }
         val shortcutOk = WindowsToastHelper.ensureShortcut()
         val notifierOk = WindowsToastHelper.isToastNotifierAvailable()
@@ -41,17 +41,16 @@ internal actual object EpisodeReleaseNotificationPlatform {
         val portable = WindowsToastHelper.isPortableBuild
         if (portable) {
             NuvioToastController.show(
-                "Notifications: Portable mode detected. System notifications require installed (Inno Setup) version. In-app notifications will be used.",
-                durationMillis = 5000L,
+                "Notifications: In-app notification mode active. Install via Inno Setup for Windows system notifications.",
+                durationMillis = 4000L,
             )
-            DesktopRuntimeLog.info("Toast: portable build, showing in-app guidance")
-            return@withContext false
+            DesktopRuntimeLog.info("Toast: portable build, using in-app notifications")
+            return@withContext true
         }
 
         val authorized = notificationsAuthorized()
         if (authorized) return@withContext true
 
-        // Try showing a test toast to confirm
         val testResult = WindowsToastHelper.showToast("Nuvio", "Notifications are ready.")
         if (testResult) {
             DesktopRuntimeLog.info("Toast: test toast shown successfully")
@@ -59,11 +58,11 @@ internal actual object EpisodeReleaseNotificationPlatform {
         }
 
         NuvioToastController.show(
-            "System notifications are disabled for Nuvio. Enable them in Windows Settings or use the installed version.",
-            durationMillis = 5000L,
+            "System notifications unavailable. In-app notifications will be used.",
+            durationMillis = 4000L,
         )
-        DesktopRuntimeLog.warn("Toast: requestAuthorization failed")
-        false
+        DesktopRuntimeLog.warn("Toast: requestAuthorization fell back to app")
+        true  // always allow toggle
     }
 
     actual suspend fun scheduleEpisodeReleaseNotifications(requests: List<EpisodeReleaseNotificationRequest>) {

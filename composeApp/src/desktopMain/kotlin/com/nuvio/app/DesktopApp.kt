@@ -22,7 +22,7 @@ import com.nuvio.app.desktop.DesktopSingleInstanceManager
 import com.nuvio.app.desktop.DesktopPlayerRegistry
 import com.nuvio.app.desktop.DesktopPreferences
 import com.nuvio.app.desktop.DesktopRuntimeLog
-import com.nuvio.app.desktop.DesktopToastOverlay
+
 import com.nuvio.app.desktop.DesktopUriHandler
 import com.nuvio.app.desktop.DesktopWindowStateStore
 import com.nuvio.app.desktop.WindowsUrlProtocolRegistrar
@@ -82,7 +82,6 @@ fun main(args: Array<String>) {
     DesktopRuntimeLog.debugEnabled = DesktopPreferences.getBoolean("nuvio_debug", "debug_logs_enabled") ?: false
     WindowsNativeBootstrap.configureProcessDpiAwareness()
     DesktopRuntimeLog.installGlobalExceptionHandlers()
-    WindowsToastHelper.ensureShortcut()
     DesktopRuntimeLog.info("Toast: portable=${WindowsToastHelper.isPortableBuild} systemSupported=${WindowsToastHelper.systemToastsSupported}")
     val pid = DesktopRuntimeLog.processPid()
     DesktopRuntimeLog.info("app startup pid=$pid")
@@ -202,7 +201,6 @@ fun main(args: Array<String>) {
             ) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     App()
-                    DesktopToastOverlay(modifier = Modifier.fillMaxSize())
                 }
             }
         }
