@@ -115,7 +115,7 @@ internal class MpvDesktopPlayerBackend private constructor(
             }
             setResizeMode(request.resizeMode)
             if (request.playWhenReady) {
-                player.resume()
+                player.resume()`r`n                DesktopRuntimeLog.debug("MPV player.resume() called")
                 runCatching { player.impl.setPropertyBoolean("pause", false) }
                     .onFailure { DesktopRuntimeLog.error("MPV unpause after load failed", it) }
             } else {
@@ -259,7 +259,7 @@ internal class MpvDesktopPlayerBackend private constructor(
             if (!canReceiveCommands()) return
             val before = snapshotForLog()
             val result = runCatching {
-                player.resume()
+                player.resume()`r`n                DesktopRuntimeLog.debug("MPV player.resume() called")
                 player.impl.setPropertyBoolean("pause", false)
             }
             DesktopRuntimeLog.info("MPV controller play before=$before result=${result.getOrNull()} after=${snapshotForLog()}")

@@ -1,4 +1,4 @@
-package com.nuvio.app
+﻿package com.nuvio.app
 
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -72,7 +72,7 @@ private fun clampDpSizeToDisplay(size: DpSize): DpSize {
 }
 
 fun main(args: Array<String>) {
-    DesktopRuntimeLog.initialize()
+    DesktopRuntimeLog.initialize()`r`n    DesktopRuntimeLog.debugEnabled = DesktopPreferences.getBoolean("nuvio_debug", "debug_logs_enabled") ?: false
     WindowsNativeBootstrap.configureProcessDpiAwareness()
     DesktopRuntimeLog.installGlobalExceptionHandlers()
     val pid = DesktopRuntimeLog.processPid()

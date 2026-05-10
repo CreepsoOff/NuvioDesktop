@@ -21,6 +21,9 @@ internal object DesktopRuntimeLog {
         localAppData.resolve("Nuvio").resolve("cache").resolve("logs").resolve("desktop-runtime.log")
     }
 
+    @Volatile
+    var debugEnabled: Boolean = false
+
     @Synchronized
     fun initialize() {
         Files.createDirectories(logFile.parent)
@@ -50,6 +53,13 @@ internal object DesktopRuntimeLog {
             info("Installed AWT/EventQueue exception logger")
         }.onFailure {
             error("Failed to install AWT/EventQueue exception logger", it)
+        }
+    }
+
+    @Synchronized
+    fun debug(message: String) {
+        if (debugEnabled) {
+            appendLine("${Instant.now()} DEBUG $message")
         }
     }
 
