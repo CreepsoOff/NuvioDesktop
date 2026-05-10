@@ -395,6 +395,7 @@ kotlin {
                 implementation(libs.ktor.client.java)
                 implementation(libs.kotlinx.coroutines.swing)
                 implementation(libs.jna)
+                implementation("net.java.dev.jna:jna-platform:5.14.0")
                 implementation("com.squareup.okhttp3:okhttp:4.12.0")
                 implementation("org.openani.mediamp:mediamp-api:0.1.0-dev-1")
                 implementation("org.openani.mediamp:mediamp-mpv:0.1.0-dev-1")
