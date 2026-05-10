@@ -90,6 +90,7 @@ internal class MpvDesktopPlayerBackend private constructor(
 
     init {
         observePlayerState()
+        applyDecoderSettings()
         DesktopRuntimeLog.info("MPV backend created id=$id runtime=${runtime.directory?.safePath() ?: "none"}")
     }
 
@@ -109,8 +110,6 @@ internal class MpvDesktopPlayerBackend private constructor(
                     "audio=${request.sourceAudioUrl?.redactedMediaUrl() ?: "none"} headersPresent=${headers.isNotEmpty()}",
             )
             resetExternalSubtitleState("load")
-            // Apply user-configured decoder settings from Desktop preferences
-            applyDecoderSettings()
                         player.setMediaData(UriMediaData(request.sourceUrl, headers))
             // Seek to saved position after source switch
             if (request.seekTargetMs > 0L) {
