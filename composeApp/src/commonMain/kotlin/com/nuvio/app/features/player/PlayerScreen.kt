@@ -438,7 +438,7 @@ fun PlayerScreen(
         }
 
         fun flushWatchProgress() {
-            println("[WP-FLUSH] videoId=${playbackSession.videoId} pos=${playbackSnapshot.positionMs}ms dur=${playbackSnapshot.durationMs}ms isEnded=${playbackSnapshot.isEnded}")
+            PlayerRuntimeTrace.info("[WP-FLUSH] videoId=${playbackSession.videoId} pos=${playbackSnapshot.positionMs}ms dur=${playbackSnapshot.durationMs}ms isEnded=${playbackSnapshot.isEnded}")
             emitStopScrobbleForCurrentProgress()
             WatchProgressRepository.flushPlaybackProgress(
                 session = playbackSession,
@@ -1412,15 +1412,21 @@ fun PlayerScreen(
             val episode = activeEpisodeNumber
             val vid = activeVideoId
 
-            if (season == null || episode == null || vid == null) return@LaunchedEffect
+            PlayerRuntimeTrace.info("[SKIP-INTRO] query vid=$vid season=$season episode=$episode")
+            if (season == null || episode == null || vid == null) {
+                PlayerRuntimeTrace.info("[SKIP-INTRO] ABORT null params")
+                return@LaunchedEffect
+            }
 
             launch {
                 val imdbId = vid.split(":").firstOrNull()?.takeIf { it.startsWith("tt") }
+                PlayerRuntimeTrace.info("[SKIP-INTRO] imdbId=$imdbId")
                 val intervals = SkipIntroRepository.getSkipIntervals(
                     imdbId = imdbId,
                     season = season,
                     episode = episode,
                 )
+                PlayerRuntimeTrace.info("[SKIP-INTRO] result count=${intervals.size} items=${intervals.map { "${it.type}(${it.startTime.toInt()}-${it.endTime.toInt()})" }}")
                 skipIntervals = intervals
             }
         }
