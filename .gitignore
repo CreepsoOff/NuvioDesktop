@@ -60,3 +60,6 @@ NOTIFICATIONS_AND_TOASTS_IMPLEMENTATION_REPORT.md
 .commandcode/taste/
 *.tmp
 *.py
+libs/
+mpv-player/
+composeApp-run_output.txt

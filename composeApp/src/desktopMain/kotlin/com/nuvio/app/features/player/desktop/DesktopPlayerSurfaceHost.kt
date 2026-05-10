@@ -75,7 +75,7 @@ internal fun DesktopPlayerSurfaceHost(
             sourceResponseHeaders = sourceResponseHeaders,
             playWhenReady = playWhenReady,
             resizeMode = resizeMode,
-            seekTargetMs = lastPositionMs,
+            seekTargetMs = 0L,
         )
         backend.load(request)
     }
