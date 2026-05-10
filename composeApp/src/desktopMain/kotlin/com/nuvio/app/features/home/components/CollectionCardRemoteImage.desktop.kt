@@ -1,6 +1,9 @@
-package com.nuvio.app.features.home.components
+﻿package com.nuvio.app.features.home.components
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -11,6 +14,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.nuvio.app.desktop.DesktopPreferences
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -153,7 +157,14 @@ internal actual fun CollectionCardRemoteImage(
         return
     }
 
-    BoxWithConstraints(modifier = modifier) {
+    val alwaysAnimateGif = remember {
+        DesktopPreferences.getBoolean("nuvio_home_settings", "always_animate_gif") ?: false
+    }
+    val interactionSource = remember { MutableInteractionSource() }
+    val isHovered by interactionSource.collectIsHoveredAsState()
+    val shouldAnimate = alwaysAnimateGif || isHovered
+
+    BoxWithConstraints(modifier = modifier.hoverable(interactionSource)) {
         val density = LocalDensity.current
         val targetWidthPx = maxWidth.value
             .takeIf { it.isFinite() && it > 0f }
@@ -209,6 +220,7 @@ internal actual fun CollectionCardRemoteImage(
                 contentDescription = contentDescription,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = contentScale,
+                isAnimating = shouldAnimate,
             )
             is DesktopGifState.Loading,
             is DesktopGifState.UseStaticCoil,
@@ -228,23 +240,25 @@ private fun AnimatedComposeGif(
     contentDescription: String,
     modifier: Modifier,
     contentScale: ContentScale,
+    isAnimating: Boolean = true,
 ) {
     if (gif.frames.isEmpty()) return
     var frameIndex by remember(gif) { mutableIntStateOf(0) }
 
-    LaunchedEffect(gif) {
-        if (gif.frames.size <= 1) return@LaunchedEffect
-        var nextFrameAtNanos = System.nanoTime()
-        while (isActive) {
-            val delayMs = gif.delaysMs.getOrElse(frameIndex) { DefaultGifDelayCentiseconds * 10 }.coerceAtLeast(10)
-            nextFrameAtNanos += delayMs * 1_000_000L
-            val waitNanos = nextFrameAtNanos - System.nanoTime()
-            if (waitNanos > 0L) {
-                delay(max(1L, waitNanos / 1_000_000L))
-            }
-            frameIndex = (frameIndex + 1) % gif.frames.size
-            if (System.nanoTime() - nextFrameAtNanos > 250_000_000L) {
-                nextFrameAtNanos = System.nanoTime()
+    if (isAnimating && gif.frames.size > 1) {
+        LaunchedEffect(gif) {
+            var nextFrameAtNanos = System.nanoTime()
+            while (isActive) {
+                val delayMs = gif.delaysMs.getOrElse(frameIndex) { DefaultGifDelayCentiseconds * 10 }.coerceAtLeast(10)
+                nextFrameAtNanos += delayMs * 1_000_000L
+                val waitNanos = nextFrameAtNanos - System.nanoTime()
+                if (waitNanos > 0L) {
+                    delay(max(1L, waitNanos / 1_000_000L))
+                }
+                frameIndex = (frameIndex + 1) % gif.frames.size
+                if (System.nanoTime() - nextFrameAtNanos > 250_000_000L) {
+                    nextFrameAtNanos = System.nanoTime()
+                }
             }
         }
     }
