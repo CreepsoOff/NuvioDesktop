@@ -1,4 +1,4 @@
-package com.nuvio.app.features.settings
+﻿package com.nuvio.app.features.settings
 
 import com.nuvio.app.core.build.AppFeaturePolicy
 import androidx.compose.foundation.BorderStroke
@@ -62,6 +62,7 @@ import com.nuvio.app.features.plugins.PluginsUiState
 import com.nuvio.app.features.plugins.PluginRepository
 import com.nuvio.app.features.streams.StreamAutoPlayMode
 import com.nuvio.app.features.streams.StreamAutoPlaySource
+import com.nuvio.app.isDesktop
 import com.nuvio.app.isIos
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
@@ -416,7 +417,7 @@ private fun PlaybackSettingsSection(
             }
         }
 
-        if (!isIos) {
+        if (!isIos && !isDesktop) {
             SettingsSection(
                 title = stringResource(Res.string.settings_playback_section_decoder),
                 isTablet = isTablet,
@@ -447,8 +448,13 @@ private fun PlaybackSettingsSection(
                 }
             }
         }
-
-        if (platformShowsAndroidLibassToggle) {
+        
+        if (isDesktop) {
+            DesktopDecoderSettingsSection(
+                isTablet = isTablet,
+            )
+        }
+if (platformShowsAndroidLibassToggle) {
             SettingsSection(
                 title = stringResource(Res.string.settings_playback_section_subtitle_rendering),
                 isTablet = isTablet,

@@ -1,10 +1,10 @@
-package com.nuvio.app.features.player.desktop.mpv
+﻿package com.nuvio.app.features.player.desktop.mpv
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.nuvio.app.desktop.DesktopPlayerRegistry
-import com.nuvio.app.desktop.DesktopRuntimeLog
+import com.nuvio.app.desktop.DesktopPreferences`r`nimport com.nuvio.app.desktop.DesktopRuntimeLog
 import com.nuvio.app.features.player.AudioTrack
 import com.nuvio.app.features.player.PlayerEngineController
 import com.nuvio.app.features.player.PlayerResizeMode
@@ -106,7 +106,9 @@ internal class MpvDesktopPlayerBackend private constructor(
                     "audio=${request.sourceAudioUrl?.redactedMediaUrl() ?: "none"} headersPresent=${headers.isNotEmpty()}",
             )
             resetExternalSubtitleState("load")
-            player.setMediaData(UriMediaData(request.sourceUrl, headers))
+            // Apply user-configured decoder settings from Desktop preferences
+            applyDecoderSettings()
+                        player.setMediaData(UriMediaData(request.sourceUrl, headers))
             request.sourceAudioUrl?.takeIf { it.isNotBlank() }?.let { audioUrl ->
                 runCatching { player.impl.command("audio-add", audioUrl, "auto") }
                     .onFailure { DesktopRuntimeLog.error("MPV audio-add failed audio=${audioUrl.redactedMediaUrl()}", it) }
@@ -193,6 +195,32 @@ internal class MpvDesktopPlayerBackend private constructor(
                 stateFlow.value = mapped
             }
         }.launchIn(scope)
+    }
+
+    
+    /**
+     * Applies Desktop decoder preferences (hwdec mode, GPU API) to the running MPV player.
+     * Settings are read from DesktopPreferences under the "nuvio_decoder_settings" namespace.
+     * Some options like gpu-context require native layer rebuild to take effect;
+     * these are noted as experimental.
+     */
+    private fun applyDecoderSettings() {
+        if (nativeClosed) return
+        val prefsName = "nuvio_decoder_settings"
+        val hwdecMode = DesktopPreferences.getString(prefsName, "hwdec_mode")
+            ?: DesktopPreferences.getString("nuvio_player_settings", "hwdec_mode")
+            ?: "auto"
+        runCatching {
+            player.impl.command("set", "hwdec", hwdecMode)
+            DesktopRuntimeLog.info("MPV decoder: hwdec=")
+        }.onFailure {
+            DesktopRuntimeLog.warn("MPV decoder: failed to set hwdec= message={it.message}")
+        }
+        // Note: gpu-context and vo are set at player initialization time via
+        // MpvMediampPlayer.init. Changing them at runtime is not supported
+        // because the native render context (OpenGL FBO) is already created.
+        // To use D3D11 or Vulkan, the mediampv native layer would need to be
+        // rebuilt with the corresponding interop backend.
     }
 
     private fun fail(error: DesktopPlayerError) {
