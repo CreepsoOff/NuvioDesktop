@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -16,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.nuvio.app.desktop.DesktopPreferences
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
@@ -214,22 +216,38 @@ internal actual fun CollectionCardRemoteImage(
             }
         }
 
-        when (val s = state) {
-            is DesktopGifState.Ready -> AnimatedComposeGif(
-                gif = s.gif,
-                contentDescription = contentDescription,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = contentScale,
-                isAnimating = shouldAnimate,
+                // Always show static poster as base layer
+        AsyncImage(
+            model = imageUrl,
+            contentDescription = contentDescription,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = contentScale,
+        )
+        // Overlay GIF on top with fade-in when hovered or always-animate enabled
+        if (shouldAnimate && state is DesktopGifState.Ready) {
+            val readyState = state as DesktopGifState.Ready
+            var gifLoaded by remember { mutableStateOf(false) }
+            val gifAlpha by androidx.compose.animation.core.animateFloatAsState(
+                targetValue = if (gifLoaded) 1f else 0f,
+                animationSpec = androidx.compose.animation.core.tween(200),
+                label = "gifFadeIn",
             )
-            is DesktopGifState.Loading,
-            is DesktopGifState.UseStaticCoil,
-            -> AsyncImage(
-                model = imageUrl,
-                contentDescription = contentDescription,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = contentScale,
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer { alpha = gifAlpha }
+            ) {
+                AnimatedComposeGif(
+                    gif = readyState.gif,
+                    contentDescription = contentDescription,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = contentScale,
+                    isAnimating = true,
+                )
+            }
+            LaunchedEffect(readyState) {
+                gifLoaded = true
+            }
         }
     }
 }
