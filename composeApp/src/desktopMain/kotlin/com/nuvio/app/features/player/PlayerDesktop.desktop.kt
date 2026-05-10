@@ -1,4 +1,4 @@
-package com.nuvio.app.features.player
+﻿package com.nuvio.app.features.player
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -917,7 +917,7 @@ actual fun ManagePlayerCursorVisibility(visible: Boolean) {
     val window = LocalDesktopWindow.current
     val hiddenCursor = remember { createHiddenPlayerCursor() }
 
-    DisposableEffect(window) {
+    DisposableEffect(window) { val keybinds = KeybindsStorage.load().binds
         val previousCursor = window?.cursor
         onDispose {
             if (window != null && previousCursor != null) {
@@ -964,6 +964,7 @@ actual fun rememberPlayerFullscreenController(): PlayerFullscreenController {
 }
 
 @Composable
+@Composable
 actual fun ManageFullscreenKeyboardShortcuts(isHomeRouteActive: Boolean) {
     val window = LocalDesktopWindow.current as? ComposeWindow
     val currentIsHomeRouteActive by rememberUpdatedState(isHomeRouteActive)
@@ -971,28 +972,29 @@ actual fun ManageFullscreenKeyboardShortcuts(isHomeRouteActive: Boolean) {
     DisposableEffect(window) {
         val composeWindow = window ?: return@DisposableEffect onDispose {}
         val keyboardFocusManager = KeyboardFocusManager.getCurrentKeyboardFocusManager()
+        val loadedBinds = KeybindsStorage.load().binds
+        val appFullscreenCode = loadedBinds
+            .firstOrNull { it.action == "toggle_app_fullscreen" }?.keyCode
+            ?: KeyEvent.VK_F11
+        val exitFullscreenCode = loadedBinds
+            .firstOrNull { it.action == "exit_fullscreen" }?.keyCode
+            ?: KeyEvent.VK_ESCAPE
+
         val dispatcher = KeyEventDispatcher { event ->
             if (event.id != KeyEvent.KEY_RELEASED) {
                 return@KeyEventDispatcher false
             }
-
-            when (event.keyCode) {
-                KeyEvent.VK_F11 -> {
-                    composeWindow.toggleDesktopFullscreen()
-                    true
-                }
-
-                KeyEvent.VK_ESCAPE -> {
-                    if (currentIsHomeRouteActive && composeWindow.isPlayerFullscreen()) {
-                        composeWindow.exitDesktopFullscreen()
-                        true
-                    } else {
-                        false
-                    }
-                }
-
-                else -> false
+            if (event.keyCode == appFullscreenCode) {
+                composeWindow.toggleDesktopFullscreen()
+                return@KeyEventDispatcher true
             }
+            if (event.keyCode == exitFullscreenCode) {
+                if (currentIsHomeRouteActive && composeWindow.isPlayerFullscreen()) {
+                    composeWindow.exitDesktopFullscreen()
+                    return@KeyEventDispatcher true
+                }
+            }
+            false
         }
 
         keyboardFocusManager.addKeyEventDispatcher(dispatcher)
@@ -1001,6 +1003,8 @@ actual fun ManageFullscreenKeyboardShortcuts(isHomeRouteActive: Boolean) {
         }
     }
 }
+
+
 
 private object DesktopFullscreenState {
     var previousPlacement: WindowPlacement = WindowPlacement.Floating
