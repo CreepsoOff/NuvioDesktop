@@ -14,7 +14,7 @@ private const val debugPrefsNamespace = "nuvio_debug"
 private const val debugLogsEnabledKey = "debug_logs_enabled"
 
 @Composable
-internal fun DebugLogsSettingsSection(isTablet: Boolean) {
+internal actual fun DebugLogsSettingsSection(isTablet: Boolean) {
     var enabled by remember {
         mutableStateOf(
             DesktopPreferences.getBoolean(debugPrefsNamespace, debugLogsEnabledKey) ?: false

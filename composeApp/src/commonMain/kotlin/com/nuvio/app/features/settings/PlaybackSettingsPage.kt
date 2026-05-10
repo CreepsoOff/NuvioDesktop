@@ -453,6 +453,9 @@ private fun PlaybackSettingsSection(
             DesktopDecoderSettingsSection(
                 isTablet = isTablet,
             )
+            DebugLogsSettingsSection(
+                isTablet = isTablet,
+            )
         }
 if (platformShowsAndroidLibassToggle) {
             SettingsSection(
