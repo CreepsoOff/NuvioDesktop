@@ -250,19 +250,6 @@ fun PlayerScreen(
         var accumulatedSeekResetJob by remember { mutableStateOf<Job?>(null) }
         var accumulatedSeekState by remember { mutableStateOf<PlayerAccumulatedSeekState?>(null) }
         var initialLoadCompleted by remember(activeSourceUrl) { mutableStateOf(false) }
-        var loadCompletionReady by remember(activeSourceUrl) { mutableStateOf(false) }
-
-        // Desktop: enforce minimum 300ms overlay display to prevent
-        // the loading screen from disappearing instantly due to MPV's
-        // fast state transition (Idle -> Playing in one frame).
-        LaunchedEffect(loadCompletionReady) {
-            if (loadCompletionReady) {
-                if (isDesktop) {
-                    delay(300)
-                }
-                initialLoadCompleted = true
-            }
-        }
         var speedBoostRestoreSpeed by remember(activeSourceUrl) { mutableStateOf<Float?>(null) }
         var isHoldToSpeedGestureActive by remember(activeSourceUrl) { mutableStateOf(false) }
         var initialSeekApplied by remember(activeSourceUrl, activeInitialPositionMs, activeInitialProgressFraction) {
@@ -1747,11 +1734,7 @@ fun PlayerScreen(
                                     "reason=${snapshot.readyPlaybackReason()}",
                             )
                         }
-                        if (isDesktop) {
-                            loadCompletionReady = true
-                        } else {
-                            initialLoadCompleted = true
-                        }
+                        initialLoadCompleted = true
                     }
                     if (snapshot.isEnded) {
                         shouldPlay = false
@@ -1864,7 +1847,7 @@ fun PlayerScreen(
             }
 
             AnimatedVisibility(
-                visible = playerSettingsUiState.showLoadingOverlay && !initialLoadCompleted && errorMessage == null,
+                visible = playerSettingsUiState.showLoadingOverlay && (playbackSnapshot.isLoading || !initialLoadCompleted) && errorMessage == null,
                 enter = fadeIn(),
                 exit = fadeOut(),
             ) {
