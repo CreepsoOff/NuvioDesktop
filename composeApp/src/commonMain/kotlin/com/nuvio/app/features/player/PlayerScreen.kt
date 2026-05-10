@@ -438,6 +438,7 @@ fun PlayerScreen(
         }
 
         fun flushWatchProgress() {
+            println("[WP-FLUSH] videoId=${playbackSession.videoId} pos=${playbackSnapshot.positionMs}ms dur=${playbackSnapshot.durationMs}ms isEnded=${playbackSnapshot.isEnded}")
             emitStopScrobbleForCurrentProgress()
             WatchProgressRepository.flushPlaybackProgress(
                 session = playbackSession,
