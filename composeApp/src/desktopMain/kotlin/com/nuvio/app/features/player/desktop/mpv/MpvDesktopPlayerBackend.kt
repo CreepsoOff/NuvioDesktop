@@ -181,12 +181,26 @@ internal class MpvDesktopPlayerBackend private constructor(
     }
 
     private fun observePlayerState() {
+        // Track video output configuration — loading overlay stays until MPV_EVENT_VIDEO_RECONFIG
+        val voConfigured = MutableStateFlow(false)
+
+        // Listen for the actual mpv event forwarded from C++ through JNI → EventListener
+                player.onVideoReconfig?.onEach { voConfigured.value = true }?.launchIn(scope)
+
         combine(
             player.playbackState,
             player.currentPositionMillis,
             player.mediaProperties,
-        ) { playbackState, position, props ->
-            val phase = playbackState.toDesktopPhase()
+            voConfigured,
+        ) { playbackState, position, props, voReady ->
+            val rawPhase = playbackState.toDesktopPhase()
+            // Force Preparing until the video output has configured — prevents
+            // the loading overlay from disappearing before the first frame renders
+            val phase = when {
+                !voReady && rawPhase == DesktopPlayerPhase.Playing -> DesktopPlayerPhase.Preparing
+                !voReady && rawPhase == DesktopPlayerPhase.Ready -> DesktopPlayerPhase.Preparing
+                else -> rawPhase
+            }
             DesktopPlayerState(
                 phase = phase,
                 positionMs = position,
