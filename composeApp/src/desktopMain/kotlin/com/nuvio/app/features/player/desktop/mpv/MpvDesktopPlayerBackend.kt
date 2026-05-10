@@ -645,6 +645,11 @@ internal class MpvDesktopPlayerBackend private constructor(
     companion object {
         fun create(runtime: MpvRuntimeResolution): Result<MpvDesktopPlayerBackend> =
             runCatching {
+                // sg/mpv-rendering LibraryLoader uses NativeRuntimeLoader (classpath-based)
+                // instead of System.loadLibrary. Must configure the runtime directory first.
+                runtime.directory?.let { dir ->
+                    MPVHandle.setRuntimeLibraryDirectory(dir.absolutePath, false)
+                }
                 MpvDesktopPlayerBackend(
                     runtime = runtime,
                     player = MpvMediampPlayer(Unit, EmptyCoroutineContext),
