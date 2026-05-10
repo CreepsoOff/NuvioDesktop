@@ -1,4 +1,4 @@
-﻿package com.nuvio.app
+package com.nuvio.app
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -6,6 +6,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -19,7 +20,9 @@ import com.nuvio.app.core.build.AppVersionConfig
 import com.nuvio.app.core.network.SupabaseConfig
 import com.nuvio.app.desktop.DesktopSingleInstanceManager
 import com.nuvio.app.desktop.DesktopPlayerRegistry
+import com.nuvio.app.desktop.DesktopPreferences
 import com.nuvio.app.desktop.DesktopRuntimeLog
+import com.nuvio.app.desktop.DesktopToastOverlay
 import com.nuvio.app.desktop.DesktopUriHandler
 import com.nuvio.app.desktop.DesktopWindowStateStore
 import com.nuvio.app.desktop.WindowsUrlProtocolRegistrar
@@ -74,7 +77,8 @@ private fun clampDpSizeToDisplay(size: DpSize): DpSize {
 }
 
 fun main(args: Array<String>) {
-    DesktopRuntimeLog.initialize()`r`n    DesktopRuntimeLog.debugEnabled = DesktopPreferences.getBoolean("nuvio_debug", "debug_logs_enabled") ?: false
+    DesktopRuntimeLog.initialize()
+    DesktopRuntimeLog.debugEnabled = DesktopPreferences.getBoolean("nuvio_debug", "debug_logs_enabled") ?: false
     WindowsNativeBootstrap.configureProcessDpiAwareness()
     DesktopRuntimeLog.installGlobalExceptionHandlers()
     val pid = DesktopRuntimeLog.processPid()
@@ -160,15 +164,6 @@ fun main(args: Array<String>) {
                 val closeStartMs = System.currentTimeMillis()
                 DesktopRuntimeLog.info("windowClose requested pid=$pid")
                 DesktopRuntimeLog.logNonDaemonThreads("windowClose:beforeCleanup")
-                // 1) Soft stop on the EDT — fast, halts MPV playback.
-                // 2) Trigger the native close path explicitly: Compose's
-                //    `exitApplication` does NOT always dispose the player
-                //    surface before the JVM shuts down, so onDispose is not a
-                //    reliable trigger for closeNative. The croix Windows must
-                //    fire closeNative itself to avoid leaving Nuvio.exe alive.
-                // 3) `exitApplication` to start Compose teardown.
-                // 4) The shutdown hook joins in-flight close threads (bounded)
-                //    so the JVM exits only after MPV has terminated cleanly.
                 DesktopPlayerRegistry.releaseAll("windowClose")
                 DesktopRuntimeLog.info("windowClose releaseAll done pid=$pid")
                 DesktopPlayerRegistry.closeAll("windowClose")
@@ -202,10 +197,9 @@ fun main(args: Array<String>) {
                 LocalDesktopWindow provides window,
                 LocalUriHandler provides desktopUriHandler,
             ) {
-            Box(modifier = Modifier.fillMaxSize()) {
+                Box(modifier = Modifier.fillMaxSize()) {
                     App()
                     DesktopToastOverlay(modifier = Modifier.fillMaxSize())
-                }
                 }
             }
         }

@@ -1,10 +1,12 @@
-﻿package com.nuvio.app.features.player.desktop.mpv
+package com.nuvio.app.features.player.desktop.mpv
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.nuvio.app.desktop.DesktopPlayerRegistry
-import com.nuvio.app.desktop.DesktopPreferences`r`nimport com.nuvio.app.desktop.DesktopRuntimeLog
+import com.nuvio.app.desktop.DesktopPreferences
+
+import com.nuvio.app.desktop.DesktopRuntimeLog
 import com.nuvio.app.features.player.AudioTrack
 import com.nuvio.app.features.player.PlayerEngineController
 import com.nuvio.app.features.player.PlayerResizeMode
@@ -115,7 +117,7 @@ internal class MpvDesktopPlayerBackend private constructor(
             }
             setResizeMode(request.resizeMode)
             if (request.playWhenReady) {
-                player.resume()`r`n                DesktopRuntimeLog.debug("MPV player.resume() called")
+                player.resume()
                 runCatching { player.impl.setPropertyBoolean("pause", false) }
                     .onFailure { DesktopRuntimeLog.error("MPV unpause after load failed", it) }
             } else {
@@ -205,7 +207,7 @@ internal class MpvDesktopPlayerBackend private constructor(
      * Only hwdec is configurable at runtime. The GPU rendering backend is fixed
      * to OpenGL because mpv's vo=libmpv render API only supports OpenGL contexts.
      * For D3D11/Vulkan rendering, a native HWND-based approach (vo=gpu-next+wid)
-     * would be required — see stremio-community-v5 for an example of this pattern.
+     * would be required - see stremio-community-v5 for an example of this pattern.
      */
     private fun applyDecoderSettings() {
         if (nativeClosed) return
@@ -214,7 +216,7 @@ internal class MpvDesktopPlayerBackend private constructor(
             player.impl.command("set", "hwdec", hwdecMode)
             DesktopRuntimeLog.info("MPV decoder: hwdec=$hwdecMode")
         }.onFailure {
-            DesktopRuntimeLog.warn("MPV decoder: failed to set hwdec=$hwdecMode message=${it.message}")
+            DesktopRuntimeLog.warn("MPV decoder: failed to set hwdec=$hwdecMode message=${'$'}{it.message}")
         }
     }
 
@@ -254,7 +256,7 @@ internal class MpvDesktopPlayerBackend private constructor(
             if (!canReceiveCommands()) return
             val before = snapshotForLog()
             val result = runCatching {
-                player.resume()`r`n                DesktopRuntimeLog.debug("MPV player.resume() called")
+                player.resume()
                 player.impl.setPropertyBoolean("pause", false)
             }
             DesktopRuntimeLog.info("MPV controller play before=$before result=${result.getOrNull()} after=${snapshotForLog()}")
