@@ -1,5 +1,7 @@
 ﻿package com.nuvio.app
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
@@ -200,7 +202,11 @@ fun main(args: Array<String>) {
                 LocalDesktopWindow provides window,
                 LocalUriHandler provides desktopUriHandler,
             ) {
-                App()
+            Box(modifier = Modifier.fillMaxSize()) {
+                    App()
+                    DesktopToastOverlay(modifier = Modifier.fillMaxSize())
+                }
+                }
             }
         }
     }
