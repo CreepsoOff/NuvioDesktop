@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.window.WindowPlacement
+import com.nuvio.app.desktop.DesktopBorderlessFullscreenController
 import com.nuvio.app.LocalDesktopWindow
 import com.nuvio.app.core.storage.ProfileScopedKey
 import com.nuvio.app.core.sync.decodeSyncBoolean
@@ -34,7 +34,6 @@ import com.nuvio.app.features.details.MetaVideo
 import com.nuvio.app.features.streams.AddonStreamGroup
 import com.nuvio.app.features.streams.StreamItem
 import java.awt.Cursor
-import java.awt.Frame
 import java.awt.KeyEventDispatcher
 import java.awt.KeyboardFocusManager
 import java.awt.Point
@@ -937,11 +936,12 @@ actual fun rememberPlayerGestureController(): PlayerGestureController? = null
 @Composable
 actual fun rememberPlayerFullscreenController(): PlayerFullscreenController {
     val window = LocalDesktopWindow.current as? ComposeWindow
+    val fullscreenRevision = DesktopBorderlessFullscreenController.revision
     var isFullscreen by remember(window) {
-        mutableStateOf(window?.placement == WindowPlacement.Fullscreen)
+        mutableStateOf(window?.isPlayerFullscreen() == true)
     }
 
-    LaunchedEffect(window) {
+    LaunchedEffect(window, fullscreenRevision) {
         while (true) {
             isFullscreen = window?.isPlayerFullscreen() == true
             delay(250)
@@ -1036,46 +1036,16 @@ actual fun BindPlayerKeyboardShortcuts(
     }
 }
 
-private object DesktopFullscreenState {
-    var previousPlacement: WindowPlacement = WindowPlacement.Floating
-}
-
 private fun ComposeWindow.toggleDesktopFullscreen() {
-    if (isPlayerFullscreen()) {
-        exitDesktopFullscreen()
-    } else {
-        enterDesktopFullscreen()
-    }
-}
-
-private fun ComposeWindow.enterDesktopFullscreen() {
-    DesktopFullscreenState.previousPlacement = placement.takeIf { it != WindowPlacement.Fullscreen }
-        ?: WindowPlacement.Floating
-    placement = WindowPlacement.Fullscreen
+    DesktopBorderlessFullscreenController.toggle(this)
 }
 
 private fun ComposeWindow.exitDesktopFullscreen() {
-    exitPlayerFullscreen(DesktopFullscreenState.previousPlacement)
+    DesktopBorderlessFullscreenController.exit(this)
 }
 
 private fun ComposeWindow.isPlayerFullscreen(): Boolean {
-    val fullScreenWindow = graphicsConfiguration?.device?.fullScreenWindow
-    return placement == WindowPlacement.Fullscreen || fullScreenWindow === this
-}
-
-private fun ComposeWindow.exitPlayerFullscreen(previousPlacement: WindowPlacement) {
-    val device = graphicsConfiguration?.device
-    if (device?.fullScreenWindow === this) {
-        device.fullScreenWindow = null
-    }
-
-    val targetPlacement = previousPlacement.takeIf { it != WindowPlacement.Fullscreen }
-        ?: WindowPlacement.Floating
-    placement = targetPlacement
-
-    if (targetPlacement == WindowPlacement.Floating) {
-        extendedState = extendedState and Frame.MAXIMIZED_BOTH.inv()
-    }
+    return DesktopBorderlessFullscreenController.isFullscreen(this)
 }
 
 private fun createHiddenPlayerCursor(): Cursor {

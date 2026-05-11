@@ -18,15 +18,15 @@ import androidx.compose.ui.window.rememberWindowState
 import com.nuvio.app.core.deeplink.handleAppUrl
 import com.nuvio.app.core.build.AppVersionConfig
 import com.nuvio.app.core.network.SupabaseConfig
-import com.nuvio.app.desktop.DesktopSingleInstanceManager
+import com.nuvio.app.desktop.DesktopBorderlessFullscreenController
 import com.nuvio.app.desktop.DesktopPlayerRegistry
 import com.nuvio.app.desktop.DesktopPreferences
 import com.nuvio.app.desktop.DesktopRuntimeLog
-
+import com.nuvio.app.desktop.DesktopSingleInstanceManager
 import com.nuvio.app.desktop.DesktopUriHandler
 import com.nuvio.app.desktop.DesktopWindowStateStore
-import com.nuvio.app.desktop.WindowsUrlProtocolRegistrar
 import com.nuvio.app.desktop.WindowsNativeBootstrap
+import com.nuvio.app.desktop.WindowsUrlProtocolRegistrar
 import com.nuvio.app.features.notifications.WindowsToastHelper
 import com.nuvio.app.features.trakt.TraktAuthRepository
 import io.ktor.http.Url
@@ -162,7 +162,11 @@ fun main(args: Array<String>) {
         )
         Window(
             onCloseRequest = {
-                DesktopWindowStateStore.save(startupWindowState.size, startupWindowState.placement)
+                if (DesktopBorderlessFullscreenController.isFullscreenActive) {
+                    DesktopRuntimeLog.info("windowClose skipped window-state save while borderless fullscreen is active")
+                } else {
+                    DesktopWindowStateStore.save(startupWindowState.size, startupWindowState.placement)
+                }
                 val closeStartMs = System.currentTimeMillis()
                 DesktopRuntimeLog.info("windowClose requested pid=$pid")
                 DesktopRuntimeLog.logNonDaemonThreads("windowClose:beforeCleanup")
