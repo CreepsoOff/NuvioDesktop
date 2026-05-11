@@ -82,7 +82,6 @@ import kotlin.math.roundToInt
 
 private const val PlaybackProgressPersistIntervalMs = 60_000L
 private const val PlayerControlsAutoHideDelayMs = 3_500L
-private const val PlayerCursorAutoHideDelayMs = 700L
 private const val PlayerDoubleTapSeekStepMs = 10_000L
 private const val PlayerDoubleTapSeekResetDelayMs = 800L
 private const val PlayerLockedOverlayDurationMs = 2_000L
@@ -193,11 +192,9 @@ fun PlayerScreen(
         var controlsVisible by rememberSaveable { mutableStateOf(true) }
         var playerControlsLocked by rememberSaveable { mutableStateOf(false) }
         var isHovering by remember { mutableStateOf(false) }
-        var cursorVisible by remember { mutableStateOf(true) }
         var pointerActivitySerial by remember { mutableStateOf(0) }
         fun revealPlayerChrome() {
             controlsVisible = true
-            cursorVisible = true
             pointerActivitySerial += 1
         }
         val setControlsVisibleFromHover = rememberUpdatedState { shouldShow: Boolean ->
@@ -565,7 +562,6 @@ fun PlayerScreen(
         fun revealLockedOverlay() {
             controlsVisible = false
             lockedOverlayVisible = true
-            cursorVisible = true
             pointerActivitySerial += 1
         }
 
@@ -573,7 +569,6 @@ fun PlayerScreen(
             playerControlsLocked = true
             controlsVisible = false
             lockedOverlayVisible = false
-            cursorVisible = false
             isHovering = false
             pointerActivitySerial += 1
             pausedOverlayVisible = false
@@ -1313,36 +1308,9 @@ fun PlayerScreen(
                                 gestureFeedback != null
                             )
                     )
-        val cursorHoldReasonVisibleState = rememberUpdatedState(cursorHoldReasonVisible)
-
-        LaunchedEffect(
-            hoverDrivenChrome,
-            cursorHoldReasonVisible,
-            pointerActivitySerial,
-        ) {
-            if (!hoverDrivenChrome) {
-                cursorVisible = true
-                return@LaunchedEffect
-            }
-
-            if (cursorHoldReasonVisible) {
-                cursorVisible = true
-                return@LaunchedEffect
-            }
-
-            // Keep cursor visible briefly after controls/chrome have just hidden.
-            cursorVisible = true
-            delay(PlayerCursorAutoHideDelayMs)
-
-            if (!cursorHoldReasonVisibleState.value) {
-                cursorVisible = false
-            }
-        }
 
         ManagePlayerCursorVisibility(
-            visible = !hoverDrivenChrome ||
-                cursorVisible ||
-                cursorHoldReasonVisible,
+            visible = !hoverDrivenChrome || cursorHoldReasonVisible,
         )
 
         LaunchedEffect(playerControlsLocked, lockedOverlayVisible) {
@@ -1579,6 +1547,7 @@ fun PlayerScreen(
                         var lastPosition: Offset? = null
                         while (true) {
                             val event = awaitPointerEvent()
+                            if (playerControlsLockedState.value) continue
                             val change = event.changes.firstOrNull()
                             if (change != null) {
                                 val currentPosition = change.position
