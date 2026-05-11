@@ -50,6 +50,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.nuvio.app.core.ui.NuvioImageFilterQuality
 import com.nuvio.app.core.ui.NuvioPosterCard
 import com.nuvio.app.core.ui.NuvioPosterShape
 import com.nuvio.app.core.ui.NuvioScreenHeader
@@ -193,6 +194,7 @@ private fun FolderCoverImage(
             .fillMaxWidth()
             .height(FolderCoverHeight),
         contentScale = ContentScale.Crop,
+        filterQuality = NuvioImageFilterQuality,
     )
 }
 

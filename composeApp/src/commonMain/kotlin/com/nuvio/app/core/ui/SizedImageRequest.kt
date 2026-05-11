@@ -2,12 +2,15 @@ package com.nuvio.app.core.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.size.Precision
 import coil3.size.Size
+
+internal val NuvioImageFilterQuality: FilterQuality = FilterQuality.High
 
 @Composable
 internal fun rememberSizedImageRequest(
@@ -20,9 +23,10 @@ internal fun rememberSizedImageRequest(
     val density = LocalDensity.current
     val widthPx = with(density) { width.roundToPx() }.coerceAtLeast(1)
     val heightPx = with(density) { height.roundToPx() }.coerceAtLeast(1)
+    val resolvedImageUrl = remember(imageUrl) { imageUrl?.upgradeTmdbImageQuality() }
 
-    return remember(platformContext, imageUrl, widthPx, heightPx, memoryCacheKeyPrefix) {
-        imageUrl
+    return remember(platformContext, resolvedImageUrl, widthPx, heightPx, memoryCacheKeyPrefix) {
+        resolvedImageUrl
             ?.takeIf { it.isNotBlank() }
             ?.let { url ->
                 ImageRequest.Builder(platformContext)

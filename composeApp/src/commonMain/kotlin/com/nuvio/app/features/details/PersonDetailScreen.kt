@@ -54,12 +54,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
-import coil3.compose.LocalPlatformContext
-import coil3.request.ImageRequest
+import com.nuvio.app.core.ui.NuvioImageFilterQuality
 import com.nuvio.app.core.i18n.localizedShortMonthName
 import com.nuvio.app.core.ui.landscapePosterHeightForWidth
 import com.nuvio.app.core.ui.landscapePosterWidth
 import com.nuvio.app.core.ui.rememberPosterCardStyleUiState
+import com.nuvio.app.core.ui.rememberSizedImageRequest
 import com.nuvio.app.features.details.components.DetailPosterRailSection
 import com.nuvio.app.features.home.MetaPreview
 import com.nuvio.app.features.tmdb.TmdbMetadataService
@@ -326,19 +326,12 @@ private fun HeroSection(
     val heroAlpha = 1f - (collapseProgress * 0.35f)
     val avatarUrl = person.profilePhoto?.takeIf { it.isNotBlank() } ?: fallbackProfilePhoto
     val avatarCacheKey = avatarTransitionKey
-    val platformContext = LocalPlatformContext.current
-    val avatarRequest = if (!avatarUrl.isNullOrBlank()) {
-        remember(platformContext, avatarUrl, avatarCacheKey) {
-            ImageRequest.Builder(platformContext)
-                .data(avatarUrl)
-                .memoryCacheKey(avatarCacheKey)
-                .placeholderMemoryCacheKey(avatarCacheKey)
-                .diskCacheKey(avatarUrl)
-                .build()
-        }
-    } else {
-        null
-    }
+    val avatarRequest = rememberSizedImageRequest(
+        imageUrl = avatarUrl,
+        width = avatarSize,
+        height = avatarSize,
+        memoryCacheKeyPrefix = "person-avatar-$avatarCacheKey",
+    )
     val avatarSharedElementModifier = if (sharedTransitionScope != null && animatedVisibilityScope != null) {
         with(sharedTransitionScope) {
             Modifier.sharedElement(
@@ -379,6 +372,7 @@ private fun HeroSection(
                     contentDescription = person.name,
                     modifier = Modifier.matchParentSize(),
                     contentScale = ContentScale.Crop,
+                    filterQuality = NuvioImageFilterQuality,
                 )
             } else {
                 Text(
@@ -483,19 +477,12 @@ private fun PersonDetailSkeleton(
     }
     val accentColor = MaterialTheme.colorScheme.primary
     val avatarCacheKey = avatarTransitionKey
-    val platformContext = LocalPlatformContext.current
-    val avatarRequest = if (!profilePhoto.isNullOrBlank()) {
-        remember(platformContext, profilePhoto, avatarCacheKey) {
-            ImageRequest.Builder(platformContext)
-                .data(profilePhoto)
-                .memoryCacheKey(avatarCacheKey)
-                .placeholderMemoryCacheKey(avatarCacheKey)
-                .diskCacheKey(profilePhoto)
-                .build()
-        }
-    } else {
-        null
-    }
+    val avatarRequest = rememberSizedImageRequest(
+        imageUrl = profilePhoto,
+        width = 140.dp,
+        height = 140.dp,
+        memoryCacheKeyPrefix = "person-avatar-$avatarCacheKey",
+    )
     val accentGradient = remember(accentColor) {
         Brush.verticalGradient(
             colorStops = arrayOf(
@@ -558,6 +545,7 @@ private fun PersonDetailSkeleton(
                             contentDescription = personName,
                             modifier = Modifier.matchParentSize(),
                             contentScale = ContentScale.Crop,
+                            filterQuality = NuvioImageFilterQuality,
                         )
                     } else {
                         Text(

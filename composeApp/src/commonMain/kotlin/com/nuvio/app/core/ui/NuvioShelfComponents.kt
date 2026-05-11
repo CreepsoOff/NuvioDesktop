@@ -217,6 +217,7 @@ fun NuvioPosterCard(
                     contentDescription = title,
                     modifier = Modifier.matchParentSize(),
                     contentScale = ContentScale.Crop,
+                    filterQuality = NuvioImageFilterQuality,
                 )
             } else {
                 Text(
@@ -244,6 +245,7 @@ fun NuvioPosterCard(
                                 .width(catalogLogoOverlaySize.width)
                                 .height(catalogLogoOverlaySize.height),
                             contentScale = ContentScale.Fit,
+                            filterQuality = NuvioImageFilterQuality,
                         )
                     } else {
                         Text(
@@ -438,7 +440,7 @@ internal fun Modifier.posterCardClickable(
     return withPrimaryGestures.desktopContextMenuPointer(onLongClick)
 }
 
-private fun String.upgradeTmdbImageQuality(): String {
+internal fun String.upgradeTmdbImageQuality(): String {
     if (!contains("image.tmdb.org/t/p/", ignoreCase = true)) return this
     return replace("/w300/", "/original/")
         .replace("/w500/", "/original/")

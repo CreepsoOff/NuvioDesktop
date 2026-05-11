@@ -43,6 +43,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import com.nuvio.app.core.ui.NuvioImageFilterQuality
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 import com.nuvio.app.core.ui.landscapePosterHeightForWidth
@@ -151,6 +152,7 @@ private fun EntityBrowseContent(
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
+                filterQuality = NuvioImageFilterQuality,
                 alpha = 0.10f,
             )
         }
@@ -257,6 +259,7 @@ private fun EntityHeroSection(
                     contentDescription = header.name,
                     modifier = Modifier.height(44.dp),
                     contentScale = ContentScale.Fit,
+                    filterQuality = NuvioImageFilterQuality,
                 )
             }
             Spacer(modifier = Modifier.height(12.dp))

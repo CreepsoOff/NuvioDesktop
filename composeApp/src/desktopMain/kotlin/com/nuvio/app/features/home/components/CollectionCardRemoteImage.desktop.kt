@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import com.nuvio.app.core.ui.NuvioImageFilterQuality
 import coil3.compose.LocalPlatformContext
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
@@ -55,7 +56,7 @@ private const val MaxGifSourceBytes = 16L * 1024 * 1024
 private const val MaxDecodedGifBytes = 64L * 1024 * 1024
 private const val MaxDecodedGifBytesTotal = 128L * 1024 * 1024
 private const val MaxLogicalGifPixels = 4096L * 4096L
-private const val MaxGifDecodeUpscale = 2.0
+private const val MaxGifDecodeUpscale = 3.0
 
 private data class DesktopGifCacheKey(
     val url: String,
@@ -235,6 +236,7 @@ internal actual fun CollectionCardRemoteImage(
             contentDescription = contentDescription,
             modifier = Modifier.fillMaxSize(),
             contentScale = contentScale,
+            filterQuality = NuvioImageFilterQuality,
         )
         // Overlay GIF on top with fade-in when hovered or always-animate enabled
         if (shouldAnimate && state is DesktopGifState.Ready) {
@@ -299,6 +301,7 @@ private fun AnimatedComposeGif(
         contentDescription = contentDescription,
         modifier = modifier,
         contentScale = contentScale,
+        filterQuality = NuvioImageFilterQuality,
     )
 }
 
@@ -370,8 +373,11 @@ private fun decodeGifForCompose(
             }
             val gOutputCanvas = outputCanvas.createGraphics().apply {
                 composite = AlphaComposite.SrcOver
-                setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
+                setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC)
                 setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY)
+                setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY)
+                setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+                setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY)
             }
 
             try {

@@ -48,6 +48,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.nuvio.app.core.auth.AuthRepository
 import com.nuvio.app.core.auth.AuthState
+import com.nuvio.app.core.ui.NuvioImageFilterQuality
 import com.nuvio.app.core.ui.NuvioInputField
 import com.nuvio.app.core.ui.NuvioPrimaryButton
 import com.nuvio.app.core.ui.NuvioScreen
@@ -420,6 +421,7 @@ private fun ProfileIdentityCard(
                             contentDescription = name,
                             modifier = Modifier.size(88.dp).clip(CircleShape),
                             contentScale = ContentScale.Crop,
+                            filterQuality = NuvioImageFilterQuality,
                         )
                     } else if (selectedAvatar != null) {
                         val avatarUrl = avatarStorageUrl(selectedAvatar.storagePath)
@@ -434,6 +436,7 @@ private fun ProfileIdentityCard(
                             contentDescription = selectedAvatar.displayName,
                             modifier = Modifier.size(88.dp).clip(CircleShape),
                             contentScale = ContentScale.Crop,
+                            filterQuality = NuvioImageFilterQuality,
                         )
                     } else if (name.isNotBlank()) {
                         Text(
@@ -542,6 +545,7 @@ private fun AvatarChoiceItem(
             contentDescription = avatar.displayName,
             modifier = Modifier.fillMaxSize().clip(CircleShape),
             contentScale = ContentScale.Crop,
+            filterQuality = NuvioImageFilterQuality,
         )
 
         if (isSelected) {

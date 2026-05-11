@@ -60,6 +60,7 @@ import com.nuvio.app.core.build.TrailerPlaybackMode
 import com.nuvio.app.core.network.NetworkCondition
 import com.nuvio.app.core.network.NetworkStatusRepository
 import com.nuvio.app.core.ui.NuvioBackButton
+import com.nuvio.app.core.ui.NuvioImageFilterQuality
 import com.nuvio.app.core.ui.TraktListPickerDialog
 import com.nuvio.app.core.ui.nuvioSafeBottomPadding
 import com.nuvio.app.features.details.components.DetailActionButtons
@@ -626,6 +627,7 @@ fun MetaDetailsScreen(
                                         .fillMaxSize()
                                         .blur(30.dp),
                                     contentScale = ContentScale.Crop,
+                                    filterQuality = NuvioImageFilterQuality,
                                 )
                                 Box(
                                     modifier = Modifier

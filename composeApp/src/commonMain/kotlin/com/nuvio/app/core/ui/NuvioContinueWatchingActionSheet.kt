@@ -132,6 +132,7 @@ private fun ContinueWatchingSheetHeader(
                     contentDescription = item.title,
                     modifier = Modifier.matchParentSize(),
                     contentScale = ContentScale.Crop,
+                    filterQuality = NuvioImageFilterQuality,
                 )
             } else {
                 Text(
