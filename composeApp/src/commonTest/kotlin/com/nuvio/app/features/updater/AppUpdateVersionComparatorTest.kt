@@ -84,4 +84,45 @@ class AppUpdateVersionComparatorTest {
             ),
         )
     }
+
+    @Test
+    fun sameVersionWithoutRemoteBuildDoesNotUseFixedPreTagAsUpdate() {
+        assertFalse(
+            AppUpdateVersionComparator.isUpdateAvailable(
+                remoteVersionName = "0.1.15",
+                remoteVersionCode = null,
+                remoteTag = "pre",
+                localVersionName = "0.1.15",
+                localVersionCode = 59,
+            ),
+        )
+    }
+
+    @Test
+    fun candidateComparisonPrefersStableWhenStableVersionIsNewerThanPre() {
+        val comparison = AppUpdateVersionComparator.compareRemoteCandidates(
+            firstVersionName = "0.1.16",
+            firstVersionCode = 60,
+            firstTag = "v0.1.16",
+            secondVersionName = "0.1.15",
+            secondVersionCode = 59,
+            secondTag = "pre",
+        )
+
+        assertTrue(comparison > 0)
+    }
+
+    @Test
+    fun candidateComparisonPrefersPreWhenPreBuildIsNewerForSameVersion() {
+        val comparison = AppUpdateVersionComparator.compareRemoteCandidates(
+            firstVersionName = "0.1.16",
+            firstVersionCode = 61,
+            firstTag = "pre",
+            secondVersionName = "0.1.16",
+            secondVersionCode = 60,
+            secondTag = "v0.1.16",
+        )
+
+        assertTrue(comparison > 0)
+    }
 }

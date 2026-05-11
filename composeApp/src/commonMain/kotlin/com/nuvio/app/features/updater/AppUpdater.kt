@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
@@ -169,9 +170,39 @@ internal object AppUpdateVersionComparator {
             val versionComparison = compareVersionParts(remoteParts, localParts)
             if (versionComparison != 0) return versionComparison > 0
             if (remoteVersionCode != null) return remoteVersionCode > localVersionCode
+            return false
         }
 
+        if (remoteVersionCode != null && remoteVersionCode > localVersionCode) return true
+
         return isRemoteNewer(remoteTag, localVersionName)
+    }
+
+    fun compareRemoteCandidates(
+        firstVersionName: String?,
+        firstVersionCode: Int?,
+        firstTag: String?,
+        secondVersionName: String?,
+        secondVersionCode: Int?,
+        secondTag: String?,
+    ): Int {
+        val firstParts = parseVersionParts(firstVersionName ?: firstTag)
+        val secondParts = parseVersionParts(secondVersionName ?: secondTag)
+
+        if (firstParts != null && secondParts != null) {
+            val versionComparison = compareVersionParts(firstParts, secondParts)
+            if (versionComparison != 0) return versionComparison
+        } else if (firstParts != null) {
+            return 1
+        } else if (secondParts != null) {
+            return -1
+        }
+
+        val firstBuild = firstVersionCode ?: -1
+        val secondBuild = secondVersionCode ?: -1
+        if (firstBuild != secondBuild) return firstBuild.compareTo(secondBuild)
+
+        return normalize(firstTag).compareTo(normalize(secondTag))
     }
 
     private fun isRemoteNewer(remote: String?, local: String?): Boolean {
@@ -227,11 +258,7 @@ private object AppUpdaterRepository {
         val nightlyTag = AppUpdaterPlatform.nightlyReleaseTag?.takeIf { it.isNotBlank() }
         val response = httpRequestRaw(
             method = "GET",
-            url = if (nightlyMode && nightlyTag != null) {
-                "$gitHubApiBase/repos/${AppUpdaterPlatform.gitHubOwner}/${AppUpdaterPlatform.gitHubRepo}/releases/tags/$nightlyTag"
-            } else {
-                "$gitHubApiBase/repos/${AppUpdaterPlatform.gitHubOwner}/${AppUpdaterPlatform.gitHubRepo}/releases?per_page=20"
-            },
+            url = "$gitHubApiBase/repos/${AppUpdaterPlatform.gitHubOwner}/${AppUpdaterPlatform.gitHubRepo}/releases?per_page=50",
             headers = mapOf(
                 "Accept" to "application/vnd.github+json",
                 "User-Agent" to "Nuvio",
@@ -242,24 +269,46 @@ private object AppUpdaterRepository {
             error("GitHub releases API error: ${response.status}")
         }
 
-        val release = if (nightlyMode && nightlyTag != null) {
-            appUpdaterJson.decodeFromString<GitHubReleaseDto>(response.body)
-                .takeIf { !it.draft }
+        val releases = appUpdaterJson.decodeFromString<List<GitHubReleaseDto>>(response.body)
+        val stableRelease = releases.firstOrNull { it.matchesRequestedChannel() && !it.draft && !it.prerelease }
+        val releaseCandidates = if (nightlyMode && nightlyTag != null) {
+            buildList {
+                if (stableRelease != null) add(stableRelease to "latest")
+                releases.firstOrNull { release -> release.matchesNightlyTag(nightlyTag) && !release.draft }
+                    ?.takeIf { nightlyRelease -> nightlyRelease.tagName != stableRelease?.tagName }
+                    ?.let { nightlyRelease -> add(nightlyRelease to nightlyTag) }
+            }
         } else {
-            val releases = appUpdaterJson.decodeFromString<List<GitHubReleaseDto>>(response.body)
-            releases.firstOrNull { it.matchesRequestedChannel() && !it.draft && !it.prerelease }
+            stableRelease?.let { listOf(it to "latest") }.orEmpty()
         }
+
+        val update = releaseCandidates
+            .map { (release, channelLabel) -> release.toAppUpdate(channelLabel) }
+            .maxWithOrNull { first, second ->
+                AppUpdateVersionComparator.compareRemoteCandidates(
+                    firstVersionName = first.versionName,
+                    firstVersionCode = first.versionCode,
+                    firstTag = first.tag,
+                    secondVersionName = second.versionName,
+                    secondVersionCode = second.versionCode,
+                    secondTag = second.tag,
+                )
+            }
             ?: throw NoChannelReleaseException()
 
-        val tag = release.tagName?.takeIf { it.isNotBlank() }
-            ?: release.name?.takeIf { it.isNotBlank() }
+        update
+    }
+
+    private fun GitHubReleaseDto.toAppUpdate(channelLabel: String): AppUpdate {
+        val tag = tagName?.takeIf { it.isNotBlank() }
+            ?: name?.takeIf { it.isNotBlank() }
             ?: error("Release has no tag or name")
 
         val availableAssets = buildList {
-            val installerAsset = chooseInstallerAsset(release.assets)
+            val installerAsset = chooseInstallerAsset(assets)
             if (installerAsset != null) add(installerAsset)
 
-            val portableZipAsset = choosePortableZipAsset(release.assets)
+            val portableZipAsset = choosePortableZipAsset(assets)
             if (portableZipAsset != null) add(portableZipAsset)
         }
         if (availableAssets.isEmpty()) {
@@ -268,25 +317,29 @@ private object AppUpdaterRepository {
         }
         val selectedAsset = chooseDefaultAsset(availableAssets)
         val releaseVersion = AppUpdateVersionComparator.parseReleaseVersion(
-            tag = release.tagName,
-            title = release.name,
-            notes = release.body,
+            tag = tagName,
+            title = name,
+            notes = body,
         )
 
-        AppUpdate(
+        return AppUpdate(
             tag = tag,
-            title = release.name?.takeIf { it.isNotBlank() } ?: tag,
-            notes = release.body.orEmpty(),
-            releaseUrl = release.htmlUrl,
+            title = name?.takeIf { it.isNotBlank() } ?: tag,
+            notes = body.orEmpty(),
+            releaseUrl = htmlUrl,
             assetName = selectedAsset?.name,
             assetUrl = selectedAsset?.url,
             assetSizeBytes = selectedAsset?.sizeBytes,
             versionName = releaseVersion.versionName,
             versionCode = releaseVersion.versionCode,
-            channelLabel = if (nightlyMode && nightlyTag != null) nightlyTag else "latest",
+            channelLabel = channelLabel,
             availableAssets = availableAssets,
         )
     }
+
+    private fun GitHubReleaseDto.matchesNightlyTag(nightlyTag: String): Boolean =
+        tagName?.equals(nightlyTag, ignoreCase = true) == true ||
+            name?.equals(nightlyTag, ignoreCase = true) == true
 
     private fun GitHubReleaseDto.matchesRequestedChannel(): Boolean {
         val channel = AppUpdaterPlatform.stableReleaseChannelBranch ?: return true
@@ -402,6 +455,20 @@ private object AppUpdaterRepository {
     }
 }
 
+private fun AppUpdate.ignoreKey(): String =
+    listOf(tag, versionName.orEmpty(), versionCode?.toString().orEmpty())
+        .joinToString(separator = "|")
+
+private fun AppUpdate.isIgnoredBy(storedKey: String?): Boolean {
+    if (storedKey.isNullOrBlank()) return false
+    if (storedKey == ignoreKey()) return true
+
+    // Older builds stored only the tag. Keep that compatible only for releases
+    // without parsed version/build metadata, otherwise a fixed tag like "pre"
+    // would suppress every future nightly build.
+    return storedKey == tag && versionName == null && versionCode == null
+}
+
 class AppUpdaterController internal constructor(
     private val scope: CoroutineScope,
 ) {
@@ -454,7 +521,7 @@ class AppUpdaterController internal constructor(
                     localVersionName = AppVersionConfig.VERSION_NAME,
                     localVersionCode = AppVersionConfig.VERSION_CODE,
                 )
-                val ignored = ignoredTag != null && ignoredTag == update.tag
+                val ignored = update.isIgnoredBy(ignoredTag)
                 val shouldShowDialog = force || (remoteNewer && !ignored)
 
                 _uiState.update { state ->
@@ -545,8 +612,8 @@ class AppUpdaterController internal constructor(
     }
 
     fun ignoreThisVersion() {
-        val tag = _uiState.value.update?.tag ?: return
-        AppUpdaterPlatform.setIgnoredTag(tag)
+        val update = _uiState.value.update ?: return
+        AppUpdaterPlatform.setIgnoredTag(update.ignoreKey())
         dismissDialog()
     }
 
@@ -791,10 +858,22 @@ fun AppUpdaterHost(
                                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                             ) {
                                 update.availableAssets.forEach { asset ->
+                                    val selected = state.selectedAssetKind == asset.kind
                                     OutlinedButton(
                                         modifier = Modifier.weight(1f),
                                         onClick = { controller.selectUpdateAsset(asset.kind) },
-                                        enabled = state.selectedAssetKind != asset.kind,
+                                        colors = ButtonDefaults.outlinedButtonColors(
+                                            containerColor = if (selected) {
+                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
+                                            } else {
+                                                MaterialTheme.colorScheme.surface
+                                            },
+                                            contentColor = if (selected) {
+                                                MaterialTheme.colorScheme.onPrimary
+                                            } else {
+                                                MaterialTheme.colorScheme.primary
+                                            },
+                                        ),
                                     ) {
                                         Text(
                                             text = when (asset.kind) {
