@@ -446,10 +446,13 @@ fun PlayerScreen(
             )
         }
 
+        var backFlushed by remember { mutableStateOf(false) }
+
         val onBackWithProgress = remember(onBack, playbackSession, playbackSnapshot) {
             {
                 flushWatchProgress()
                 playerController?.release()
+                backFlushed = true
                 onBack()
             }
         }
@@ -1522,7 +1525,9 @@ fun PlayerScreen(
 
         DisposableEffect(playbackSession.videoId, activeSourceUrl, activeSourceAudioUrl) {
             onDispose {
-                flushWatchProgress()
+                if (!backFlushed) {
+                    flushWatchProgress()
+                }
             }
         }
 
