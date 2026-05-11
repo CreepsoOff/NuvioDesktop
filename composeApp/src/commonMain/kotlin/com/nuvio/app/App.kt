@@ -25,15 +25,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.rounded.FullscreenExit
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 
 import androidx.compose.material3.Scaffold
@@ -127,8 +130,10 @@ import com.nuvio.app.features.notifications.EpisodeReleaseNotificationsRepositor
 import com.nuvio.app.features.player.PlayerLaunch
 import com.nuvio.app.features.player.PlayerLaunchStore
 import com.nuvio.app.features.player.ManageFullscreenKeyboardShortcuts
+import com.nuvio.app.features.player.PlayerFullscreenController
 import com.nuvio.app.features.player.PlayerRoute
 import com.nuvio.app.features.player.PlayerScreen
+import com.nuvio.app.features.player.rememberPlayerFullscreenController
 import com.nuvio.app.features.player.sanitizePlaybackHeaders
 import com.nuvio.app.features.player.sanitizePlaybackResponseHeaders
 import com.nuvio.app.features.profiles.AvatarRepository
@@ -519,6 +524,7 @@ private fun MainAppContent(
         val isHomeRouteActive = selectedTab == AppScreenTab.Home &&
             currentBackStackEntry?.destination?.hasRoute<TabsRoute>() == true
         ManageFullscreenKeyboardShortcuts(isHomeRouteActive = isHomeRouteActive)
+        val fullscreenController = rememberPlayerFullscreenController()
         val nativeRequestedTab by remember { NativeTabBridge.requestedTab }.collectAsStateWithLifecycle()
         val liquidGlassNativeTabBarEnabled by remember {
             ThemeSettingsRepository.liquidGlassNativeTabBarEnabled
@@ -1931,6 +1937,13 @@ private fun MainAppContent(
                     .zIndex(15f),
             )
 
+            GlobalFullscreenExitButton(
+                controller = fullscreenController,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .zIndex(18f),
+            )
+
             NuvioToastHost(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
@@ -1944,6 +1957,45 @@ private fun MainAppContent(
                     .zIndex(25f),
             )
         }
+}
+
+@Composable
+private fun GlobalFullscreenExitButton(
+    controller: PlayerFullscreenController,
+    modifier: Modifier = Modifier,
+) {
+    androidx.compose.animation.AnimatedVisibility(
+        visible = controller.isFullscreenSupported && controller.isFullscreen,
+        enter = fadeIn(animationSpec = tween(140)),
+        exit = fadeOut(animationSpec = tween(120)),
+        modifier = modifier.padding(
+            top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 10.dp,
+            end = 14.dp,
+        ),
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.74f),
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            tonalElevation = 3.dp,
+            shadowElevation = 8.dp,
+        ) {
+            IconButton(
+                onClick = {
+                    if (controller.isFullscreen) {
+                        controller.toggleFullscreen()
+                    }
+                },
+                modifier = Modifier.size(42.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.FullscreenExit,
+                    contentDescription = stringResource(Res.string.compose_player_exit_fullscreen),
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+        }
+    }
 }
 
 @Composable
