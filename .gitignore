@@ -65,3 +65,5 @@ objective-status.md
 libs/
 mpv-player/
 composeApp-run_output.txt
+# Kiro agent spec/tooling artifacts. Local only; never committed.
+.kiro/
