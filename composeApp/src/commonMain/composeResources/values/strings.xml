@@ -495,6 +495,7 @@
     <string name="settings_poster_description">Tune card width and corner radius.</string>
     <string name="settings_poster_hide_labels">Hide labels</string>
     <string name="settings_poster_landscape_mode">Landscape Posters</string>
+    <string name="settings_poster_always_animate_gif">Always animate GIF</string>
     <string name="settings_poster_live_preview">Live Preview</string>
     <string name="settings_poster_option_with_value">%1$s (%2$s)</string>
     <string name="settings_poster_preview_corner_radius">Corner radius: %1$ddp</string>

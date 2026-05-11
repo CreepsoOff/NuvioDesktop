@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import com.nuvio.app.core.ui.rememberSizedImageRequest
 import com.nuvio.app.features.details.MetaCompany
 import com.nuvio.app.features.details.MetaDetails
 import nuvio.composeapp.generated.resources.*
@@ -121,8 +122,14 @@ private fun ProductionChip(
         contentAlignment = Alignment.Center,
     ) {
         if (!item.logo.isNullOrBlank()) {
+            val logoRequest = rememberSizedImageRequest(
+                imageUrl = item.logo,
+                width = logoWidth,
+                height = logoHeight,
+                memoryCacheKeyPrefix = "production-logo",
+            )
             AsyncImage(
-                model = item.logo,
+                model = logoRequest ?: item.logo,
                 contentDescription = item.name,
                 modifier = Modifier
                     .width(logoWidth)

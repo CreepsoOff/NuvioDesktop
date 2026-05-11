@@ -190,6 +190,12 @@ fun NuvioPosterCard(
         basePosterWidthDp = posterCardStyle.widthDp,
         shape = shape,
     )
+    val bottomLeftLogoRequest = rememberSizedImageRequest(
+        imageUrl = resolvedBottomLeftLogoUrl,
+        width = catalogLogoOverlaySize.width,
+        height = catalogLogoOverlaySize.height,
+        memoryCacheKeyPrefix = "poster-logo",
+    )
     val shouldShowTitleBelow = showTitleBelow && !posterCardStyle.hideLabelsEnabled
 
     Column(
@@ -232,7 +238,7 @@ fun NuvioPosterCard(
                 ) {
                     if (!resolvedBottomLeftLogoUrl.isNullOrBlank()) {
                         AsyncImage(
-                            model = resolvedBottomLeftLogoUrl,
+                            model = bottomLeftLogoRequest ?: resolvedBottomLeftLogoUrl,
                             contentDescription = stringResource(Res.string.poster_logo_content_description, title),
                             modifier = Modifier
                                 .width(catalogLogoOverlaySize.width)

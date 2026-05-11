@@ -145,6 +145,4 @@ internal actual fun DesktopDecoderSettingsSection(isTablet: Boolean) {
             }
         }
     }
-
-    HomeLayoutSettingsSection(isTablet = isTablet)
 }

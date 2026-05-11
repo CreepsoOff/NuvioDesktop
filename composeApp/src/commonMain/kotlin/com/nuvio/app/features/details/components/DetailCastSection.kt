@@ -30,8 +30,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
-import coil3.compose.LocalPlatformContext
-import coil3.request.ImageRequest
+import com.nuvio.app.core.ui.rememberSizedImageRequest
 import com.nuvio.app.features.details.MetaPerson
 import com.nuvio.app.features.details.castAvatarSharedTransitionKey
 import nuvio.composeapp.generated.resources.*
@@ -96,20 +95,12 @@ private fun CastItem(
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     onClick: (() -> Unit)? = null,
 ) {
-    val avatarCacheKey = sharedTransitionKey
-    val platformContext = LocalPlatformContext.current
-    val avatarRequest = if (!person.photo.isNullOrBlank() && !avatarCacheKey.isNullOrBlank()) {
-        remember(platformContext, person.photo, avatarCacheKey) {
-            ImageRequest.Builder(platformContext)
-                .data(person.photo)
-                .memoryCacheKey(avatarCacheKey)
-                .placeholderMemoryCacheKey(avatarCacheKey)
-                .diskCacheKey(person.photo)
-                .build()
-        }
-    } else {
-        null
-    }
+    val avatarRequest = rememberSizedImageRequest(
+        imageUrl = person.photo,
+        width = sizing.avatarSize,
+        height = sizing.avatarSize,
+        memoryCacheKeyPrefix = "cast-avatar",
+    )
 
     val avatarSharedElementModifier = if (
         sharedTransitionScope != null &&

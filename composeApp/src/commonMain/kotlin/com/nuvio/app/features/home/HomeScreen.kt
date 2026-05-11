@@ -246,11 +246,13 @@ fun HomeScreen(
         visibleContinueWatchingEntries,
         cachedInProgressItems,
         effectivNextUpItems,
+        continueWatchingPreferences.upNextFromFurthestEpisode,
     ) {
         buildHomeContinueWatchingItems(
             visibleEntries = visibleContinueWatchingEntries,
             cachedInProgressByVideoId = cachedInProgressItems,
             nextUpItemsBySeries = effectivNextUpItems,
+            upNextFromFurthestEpisode = continueWatchingPreferences.upNextFromFurthestEpisode,
         )
     }
     val availableManifests = remember(addonsUiState.addons) {
@@ -631,8 +633,17 @@ internal fun buildHomeContinueWatchingItems(
     visibleEntries: List<WatchProgressEntry>,
     cachedInProgressByVideoId: Map<String, ContinueWatchingItem> = emptyMap(),
     nextUpItemsBySeries: Map<String, Pair<Long, ContinueWatchingItem>>,
+    upNextFromFurthestEpisode: Boolean,
 ): List<ContinueWatchingItem> {
-    val inProgressSeriesIds = visibleEntries
+    val displayProgressEntries = visibleEntries.filterNot { entry ->
+        if (!upNextFromFurthestEpisode || !entry.parentMetaType.isSeriesTypeForContinueWatching()) {
+            false
+        } else {
+            val nextUpItem = nextUpItemsBySeries[entry.parentMetaId]?.second ?: return@filterNot false
+            entry.isEarlierEpisodeThan(nextUpItem)
+        }
+    }
+    val inProgressSeriesIds = displayProgressEntries
         .asSequence()
         .filter { entry -> entry.parentMetaType.isSeriesTypeForContinueWatching() }
         .map { entry -> entry.parentMetaId }
@@ -641,7 +652,7 @@ internal fun buildHomeContinueWatchingItems(
 
     return buildList {
         addAll(
-            visibleEntries.map { entry ->
+            displayProgressEntries.map { entry ->
                 val liveItem = entry.toContinueWatchingItem()
                 HomeContinueWatchingCandidate(
                     lastUpdatedEpochMs = entry.lastUpdatedEpochMs,
@@ -668,6 +679,15 @@ internal fun buildHomeContinueWatchingItems(
         .filter { candidate -> candidate.item.shouldDisplayInContinueWatching() }
         .distinctBy { candidate -> candidate.item.parentMetaId.ifBlank { candidate.item.videoId } }
         .map(HomeContinueWatchingCandidate::item)
+}
+
+private fun WatchProgressEntry.isEarlierEpisodeThan(item: ContinueWatchingItem): Boolean {
+    if (parentMetaId != item.parentMetaId) return false
+    val entrySeason = seasonNumber ?: return false
+    val entryEpisode = episodeNumber ?: return false
+    val itemSeason = item.seasonNumber ?: return false
+    val itemEpisode = item.episodeNumber ?: return false
+    return entrySeason < itemSeason || (entrySeason == itemSeason && entryEpisode < itemEpisode)
 }
 
 private data class CompletedSeriesCandidate(

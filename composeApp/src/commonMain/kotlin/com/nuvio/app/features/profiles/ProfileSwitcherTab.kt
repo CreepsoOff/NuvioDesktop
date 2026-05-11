@@ -65,6 +65,7 @@ import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.nuvio.app.core.ui.desktopContextMenuPointer
+import com.nuvio.app.core.ui.rememberSizedImageRequest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
@@ -437,8 +438,14 @@ private fun PopupProfileBubble(
                 contentAlignment = Alignment.Center,
             ) {
                 if (avatarImageUrl != null) {
+                    val avatarRequest = rememberSizedImageRequest(
+                        imageUrl = avatarImageUrl,
+                        width = 48.dp,
+                        height = 48.dp,
+                        memoryCacheKeyPrefix = "profile-switcher-avatar",
+                    )
                     AsyncImage(
-                        model = avatarImageUrl,
+                        model = avatarRequest ?: avatarImageUrl,
                         contentDescription = profile.name,
                         modifier = Modifier.size(48.dp).clip(CircleShape),
                         contentScale = ContentScale.Crop,
@@ -740,8 +747,14 @@ fun ActiveProfileMiniAvatar(
         contentAlignment = Alignment.Center,
     ) {
         if (avatarImageUrl != null) {
+            val avatarRequest = rememberSizedImageRequest(
+                imageUrl = avatarImageUrl,
+                width = size.dp,
+                height = size.dp,
+                memoryCacheKeyPrefix = "profile-nav-avatar",
+            )
             AsyncImage(
-                model = avatarImageUrl,
+                model = avatarRequest ?: avatarImageUrl,
                 contentDescription = profile.name,
                 modifier = Modifier.size(size.dp).clip(CircleShape),
                 contentScale = ContentScale.Crop,

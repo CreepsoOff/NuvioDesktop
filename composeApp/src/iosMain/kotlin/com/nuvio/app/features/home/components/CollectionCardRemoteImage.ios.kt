@@ -55,11 +55,14 @@ private data class ExpandedGifFrames(
 @Composable
 internal actual fun CollectionCardRemoteImage(
     imageUrl: String,
+    animatedImageUrl: String?,
     contentDescription: String,
     modifier: Modifier,
     contentScale: ContentScale,
     animateIfPossible: Boolean,
+    animateNow: Boolean,
 ) {
+    val gifUrl = animatedImageUrl?.takeIf { it.isNotBlank() } ?: imageUrl
     if (!animateIfPossible) {
         AsyncImage(
             model = imageUrl,
@@ -70,10 +73,10 @@ internal actual fun CollectionCardRemoteImage(
         return
     }
 
-    var gifImage by remember(imageUrl) { mutableStateOf(cachedGifImage(imageUrl)) }
+    var gifImage by remember(gifUrl) { mutableStateOf(cachedGifImage(gifUrl)) }
 
-    LaunchedEffect(imageUrl) {
-        gifImage = loadGifImage(imageUrl)
+    LaunchedEffect(gifUrl) {
+        gifImage = loadGifImage(gifUrl)
     }
 
     UIKitView(
@@ -84,12 +87,12 @@ internal actual fun CollectionCardRemoteImage(
                 clipsToBounds = true
                 userInteractionEnabled = false
                 image = gifImage
-                tag = imageUrl.hashCode().toLong()
+                tag = gifUrl.hashCode().toLong()
             }
         },
         update = { imageView ->
-            if (imageView.tag != imageUrl.hashCode().toLong()) {
-                imageView.tag = imageUrl.hashCode().toLong()
+            if (imageView.tag != gifUrl.hashCode().toLong()) {
+                imageView.tag = gifUrl.hashCode().toLong()
             }
             imageView.image = gifImage
         },

@@ -26,6 +26,10 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,6 +46,7 @@ import nuvio.composeapp.generated.resources.settings_poster_card_radius
 import nuvio.composeapp.generated.resources.settings_poster_card_style
 import nuvio.composeapp.generated.resources.settings_poster_card_width
 import nuvio.composeapp.generated.resources.settings_poster_custom
+import nuvio.composeapp.generated.resources.settings_poster_always_animate_gif
 import nuvio.composeapp.generated.resources.settings_poster_description
 import nuvio.composeapp.generated.resources.settings_poster_hide_labels
 import nuvio.composeapp.generated.resources.settings_poster_landscape_mode
@@ -162,6 +167,19 @@ private fun PosterCardStyleControls(
             checked = hideLabelsEnabled,
             onCheckedChange = onHideLabelsChange,
         )
+        if (AlwaysAnimateGifPreference.isSupported) {
+            var alwaysAnimateGif by remember {
+                mutableStateOf(AlwaysAnimateGifPreference.load())
+            }
+            PosterToggleRow(
+                title = stringResource(Res.string.settings_poster_always_animate_gif),
+                checked = alwaysAnimateGif,
+                onCheckedChange = { checked ->
+                    alwaysAnimateGif = checked
+                    AlwaysAnimateGifPreference.save(checked)
+                },
+            )
+        }
     }
 }
 

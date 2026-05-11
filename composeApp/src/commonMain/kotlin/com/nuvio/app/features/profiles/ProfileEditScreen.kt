@@ -54,6 +54,7 @@ import com.nuvio.app.core.ui.NuvioScreen
 import com.nuvio.app.core.ui.NuvioScreenHeader
 import com.nuvio.app.core.ui.NuvioStatusModal
 import com.nuvio.app.core.ui.NuvioSurfaceCard
+import com.nuvio.app.core.ui.rememberSizedImageRequest
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -408,15 +409,28 @@ private fun ProfileIdentityCard(
                     contentAlignment = Alignment.Center,
                 ) {
                     if (customAvatarUrl != null) {
+                        val avatarRequest = rememberSizedImageRequest(
+                            imageUrl = customAvatarUrl,
+                            width = 88.dp,
+                            height = 88.dp,
+                            memoryCacheKeyPrefix = "profile-edit-avatar",
+                        )
                         AsyncImage(
-                            model = customAvatarUrl,
+                            model = avatarRequest ?: customAvatarUrl,
                             contentDescription = name,
                             modifier = Modifier.size(88.dp).clip(CircleShape),
                             contentScale = ContentScale.Crop,
                         )
                     } else if (selectedAvatar != null) {
+                        val avatarUrl = avatarStorageUrl(selectedAvatar.storagePath)
+                        val avatarRequest = rememberSizedImageRequest(
+                            imageUrl = avatarUrl,
+                            width = 88.dp,
+                            height = 88.dp,
+                            memoryCacheKeyPrefix = "profile-edit-avatar",
+                        )
                         AsyncImage(
-                            model = avatarStorageUrl(selectedAvatar.storagePath),
+                            model = avatarRequest ?: avatarUrl,
                             contentDescription = selectedAvatar.displayName,
                             modifier = Modifier.size(88.dp).clip(CircleShape),
                             contentScale = ContentScale.Crop,

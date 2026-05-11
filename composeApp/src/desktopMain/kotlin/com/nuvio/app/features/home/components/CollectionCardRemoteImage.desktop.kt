@@ -1,9 +1,6 @@
 ﻿package com.nuvio.app.features.home.components
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.hoverable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,7 +18,11 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import coil3.compose.LocalPlatformContext
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.size.Precision
+import coil3.size.Size
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.java.Java
@@ -54,6 +55,7 @@ private const val MaxGifSourceBytes = 16L * 1024 * 1024
 private const val MaxDecodedGifBytes = 64L * 1024 * 1024
 private const val MaxDecodedGifBytesTotal = 128L * 1024 * 1024
 private const val MaxLogicalGifPixels = 4096L * 4096L
+private const val MaxGifDecodeUpscale = 2.0
 
 private data class DesktopGifCacheKey(
     val url: String,
@@ -144,30 +146,22 @@ private sealed interface DesktopGifState {
 @Composable
 internal actual fun CollectionCardRemoteImage(
     imageUrl: String,
+    animatedImageUrl: String?,
     contentDescription: String,
     modifier: Modifier,
     contentScale: ContentScale,
     animateIfPossible: Boolean,
+    animateNow: Boolean,
 ) {
-    if (!animateIfPossible) {
-        AsyncImage(
-            model = imageUrl,
-            contentDescription = contentDescription,
-            modifier = modifier,
-            contentScale = contentScale,
-        )
-        return
-    }
-
     val alwaysAnimateGif = remember {
         DesktopPreferences.getBoolean("nuvio_home_settings", "always_animate_gif") ?: false
     }
-    val interactionSource = remember { MutableInteractionSource() }
-    val isHovered by interactionSource.collectIsHoveredAsState()
-    val shouldAnimate = alwaysAnimateGif || isHovered
+    val gifUrl = animatedImageUrl?.takeIf { animateIfPossible && it.isNotBlank() }
+    val shouldAnimate = gifUrl != null && (alwaysAnimateGif || animateNow)
 
-    BoxWithConstraints(modifier = modifier.hoverable(interactionSource)) {
+    BoxWithConstraints(modifier = modifier) {
         val density = LocalDensity.current
+        val platformContext = LocalPlatformContext.current
         val targetWidthPx = maxWidth.value
             .takeIf { it.isFinite() && it > 0f }
             ?.let { with(density) { maxWidth.roundToPx() } }
@@ -182,15 +176,26 @@ internal actual fun CollectionCardRemoteImage(
                 heightPx = targetHeightPx.roundUpToDecodeBucket().coerceIn(1, MaxDecodedDimensionPx),
             )
         }
-        val cacheKey = remember(imageUrl, decodeTarget) {
-            DesktopGifCacheKey(
-                url = imageUrl,
-                widthPx = decodeTarget.widthPx,
-                heightPx = decodeTarget.heightPx,
-            )
+        val staticRequest = remember(platformContext, imageUrl, targetWidthPx, targetHeightPx) {
+            ImageRequest.Builder(platformContext)
+                .data(imageUrl)
+                .size(Size(targetWidthPx.coerceAtLeast(1), targetHeightPx.coerceAtLeast(1)))
+                .precision(Precision.EXACT)
+                .memoryCacheKey("home-collection-static:$targetWidthPx:$targetHeightPx:${imageUrl.hashCode()}")
+                .diskCacheKey(imageUrl)
+                .build()
+        }
+        val cacheKey = remember(gifUrl, decodeTarget) {
+            gifUrl?.let { url ->
+                DesktopGifCacheKey(
+                    url = url,
+                    widthPx = decodeTarget.widthPx,
+                    heightPx = decodeTarget.heightPx,
+                )
+            }
         }
         val cachedGif = remember(cacheKey) {
-            DesktopDecodedGifCache.get(cacheKey)
+            cacheKey?.let(DesktopDecodedGifCache::get)
         }
         var state by remember(cacheKey) {
             mutableStateOf<DesktopGifState>(
@@ -198,7 +203,15 @@ internal actual fun CollectionCardRemoteImage(
             )
         }
 
-        LaunchedEffect(cacheKey) {
+        LaunchedEffect(cacheKey, gifUrl, shouldAnimate) {
+            if (cacheKey == null || gifUrl == null) {
+                state = DesktopGifState.UseStaticCoil
+                return@LaunchedEffect
+            }
+            if (!shouldAnimate) {
+                state = DesktopDecodedGifCache.get(cacheKey)?.let(DesktopGifState::Ready) ?: DesktopGifState.Loading
+                return@LaunchedEffect
+            }
             cachedGif?.let {
                 state = DesktopGifState.Ready(it)
                 return@LaunchedEffect
@@ -206,7 +219,7 @@ internal actual fun CollectionCardRemoteImage(
 
             state = DesktopGifState.Loading
             val decoded = DesktopGifInFlight.getOrDecode(cacheKey) {
-                downloadAndDecodeGif(imageUrl, decodeTarget)
+                downloadAndDecodeGif(gifUrl, decodeTarget)
             }
 
             state = if (decoded != null) {
@@ -218,7 +231,7 @@ internal actual fun CollectionCardRemoteImage(
 
                 // Always show static poster as base layer
         AsyncImage(
-            model = imageUrl,
+            model = staticRequest,
             contentDescription = contentDescription,
             modifier = Modifier.fillMaxSize(),
             contentScale = contentScale,
@@ -335,7 +348,7 @@ private fun decodeGifForCompose(
                 target.widthPx.toDouble() / baseW.toDouble(),
                 target.heightPx.toDouble() / baseH.toDouble(),
             )
-            val scale = minOf(1.0, coverScale)
+            val scale = coverScale.coerceAtMost(MaxGifDecodeUpscale)
             val canvasW = max(1, (baseW * scale).toInt())
             val canvasH = max(1, (baseH * scale).toInt())
             val approxBytes = frameCount.toLong() * canvasW.toLong() * canvasH.toLong() * 4L

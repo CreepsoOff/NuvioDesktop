@@ -495,6 +495,7 @@
     <string name="settings_poster_description">Personnalisez la largeur de carte et le rayon des coins pour les cartes d'affiches partagées dans toute l'application.</string>
     <string name="settings_poster_hide_labels">Masquer les étiquettes</string>
     <string name="settings_poster_landscape_mode">Mode paysage pour les affiches dans les rayons</string>
+    <string name="settings_poster_always_animate_gif">Toujours animer les GIF</string>
     <string name="settings_poster_live_preview">Aperçu en direct</string>
     <string name="settings_poster_option_with_value">%1$s (%2$s)</string>
     <string name="settings_poster_preview_corner_radius">Rayon de coin : %1$ddp</string>

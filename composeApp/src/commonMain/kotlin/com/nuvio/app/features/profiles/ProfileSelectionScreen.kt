@@ -59,6 +59,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.nuvio.app.core.auth.AuthRepository
 import com.nuvio.app.core.auth.AuthState
+import com.nuvio.app.core.ui.rememberSizedImageRequest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
@@ -373,8 +374,14 @@ private fun ProfileAvatarCard(
                 contentAlignment = Alignment.Center,
             ) {
                 if (avatarImageUrl != null) {
+                    val avatarRequest = rememberSizedImageRequest(
+                        imageUrl = avatarImageUrl,
+                        width = 100.dp,
+                        height = 100.dp,
+                        memoryCacheKeyPrefix = "profile-selection-avatar",
+                    )
                     AsyncImage(
-                        model = avatarImageUrl,
+                        model = avatarRequest ?: avatarImageUrl,
                         contentDescription = avatarItem?.displayName ?: profile.name,
                         modifier = Modifier.size(100.dp).clip(CircleShape),
                         contentScale = ContentScale.Crop,

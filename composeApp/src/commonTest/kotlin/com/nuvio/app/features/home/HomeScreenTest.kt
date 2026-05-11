@@ -32,6 +32,7 @@ class HomeScreenTest {
         val result = buildHomeContinueWatchingItems(
             visibleEntries = listOf(inProgress, movie),
             nextUpItemsBySeries = mapOf("tt0944947" to (200L to nextUp)),
+            upNextFromFurthestEpisode = false,
         )
 
         assertEquals(listOf("tt0944947:1:4", "movie-1"), result.map(ContinueWatchingItem::videoId))
@@ -55,6 +56,7 @@ class HomeScreenTest {
         val result = buildHomeContinueWatchingItems(
             visibleEntries = listOf(inProgress),
             nextUpItemsBySeries = mapOf("show" to (500L to nextUp)),
+            upNextFromFurthestEpisode = false,
         )
 
         assertEquals(1, result.size)
@@ -78,10 +80,59 @@ class HomeScreenTest {
         val result = buildHomeContinueWatchingItems(
             visibleEntries = listOf(inProgress),
             nextUpItemsBySeries = mapOf("show" to (500L to nextUp)),
+            upNextFromFurthestEpisode = false,
         )
 
         assertEquals(listOf("show:1:4"), result.map(ContinueWatchingItem::videoId))
         assertEquals("S1E4 • Current", result.single().subtitle)
+    }
+
+    @Test
+    fun `build home continue watching items prefers furthest next up over earlier replay when enabled`() {
+        val replayInProgress = progressEntry(
+            videoId = "show:1:12",
+            title = "Show",
+            episodeNumber = 12,
+            episodeTitle = "Replay",
+            lastUpdatedEpochMs = 1_000L,
+        )
+        val nextUp = continueWatchingItem(
+            videoId = "show:1:15",
+            subtitle = "S1E15 • Furthest",
+        )
+
+        val result = buildHomeContinueWatchingItems(
+            visibleEntries = listOf(replayInProgress),
+            nextUpItemsBySeries = mapOf("show" to (500L to nextUp)),
+            upNextFromFurthestEpisode = true,
+        )
+
+        assertEquals(listOf("show:1:15"), result.map(ContinueWatchingItem::videoId))
+        assertEquals("S1E15 • Furthest", result.single().subtitle)
+    }
+
+    @Test
+    fun `build home continue watching items shows earlier replay when furthest next up is disabled`() {
+        val replayInProgress = progressEntry(
+            videoId = "show:1:12",
+            title = "Show",
+            episodeNumber = 12,
+            episodeTitle = "Replay",
+            lastUpdatedEpochMs = 1_000L,
+        )
+        val nextUp = continueWatchingItem(
+            videoId = "show:1:15",
+            subtitle = "S1E15 • Furthest",
+        )
+
+        val result = buildHomeContinueWatchingItems(
+            visibleEntries = listOf(replayInProgress),
+            nextUpItemsBySeries = mapOf("show" to (500L to nextUp)),
+            upNextFromFurthestEpisode = false,
+        )
+
+        assertEquals(listOf("show:1:12"), result.map(ContinueWatchingItem::videoId))
+        assertEquals("S1E12 • Replay", result.single().subtitle)
     }
 
     @Test
@@ -171,21 +222,25 @@ class HomeScreenTest {
     private fun continueWatchingItem(
         videoId: String,
         subtitle: String,
-    ): ContinueWatchingItem =
-        ContinueWatchingItem(
+    ): ContinueWatchingItem {
+        val parts = videoId.split(':')
+        val season = parts.getOrNull(1)?.toIntOrNull() ?: 1
+        val episode = parts.getOrNull(2)?.toIntOrNull() ?: 4
+        return ContinueWatchingItem(
             parentMetaId = videoId.substringBefore(':'),
             parentMetaType = "series",
             videoId = videoId,
             title = "Show",
             subtitle = subtitle,
             imageUrl = null,
-            seasonNumber = 1,
-            episodeNumber = 4,
+            seasonNumber = season,
+            episodeNumber = episode,
             episodeTitle = subtitle.substringAfterLast(" • ", "Episode"),
             resumePositionMs = 0L,
             durationMs = 0L,
             progressFraction = 0f,
         )
+    }
 
     private companion object {
         const val MILLIS_PER_DAY = 24L * 60L * 60L * 1000L
