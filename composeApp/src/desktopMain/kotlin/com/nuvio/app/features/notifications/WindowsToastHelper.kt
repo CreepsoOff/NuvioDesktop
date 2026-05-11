@@ -1,6 +1,7 @@
 package com.nuvio.app.features.notifications
 
 import com.nuvio.app.desktop.DesktopRuntimeLog
+import com.sun.jna.Function
 import com.sun.jna.Memory
 import com.sun.jna.Native
 import com.sun.jna.Pointer
@@ -9,6 +10,7 @@ import com.sun.jna.platform.win32.Guid.GUID
 import com.sun.jna.platform.win32.Ole32Util
 import com.sun.jna.platform.win32.WinNT.HRESULT
 import com.sun.jna.ptr.PointerByReference
+import com.sun.jna.win32.StdCallLibrary
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util.*
@@ -21,9 +23,14 @@ object WindowsToastHelper {
         get() = System.getProperty("os.name")?.lowercase(Locale.US)?.contains("windows") == true
 
     val isPortableBuild: Boolean by lazy {
-        val exeDir = executableDirectory() ?: return@lazy true
-        !File(exeDir, ".installed").exists() &&
-            exeDir.lowercase().let { !it.contains("program files") }
+        val exe = executableFile() ?: return@lazy true
+        val exeDir = exe.parentFile ?: return@lazy true
+        val packagedNuvioExe = exe.name.equals("Nuvio.exe", ignoreCase = true)
+        val portableMarker = File(exeDir, "Nuvio.portable").exists()
+        val installedMarker = File(exeDir, ".installed").exists()
+        val installedPath = exeDir.absolutePath.lowercase(Locale.US).contains("program files")
+
+        !packagedNuvioExe || portableMarker || (!installedMarker && !installedPath)
     }
 
     val systemToastsSupported: Boolean by lazy {
@@ -73,35 +80,42 @@ object WindowsToastHelper {
 
     fun clearScheduledToasts(): Boolean {
         if (!isWindows) return false
-        return runCatching { runPowerShell(clearScheduledScript) }.isSuccess
+        if (isPortableBuild) return false
+        ensureShortcut()
+        return runPowerShell(clearScheduledScript, mapOf("NUVIO_TOAST_AUMID" to appUserModelId)).isSuccess
     }
 
     // ---- internals ----
 
-    private fun executableDirectory(): String? {
-        val path = executablePath() ?: return null
-        return File(path).parent
-    }
+    private fun executableDirectory(): String? = executableFile()?.parent
+
+    private fun executableFile(): File? =
+        executablePath()?.let(::File)
 
     private fun executablePath(): String? =
-        ProcessHandle.current().info().command().orElse("")
+        ProcessHandle.current().info().command().orElse("").takeIf { it.isNotBlank() }
 
     private fun programsDirectory(): String? =
         System.getenv("APPDATA")?.let { "$it\\Microsoft\\Windows\\Start Menu\\Programs" }
 
     private fun createShortcut(shortcutPath: String, exePath: String, appId: String): Boolean = runCatching {
-        val shellLink = createComObject(CLSID_ShellLink, IID_IShellLinkW)
-            ?: error("Could not create ShellLink COM object")
+        val comScope = initializeComForShortcut()
         try {
-            setShellLinkPath(shellLink, exePath)
-            setShellLinkWorkingDir(shellLink, File(exePath).parent ?: "")
-            setShellLinkDescription(shellLink, "Nuvio")
-            setShellLinkIcon(shellLink, exePath, 0)
-            setAppUserModelId(shellLink, appId)
-            saveShortcutFile(shellLink, shortcutPath)
-            true
+            val shellLink = createComObject(CLSID_ShellLink, IID_IShellLinkW)
+                ?: error("Could not create ShellLink COM object")
+            try {
+                setShellLinkPath(shellLink, exePath)
+                setShellLinkWorkingDir(shellLink, File(exePath).parent ?: "")
+                setShellLinkDescription(shellLink, "Nuvio")
+                setShellLinkIcon(shellLink, exePath, 0)
+                setAppUserModelId(shellLink, appId)
+                saveShortcutFile(shellLink, shortcutPath)
+                true
+            } finally {
+                releaseComObject(shellLink)
+            }
         } finally {
-            releaseComObject(shellLink)
+            comScope.close()
         }
     }.onFailure { DesktopRuntimeLog.error("Toast: shortcut creation failed", it) }
         .getOrDefault(false)
@@ -195,6 +209,30 @@ object WindowsToastHelper {
     private val IID_IPropertyStore = GUID.fromString("{00000138-0000-0000-C000-000000000046}")
     private val PROPERTYKEY_FMTID = Ole32Util.getGUIDFromString("{9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3}")
     private val PROPERTYKEY_PID = 5
+    private const val COINIT_APARTMENTTHREADED = 0x2
+    private const val S_OK = 0
+    private const val S_FALSE = 1
+    private const val RPC_E_CHANGED_MODE = -2147417850
+
+    private const val VT_LPWSTR: Short = 31
+    private const val IUNKNOWN_QUERY_INTERFACE_INDEX = 0
+    private const val IUNKNOWN_RELEASE_INDEX = 2
+    private const val ISHELLLINK_SET_DESCRIPTION_INDEX = 7
+    private const val ISHELLLINK_SET_WORKING_DIRECTORY_INDEX = 9
+    private const val ISHELLLINK_SET_ICON_LOCATION_INDEX = 17
+    private const val ISHELLLINK_SET_PATH_INDEX = 20
+    private const val IPERSISTFILE_SAVE_INDEX = 6
+    private const val IPROPERTYSTORE_SET_VALUE_INDEX = 6
+    private const val IPROPERTYSTORE_COMMIT_INDEX = 7
+
+    private fun initializeComForShortcut(): ComScope {
+        val hr = Ole32.INSTANCE.CoInitializeEx(null, COINIT_APARTMENTTHREADED).toInt()
+        return when (hr) {
+            S_OK, S_FALSE -> ComScope(needsUninitialize = true)
+            RPC_E_CHANGED_MODE -> ComScope(needsUninitialize = false)
+            else -> error("CoInitializeEx failed hr=0x${hr.toUInt().toString(16)}")
+        }
+    }
 
     private fun createComObject(clsid: GUID, iid: GUID): Pointer? {
         val ppv = PointerByReference()
@@ -208,40 +246,33 @@ object WindowsToastHelper {
 
     private fun releaseComObject(p: Pointer) {
         try {
-            // Release is a COM vtable method, not a DLL export.
-            // Call via IUnknown vtable: offset 2 (0=QueryInterface, 1=AddRef, 2=Release)
-            val vtable = p.getPointer(0)
-            val releaseFunc = com.sun.jna.Function.getFunction(vtable.getPointer(2 * com.sun.jna.Native.POINTER_SIZE.toLong()))
-            releaseFunc.invoke(Int::class.java, arrayOf(p))
+            invokeComInt(p, IUNKNOWN_RELEASE_INDEX, p)
         } catch (_: Exception) {
             // Release failures at shutdown are non-fatal
         }
     }
 
     private fun setShellLinkPath(link: Pointer, path: String) {
-        IShellLinkW.INSTANCE.SetPath(link, WString(path))
+        invokeComInt(link, ISHELLLINK_SET_PATH_INDEX, link, WString(path))
     }
 
     private fun setShellLinkWorkingDir(link: Pointer, dir: String) {
-        IShellLinkW.INSTANCE.SetWorkingDirectory(link, WString(dir))
+        invokeComInt(link, ISHELLLINK_SET_WORKING_DIRECTORY_INDEX, link, WString(dir))
     }
 
     private fun setShellLinkDescription(link: Pointer, desc: String) {
-        IShellLinkW.INSTANCE.SetDescription(link, WString(desc))
+        invokeComInt(link, ISHELLLINK_SET_DESCRIPTION_INDEX, link, WString(desc))
     }
 
     private fun setShellLinkIcon(link: Pointer, path: String, index: Int) {
-        IShellLinkW.INSTANCE.SetIconLocation(link, WString(path), index)
+        invokeComInt(link, ISHELLLINK_SET_ICON_LOCATION_INDEX, link, WString(path), index)
     }
 
     private fun setAppUserModelId(shellLink: Pointer, appId: String) {
-        val pps = PointerByReference()
-        val hr = IShellLinkW.INSTANCE.QueryInterface(shellLink, IID_IPropertyStore, pps).toInt()
-        if (hr != 0 || pps.value == null) {
-            DesktopRuntimeLog.warn("Toast: QueryInterface IPropertyStore failed hr=0x${hr.toUInt().toString(16)}")
+        val propStore = queryInterface(shellLink, IID_IPropertyStore) ?: run {
+            DesktopRuntimeLog.warn("Toast: QueryInterface IPropertyStore failed")
             return
         }
-        val propStore = pps.value
         try {
             val pKey = Memory(20)
             val fmtidBytes = PROPERTYKEY_FMTID.toByteArray()
@@ -249,15 +280,15 @@ object WindowsToastHelper {
             pKey.setInt(16, PROPERTYKEY_PID)
 
             val propVariant = Memory(24)
-            propVariant.setShort(0, 31) // VT_LPWSTR = 31
+            propVariant.setShort(0, VT_LPWSTR)
             val appIdBytes = (appId + "\u0000").toByteArray(StandardCharsets.UTF_16LE)
             val appIdMemory = Memory(appIdBytes.size.toLong())
             appIdMemory.write(0, appIdBytes, 0, appIdBytes.size)
             propVariant.setPointer(8, appIdMemory)
 
-            val setHr = IPropertyStore.INSTANCE.SetValue(propStore, pKey, propVariant).toInt()
+            val setHr = invokeComInt(propStore, IPROPERTYSTORE_SET_VALUE_INDEX, propStore, pKey, propVariant)
             if (setHr == 0) {
-                IPropertyStore.INSTANCE.Commit(propStore)
+                invokeComInt(propStore, IPROPERTYSTORE_COMMIT_INDEX, propStore)
             } else {
                 DesktopRuntimeLog.warn("Toast: IPropertyStore.SetValue failed hr=0x${setHr.toUInt().toString(16)}")
             }
@@ -267,50 +298,55 @@ object WindowsToastHelper {
     }
 
     private fun saveShortcutFile(shellLink: Pointer, path: String) {
-        val pps = PointerByReference()
-        val hr = IShellLinkW.INSTANCE.QueryInterface(shellLink, IID_IPersistFile, pps).toInt()
-        if (hr != 0 || pps.value == null) {
-            DesktopRuntimeLog.warn("Toast: QueryInterface IPersistFile failed hr=0x${hr.toUInt().toString(16)}")
+        val persistFile = queryInterface(shellLink, IID_IPersistFile) ?: run {
+            DesktopRuntimeLog.warn("Toast: QueryInterface IPersistFile failed")
             return
         }
-        IPersistFile.INSTANCE.Save(pps.value, WString(path), true)
+        try {
+            invokeComInt(persistFile, IPERSISTFILE_SAVE_INDEX, persistFile, WString(path), true)
+        } finally {
+            releaseComObject(persistFile)
+        }
+    }
+
+    private fun queryInterface(unknown: Pointer, iid: GUID): Pointer? {
+        val ppv = PointerByReference()
+        val hr = invokeComInt(unknown, IUNKNOWN_QUERY_INTERFACE_INDEX, unknown, iid, ppv)
+        if (hr != 0 || ppv.value == null) {
+            DesktopRuntimeLog.warn("Toast: QueryInterface failed iid=$iid hr=0x${hr.toUInt().toString(16)}")
+            return null
+        }
+        return ppv.value
+    }
+
+    private fun invokeComInt(comObject: Pointer, methodIndex: Int, vararg args: Any?): Int {
+        val vtable = comObject.getPointer(0)
+        val method = vtable.getPointer(methodIndex * Native.POINTER_SIZE.toLong())
+        val function = Function.getFunction(method, Function.ALT_CONVENTION)
+        return function.invoke(Int::class.java, args) as Int
     }
 
     private const val CLSCTX_INPROC_SERVER = 1
 
-    private interface Ole32 : com.sun.jna.Library {
+    private data class ComScope(
+        val needsUninitialize: Boolean,
+    ) {
+        fun close() {
+            if (needsUninitialize) {
+                Ole32.INSTANCE.CoUninitialize()
+            }
+        }
+    }
+
+    private interface Ole32 : StdCallLibrary {
         companion object {
             val INSTANCE: Ole32 = Native.load("ole32", Ole32::class.java)
         }
+        fun CoInitializeEx(pvReserved: Pointer?, dwCoInit: Int): HRESULT
+        fun CoUninitialize()
         fun CoCreateInstance(
             rclsid: GUID, pUnkOuter: Pointer?, dwClsContext: Int,
             riid: GUID, ppv: PointerByReference,
         ): HRESULT
-    }
-
-    private interface IShellLinkW : com.sun.jna.Library {
-        companion object {
-            val INSTANCE: IShellLinkW = Native.load("shell32", IShellLinkW::class.java)
-        }
-        fun SetPath(link: Pointer, path: WString): HRESULT
-        fun SetWorkingDirectory(link: Pointer, dir: WString): HRESULT
-        fun SetDescription(link: Pointer, desc: WString): HRESULT
-        fun SetIconLocation(link: Pointer, path: WString, index: Int): HRESULT
-        fun QueryInterface(link: Pointer, riid: GUID, ppv: PointerByReference): HRESULT
-    }
-
-    private interface IPersistFile : com.sun.jna.Library {
-        companion object {
-            val INSTANCE: IPersistFile = Native.load("ole32", IPersistFile::class.java)
-        }
-        fun Save(persistFile: Pointer, path: WString, remember: Boolean): HRESULT
-    }
-
-    private interface IPropertyStore : com.sun.jna.Library {
-        companion object {
-            val INSTANCE: IPropertyStore = Native.load("ole32", IPropertyStore::class.java)
-        }
-        fun SetValue(propStore: Pointer, key: Pointer, value: Pointer): HRESULT
-        fun Commit(propStore: Pointer): HRESULT
     }
 }
