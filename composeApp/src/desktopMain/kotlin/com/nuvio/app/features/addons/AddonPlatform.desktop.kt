@@ -1,6 +1,7 @@
 package com.nuvio.app.features.addons
 
 import com.nuvio.app.desktop.DesktopPreferences
+import com.nuvio.app.desktop.log.DesktopRuntimeLog
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.util.concurrent.TimeUnit
@@ -137,32 +138,37 @@ private suspend fun executeTextRequest(
     headers: Map<String, String> = emptyMap(),
     body: String = "",
 ): String = withContext(Dispatchers.IO) {
-    val normalizedMethod = method.uppercase()
-    val sanitizedHeaders = headers.withoutAcceptEncoding()
-    val builder = Request.Builder().url(normalizeDesktopAddonRequestUrl(url))
-    sanitizedHeaders.forEach { (key, value) ->
-        builder.header(key, value)
-    }
-
-    val request = if (requestAllowsBody(normalizedMethod)) {
-        val contentType = sanitizedHeaders.getHeaderIgnoreCase("Content-Type")
-            ?: if (normalizedMethod == "POST") "application/x-www-form-urlencoded" else "application/json"
-        // Preserve exact media type and avoid implicit charset rewriting used in signed APIs.
-        val requestBody = body.toByteArray(Charsets.UTF_8).toRequestBody(contentType.toMediaType())
-        builder.method(normalizedMethod, requestBody)
-    } else {
-        builder.method(normalizedMethod, null)
-    }.build()
-
-    addonHttpClient.newCall(request).execute().use { response ->
-        val payload = readResponseBody(response.body)
-        if (!response.isSuccessful) {
-            error("Request failed with HTTP ${response.code}")
+    try {
+        val normalizedMethod = method.uppercase()
+        val sanitizedHeaders = headers.withoutAcceptEncoding()
+        val builder = Request.Builder().url(normalizeDesktopAddonRequestUrl(url))
+        sanitizedHeaders.forEach { (key, value) ->
+            builder.header(key, value)
         }
-        if (payload.isBlank()) {
-            throw IllegalStateException("Empty response body")
+
+        val request = if (requestAllowsBody(normalizedMethod)) {
+            val contentType = sanitizedHeaders.getHeaderIgnoreCase("Content-Type")
+                ?: if (normalizedMethod == "POST") "application/x-www-form-urlencoded" else "application/json"
+            // Preserve exact media type and avoid implicit charset rewriting used in signed APIs.
+            val requestBody = body.toByteArray(Charsets.UTF_8).toRequestBody(contentType.toMediaType())
+            builder.method(normalizedMethod, requestBody)
+        } else {
+            builder.method(normalizedMethod, null)
+        }.build()
+
+        addonHttpClient.newCall(request).execute().use { response ->
+            val payload = readResponseBody(response.body)
+            if (!response.isSuccessful) {
+                error("Request failed with HTTP ${response.code}")
+            }
+            if (payload.isBlank()) {
+                throw IllegalStateException("Empty response body")
+            }
+            payload
         }
-        payload
+    } catch (e: Exception) {
+        DesktopRuntimeLog.info("[HTTP-ERR] method=$method url=$url exception=${e::class.simpleName} msg=${e.message}")
+        throw e
     }
 }
 
