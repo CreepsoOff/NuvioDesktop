@@ -450,9 +450,9 @@ fun PlayerScreen(
 
         val onBackWithProgress = remember(onBack, playbackSession, playbackSnapshot) {
             {
+                backFlushed = true
                 flushWatchProgress()
                 playerController?.release()
-                backFlushed = true
                 onBack()
             }
         }
@@ -1370,7 +1370,9 @@ fun PlayerScreen(
             playbackSnapshot.durationMs,
         ) {
             if (playbackSnapshot.isEnded) {
-                flushWatchProgress()
+                if (!backFlushed) {
+                    flushWatchProgress()
+                }
                 previousIsPlaying = false
                 return@LaunchedEffect
             }
@@ -1526,7 +1528,10 @@ fun PlayerScreen(
         DisposableEffect(playbackSession.videoId, activeSourceUrl, activeSourceAudioUrl) {
             onDispose {
                 if (!backFlushed) {
+                    PlayerRuntimeTrace.info("[WP-DISPOSE] flushing (backFlushed=false) videoId=${playbackSession.videoId}")
                     flushWatchProgress()
+                } else {
+                    PlayerRuntimeTrace.info("[WP-DISPOSE] SKIPPED flush (backFlushed=true) videoId=${playbackSession.videoId}")
                 }
             }
         }
