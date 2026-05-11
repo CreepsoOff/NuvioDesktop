@@ -311,6 +311,7 @@ fun PlayerScreen(
         var nextEpisodeAutoPlayCountdown by remember { mutableStateOf<Int?>(null) }
         var nextEpisodeAutoPlayJob by remember { mutableStateOf<Job?>(null) }
         var lastNonMutedVolume by remember { mutableStateOf(1f) }
+        var visibleVolumeLevel by remember { mutableStateOf<PlayerAudioLevel?>(null) }
 
         LaunchedEffect(parentMetaType, parentMetaId) {
             playerMetaVideos = MetaDetailsRepository.peek(parentMetaType, parentMetaId)?.videos ?: emptyList()
@@ -703,6 +704,7 @@ fun PlayerScreen(
         fun setPlayerVolume(level: Float) {
             val nextLevel = playerController?.setVolume(level) ?: gestureController?.setVolume(level)
             if (nextLevel != null) {
+                visibleVolumeLevel = nextLevel
                 if (!nextLevel.isMuted && nextLevel.fraction > 0.001f) {
                     lastNonMutedVolume = nextLevel.fraction
                 }
@@ -731,6 +733,14 @@ fun PlayerScreen(
             playerController?.seekTo((interval.endTime * 1000).toLong())
             skipIntervalDismissed = true
             revealPlayerChrome()
+        }
+
+        LaunchedEffect(playerController, gestureController, activeSourceUrl) {
+            val current = currentPlayerVolume()
+            visibleVolumeLevel = current
+            if (current != null && !current.isMuted && current.fraction > 0.001f) {
+                lastNonMutedVolume = current.fraction
+            }
         }
 
         fun handleDoubleTapSeek(direction: PlayerSeekDirection) {
@@ -1841,6 +1851,7 @@ fun PlayerScreen(
                     displayedPositionMs = displayedPositionMs,
                     metrics = metrics,
                     resizeMode = resizeMode,
+                    volumeLevel = visibleVolumeLevel,
                     isLocked = playerControlsLocked,
                     isFullscreenSupported = fullscreenController.isFullscreenSupported,
                     isFullscreen = fullscreenController.isFullscreen,
@@ -1858,6 +1869,8 @@ fun PlayerScreen(
                     onSeekForward = { seekBy(10_000L) },
                     onResizeModeClick = ::cycleResizeMode,
                     onSpeedClick = ::cyclePlaybackSpeed,
+                    onVolumeChange = ::setPlayerVolume,
+                    onMuteClick = ::toggleMute,
                     onSubtitleClick = {
                         refreshTracks()
                         showSubtitleModal = true

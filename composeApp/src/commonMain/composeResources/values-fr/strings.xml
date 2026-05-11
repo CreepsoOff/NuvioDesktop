@@ -336,6 +336,7 @@
     <string name="compose_player_subs">Sous-titres</string>
     <string name="compose_player_subtitles">Sous-titres</string>
     <string name="compose_player_brightness_level">Luminosité %1$s</string>
+    <string name="compose_player_volume">Volume</string>
     <string name="compose_player_volume_level">Volume %1$s</string>
     <string name="compose_player_muted">Muet</string>
     <string name="compose_player_downloaded">Téléchargé</string>
