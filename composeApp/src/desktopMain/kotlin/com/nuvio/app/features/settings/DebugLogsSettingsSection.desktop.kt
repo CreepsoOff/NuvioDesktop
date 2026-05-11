@@ -34,8 +34,13 @@ internal actual fun DebugLogsSettingsSection(isTablet: Boolean) {
                 onCheckedChange = { checked ->
                     enabled = checked
                     DesktopPreferences.putBoolean(debugPrefsNamespace, debugLogsEnabledKey, checked)
+                    if (!checked) {
+                        DesktopRuntimeLog.info("Debug logs disabled by user")
+                    }
                     DesktopRuntimeLog.debugEnabled = checked
-                    DesktopRuntimeLog.info("Debug logs ${if (checked) "enabled" else "disabled"} by user")
+                    if (checked) {
+                        DesktopRuntimeLog.info("Debug logs enabled by user")
+                    }
                 },
             )
         }

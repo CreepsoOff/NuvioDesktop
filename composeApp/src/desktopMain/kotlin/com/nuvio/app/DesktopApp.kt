@@ -78,8 +78,9 @@ private fun clampDpSizeToDisplay(size: DpSize): DpSize {
 }
 
 fun main(args: Array<String>) {
-    DesktopRuntimeLog.initialize()
-    DesktopRuntimeLog.debugEnabled = DesktopPreferences.getBoolean("nuvio_debug", "debug_logs_enabled") ?: false
+    DesktopRuntimeLog.initialize(
+        enabled = DesktopPreferences.getBoolean("nuvio_debug", "debug_logs_enabled") ?: false,
+    )
     WindowsNativeBootstrap.configureProcessDpiAwareness()
     DesktopRuntimeLog.installGlobalExceptionHandlers()
     DesktopRuntimeLog.info("Toast: portable=${WindowsToastHelper.isPortableBuild} systemSupported=${WindowsToastHelper.systemToastsSupported}")

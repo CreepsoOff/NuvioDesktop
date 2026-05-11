@@ -10,8 +10,12 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import java.time.Instant
+import kotlin.math.min
 
 internal object DesktopRuntimeLog {
+    private const val MAX_LOG_BYTES = 200 * 1024L
+    private const val TRIM_TO_BYTES = 150 * 1024
+
     private val processId: Long by lazy { ProcessHandle.current().pid() }
     private val logFile: Path by lazy {
         val localAppData = System.getenv("LOCALAPPDATA")
@@ -24,16 +28,23 @@ internal object DesktopRuntimeLog {
     @Volatile
     var debugEnabled: Boolean = false
 
+    @Volatile
+    private var initialized: Boolean = false
+
     @Synchronized
-    fun initialize() {
-        Files.createDirectories(logFile.parent)
-        appendLine("")
-        appendLine("===== Nuvio desktop startup ${Instant.now()} pid=$processId =====")
+    fun initialize(enabled: Boolean = false) {
+        debugEnabled = enabled
+        initialized = true
+        trimExistingLogIfNeeded()
+        if (debugEnabled) {
+            appendLine("", force = true)
+            appendLine("===== Nuvio desktop startup ${Instant.now()} pid=$processId =====", force = true)
+        }
     }
 
     fun installGlobalExceptionHandlers() {
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
-            error("Uncaught exception on thread=${thread.name}", throwable)
+            crash("Uncaught exception on thread=${thread.name}", throwable)
             DesktopPlayerRegistry.releaseAll("uncaught:${thread.name}")
         }
         runCatching {
@@ -43,7 +54,7 @@ internal object DesktopRuntimeLog {
                         try {
                             super.dispatchEvent(event)
                         } catch (throwable: Throwable) {
-                            error("Uncaught AWT/EventQueue exception event=${event.javaClass.name}", throwable)
+                            crash("Uncaught AWT/EventQueue exception event=${event.javaClass.name}", throwable)
                             DesktopPlayerRegistry.releaseAll("awtException")
                             throw throwable
                         }
@@ -52,7 +63,7 @@ internal object DesktopRuntimeLog {
             )
             info("Installed AWT/EventQueue exception logger")
         }.onFailure {
-            error("Failed to install AWT/EventQueue exception logger", it)
+            crash("Failed to install AWT/EventQueue exception logger", it)
         }
     }
 
@@ -81,6 +92,14 @@ internal object DesktopRuntimeLog {
         }
     }
 
+    @Synchronized
+    fun crash(message: String, throwable: Throwable? = null) {
+        appendLine("${Instant.now()} CRASH $message", force = true)
+        if (throwable != null) {
+            appendLine(stackTrace(throwable), force = true)
+        }
+    }
+
     fun path(): Path = logFile
 
     fun processPid(): Long = processId
@@ -98,6 +117,13 @@ internal object DesktopRuntimeLog {
     }
 
     private fun appendLine(line: String) {
+        appendLine(line, force = false)
+    }
+
+    private fun appendLine(line: String, force: Boolean) {
+        if (!force && !debugEnabled) return
+        ensureLogDirectory()
+        trimExistingLogIfNeeded()
         Files.writeString(
             logFile,
             line + System.lineSeparator(),
@@ -105,6 +131,32 @@ internal object DesktopRuntimeLog {
             StandardOpenOption.CREATE,
             StandardOpenOption.APPEND,
         )
+    }
+
+    private fun ensureLogDirectory() {
+        if (!initialized) {
+            initialized = true
+            debugEnabled = false
+        }
+        Files.createDirectories(logFile.parent)
+    }
+
+    private fun trimExistingLogIfNeeded() {
+        runCatching {
+            if (!Files.exists(logFile) || Files.size(logFile) <= MAX_LOG_BYTES) return
+            val bytes = Files.readAllBytes(logFile)
+            val keep = min(bytes.size, TRIM_TO_BYTES)
+            val retained = bytes.copyOfRange(bytes.size - keep, bytes.size)
+            Files.createDirectories(logFile.parent)
+            Files.writeString(
+                logFile,
+                "===== Nuvio desktop log trimmed ${Instant.now()} maxBytes=$MAX_LOG_BYTES =====${System.lineSeparator()}",
+                StandardCharsets.UTF_8,
+                StandardOpenOption.CREATE,
+                StandardOpenOption.TRUNCATE_EXISTING,
+            )
+            Files.write(logFile, retained, StandardOpenOption.APPEND)
+        }
     }
 
     private fun stackTrace(throwable: Throwable): String {
