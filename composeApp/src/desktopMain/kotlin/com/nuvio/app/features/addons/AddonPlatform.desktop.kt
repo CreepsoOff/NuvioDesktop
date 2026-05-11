@@ -1,7 +1,6 @@
 package com.nuvio.app.features.addons
 
 import com.nuvio.app.desktop.DesktopPreferences
-import com.nuvio.app.desktop.log.DesktopRuntimeLog
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.util.concurrent.TimeUnit
@@ -167,7 +166,6 @@ private suspend fun executeTextRequest(
             payload
         }
     } catch (e: Exception) {
-        DesktopRuntimeLog.info("[HTTP-ERR] method=$method url=$url exception=${e::class.simpleName} msg=${e.message}")
         throw e
     }
 }
