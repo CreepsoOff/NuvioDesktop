@@ -164,6 +164,9 @@ internal fun LazyListScope.settingsRootContent(
                 }
             }
         }
+        item {
+            KeybindsSettingsContent(isTablet = isTablet)
+        }
     }
     if (showAboutSection) {
         item {

@@ -8,6 +8,7 @@ import com.nuvio.app.desktop.DesktopPreferences
 
 import com.nuvio.app.desktop.DesktopRuntimeLog
 import com.nuvio.app.features.player.AudioTrack
+import com.nuvio.app.features.player.PlayerAudioLevel
 import com.nuvio.app.features.player.PlayerEngineController
 import com.nuvio.app.features.player.PlayerResizeMode
 import com.nuvio.app.features.player.SubtitleStyleState
@@ -333,6 +334,33 @@ internal class MpvDesktopPlayerBackend private constructor(
         override fun setPlaybackSpeed(speed: Float) {
             if (!canReceiveCommands()) return
             player.features[PlaybackSpeed]?.set(speed.coerceIn(0.25f, 4.0f))
+        }
+
+        override fun currentVolume(): PlayerAudioLevel? {
+            if (!canReceiveCommands()) return null
+            val volume = mpvHandle.getMpvStringProperty("volume")
+                .toDoubleOrNull()
+                ?.div(100.0)
+                ?.toFloat()
+                ?.coerceIn(0f, 1f)
+                ?: return null
+            val muted = mpvHandle.getMpvBooleanProperty("mute")
+            return PlayerAudioLevel(
+                fraction = volume,
+                isMuted = muted || volume <= 0.001f,
+            )
+        }
+
+        override fun setVolume(level: Float): PlayerAudioLevel? {
+            if (!canReceiveCommands()) return null
+            val target = level.coerceIn(0f, 1f)
+            runCatching {
+                mpvHandle.setMpvProperty("volume", (target * 100.0).coerceIn(0.0, 100.0))
+                mpvHandle.setMpvProperty("mute", target <= 0.001f)
+            }.onFailure {
+                DesktopRuntimeLog.error("MPV controller setVolume failed target=$target", it)
+            }
+            return currentVolume()
         }
 
         override fun getAudioTracks(): List<AudioTrack> =

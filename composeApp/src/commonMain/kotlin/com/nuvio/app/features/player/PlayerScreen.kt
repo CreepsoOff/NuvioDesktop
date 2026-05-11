@@ -310,6 +310,7 @@ fun PlayerScreen(
         var nextEpisodeAutoPlaySourceName by remember { mutableStateOf<String?>(null) }
         var nextEpisodeAutoPlayCountdown by remember { mutableStateOf<Int?>(null) }
         var nextEpisodeAutoPlayJob by remember { mutableStateOf<Job?>(null) }
+        var lastNonMutedVolume by remember { mutableStateOf(1f) }
 
         LaunchedEffect(parentMetaType, parentMetaId) {
             playerMetaVideos = MetaDetailsRepository.peek(parentMetaType, parentMetaId)?.videos ?: emptyList()
@@ -694,6 +695,42 @@ fun PlayerScreen(
                 offsetMs > 0L -> showSeekFeedback(PlayerSeekDirection.Forward, offsetMs)
                 offsetMs < 0L -> showSeekFeedback(PlayerSeekDirection.Backward, abs(offsetMs))
             }
+        }
+
+        fun currentPlayerVolume(): PlayerAudioLevel? =
+            playerController?.currentVolume() ?: gestureController?.currentVolume()
+
+        fun setPlayerVolume(level: Float) {
+            val nextLevel = playerController?.setVolume(level) ?: gestureController?.setVolume(level)
+            if (nextLevel != null) {
+                if (!nextLevel.isMuted && nextLevel.fraction > 0.001f) {
+                    lastNonMutedVolume = nextLevel.fraction
+                }
+                showVolumeFeedback(nextLevel)
+                revealPlayerChrome()
+            }
+        }
+
+        fun adjustVolume(delta: Float) {
+            val current = currentPlayerVolume()?.fraction ?: lastNonMutedVolume
+            setPlayerVolume(current + delta)
+        }
+
+        fun toggleMute() {
+            val current = currentPlayerVolume()
+            if (current?.isMuted == true || (current?.fraction ?: 0f) <= 0.001f) {
+                setPlayerVolume(lastNonMutedVolume.coerceIn(0.05f, 1f))
+            } else {
+                lastNonMutedVolume = current?.fraction?.coerceIn(0.05f, 1f) ?: lastNonMutedVolume
+                setPlayerVolume(0f)
+            }
+        }
+
+        fun skipActiveSegment() {
+            val interval = activeSkipInterval ?: return
+            playerController?.seekTo((interval.endTime * 1000).toLong())
+            skipIntervalDismissed = true
+            revealPlayerChrome()
         }
 
         fun handleDoubleTapSeek(direction: PlayerSeekDirection) {
@@ -1518,6 +1555,25 @@ fun PlayerScreen(
             playerFocusRequester.requestFocus()
         }
 
+        BindPlayerKeyboardShortcuts(
+            enabled = isDesktop,
+            handlers = PlayerKeyboardShortcutHandlers(
+                toggleFullscreen = ::toggleFullscreen,
+                togglePlayback = ::togglePlayback,
+                seekForward = { seekBy(10_000L) },
+                seekBackward = { seekBy(-10_000L) },
+                volumeUp = { adjustVolume(0.05f) },
+                volumeDown = { adjustVolume(-0.05f) },
+                toggleMute = ::toggleMute,
+                cyclePlaybackSpeed = ::cyclePlaybackSpeed,
+                playNextEpisode = {
+                    nextEpisodeAutoPlayJob?.cancel()
+                    playNextEpisode()
+                },
+                skipActiveSegment = ::skipActiveSegment,
+            ),
+        )
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -1525,13 +1581,9 @@ fun PlayerScreen(
                     if (event.type == KeyEventType.KeyUp) {
                         when (event.key) {
                             Key.F -> { toggleFullscreen(); true }
-                            Key.Spacebar -> {
-                                if (playbackSnapshot.isPlaying) playerController?.pause()
-                                else playerController?.play()
-                                true
-                            }
-                            Key.DirectionRight -> { playerController?.seekBy(10_000L); true }
-                            Key.DirectionLeft -> { playerController?.seekBy(-10_000L); true }
+                            Key.Spacebar -> { togglePlayback(); true }
+                            Key.DirectionRight -> { seekBy(10_000L); true }
+                            Key.DirectionLeft -> { seekBy(-10_000L); true }
                             else -> false
                         }
                     } else {
@@ -1884,11 +1936,7 @@ fun PlayerScreen(
                     interval = activeSkipInterval,
                     dismissed = skipIntervalDismissed,
                     controlsVisible = controlsVisible,
-                    onSkip = {
-                        val interval = activeSkipInterval ?: return@SkipIntroButton
-                        playerController?.seekTo((interval.endTime * 1000).toLong())
-                        skipIntervalDismissed = true
-                    },
+                    onSkip = ::skipActiveSegment,
                     onDismiss = { skipIntervalDismissed = true },
                     modifier = Modifier
                         .align(Alignment.BottomStart)

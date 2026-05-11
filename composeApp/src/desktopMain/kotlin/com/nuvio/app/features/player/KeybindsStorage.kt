@@ -27,7 +27,7 @@ data class KeybindsConfig(
             KeybindEntry("volume_up", java.awt.event.KeyEvent.VK_UP),
             KeybindEntry("volume_down", java.awt.event.KeyEvent.VK_DOWN),
             KeybindEntry("mute", java.awt.event.KeyEvent.VK_M),
-            KeybindEntry("cycle_speed", java.awt.event.KeyEvent.VK_CLOSE_BRACKET),
+            KeybindEntry("cycle_speed", java.awt.event.KeyEvent.VK_R),
             KeybindEntry("next_episode", java.awt.event.KeyEvent.VK_N),
             KeybindEntry("skip_intro", java.awt.event.KeyEvent.VK_S),
         )
@@ -43,6 +43,7 @@ object KeybindsStorage {
         val raw = DesktopPreferences.getString(namespace, configKey) ?: return KeybindsConfig()
         return runCatching { json.decodeFromString<KeybindsConfig>(raw) }
             .getOrDefault(KeybindsConfig())
+            .withDefaultActions()
     }
 
     fun save(config: KeybindsConfig) {
@@ -52,4 +53,32 @@ object KeybindsStorage {
 
     fun getKeyCode(action: String): Int? = load().binds
         .firstOrNull { it.action == action }?.keyCode
+
+    fun actionForKeyCode(keyCode: Int, modifiers: Int = 0): String? {
+        val disallowedModifiers = java.awt.event.KeyEvent.CTRL_DOWN_MASK or
+            java.awt.event.KeyEvent.ALT_DOWN_MASK or
+            java.awt.event.KeyEvent.META_DOWN_MASK or
+            java.awt.event.KeyEvent.ALT_GRAPH_DOWN_MASK
+        return load().binds.firstOrNull { bind ->
+            bind.keyCode == keyCode &&
+                if (bind.modifiers == 0) {
+                    modifiers and disallowedModifiers == 0
+                } else {
+                    bind.modifiers == modifiers
+                }
+        }?.action
+    }
+
+    private fun KeybindsConfig.withDefaultActions(): KeybindsConfig {
+        val savedByAction = binds.associateBy { it.action }
+        val normalized = KeybindsConfig.defaultKeybinds().map { defaultEntry ->
+            val saved = savedByAction[defaultEntry.action] ?: return@map defaultEntry
+            if (saved.action == "cycle_speed" && saved.keyCode == java.awt.event.KeyEvent.VK_CLOSE_BRACKET) {
+                defaultEntry
+            } else {
+                saved
+            }
+        }
+        return copy(binds = normalized)
+    }
 }

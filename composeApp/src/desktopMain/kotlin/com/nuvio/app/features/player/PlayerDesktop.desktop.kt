@@ -9,6 +9,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
@@ -969,29 +970,26 @@ actual fun ManageFullscreenKeyboardShortcuts(isHomeRouteActive: Boolean) {
     DisposableEffect(window) {
         val composeWindow = window ?: return@DisposableEffect onDispose {}
         val keyboardFocusManager = KeyboardFocusManager.getCurrentKeyboardFocusManager()
-        val loadedBinds = KeybindsStorage.load().binds
-        val appFullscreenCode = loadedBinds
-            .firstOrNull { it.action == "toggle_app_fullscreen" }?.keyCode
-            ?: KeyEvent.VK_F11
-        val exitFullscreenCode = loadedBinds
-            .firstOrNull { it.action == "exit_fullscreen" }?.keyCode
-            ?: KeyEvent.VK_ESCAPE
 
         val dispatcher = KeyEventDispatcher { event ->
             if (event.id != KeyEvent.KEY_RELEASED) {
                 return@KeyEventDispatcher false
             }
-            if (event.keyCode == appFullscreenCode) {
-                composeWindow.toggleDesktopFullscreen()
-                return@KeyEventDispatcher true
-            }
-            if (event.keyCode == exitFullscreenCode) {
-                if (composeWindow.isPlayerFullscreen()) {
-                    composeWindow.exitDesktopFullscreen()
-                    return@KeyEventDispatcher true
+            when (KeybindsStorage.actionForKeyCode(event.keyCode, event.modifiersEx)) {
+                "toggle_app_fullscreen" -> {
+                    composeWindow.toggleDesktopFullscreen()
+                    true
                 }
+                "exit_fullscreen" -> {
+                    if (composeWindow.isPlayerFullscreen()) {
+                        composeWindow.exitDesktopFullscreen()
+                        true
+                    } else {
+                        false
+                    }
+                }
+                else -> false
             }
-            false
         }
 
         keyboardFocusManager.addKeyEventDispatcher(dispatcher)
@@ -1001,7 +999,42 @@ actual fun ManageFullscreenKeyboardShortcuts(isHomeRouteActive: Boolean) {
     }
 }
 
+@Composable
+actual fun BindPlayerKeyboardShortcuts(
+    enabled: Boolean,
+    handlers: PlayerKeyboardShortcutHandlers,
+) {
+    val latestHandlers by rememberUpdatedState(handlers)
 
+    DisposableEffect(enabled) {
+        if (!enabled) return@DisposableEffect onDispose {}
+        val keyboardFocusManager = KeyboardFocusManager.getCurrentKeyboardFocusManager()
+        val dispatcher = KeyEventDispatcher { event ->
+            if (event.id != KeyEvent.KEY_RELEASED) {
+                return@KeyEventDispatcher false
+            }
+            when (KeybindsStorage.actionForKeyCode(event.keyCode, event.modifiersEx)) {
+                "toggle_fullscreen" -> latestHandlers.toggleFullscreen()
+                "play_pause" -> latestHandlers.togglePlayback()
+                "seek_forward_10s" -> latestHandlers.seekForward()
+                "seek_backward_10s" -> latestHandlers.seekBackward()
+                "volume_up" -> latestHandlers.volumeUp()
+                "volume_down" -> latestHandlers.volumeDown()
+                "mute" -> latestHandlers.toggleMute()
+                "cycle_speed" -> latestHandlers.cyclePlaybackSpeed()
+                "next_episode" -> latestHandlers.playNextEpisode()
+                "skip_intro" -> latestHandlers.skipActiveSegment()
+                else -> return@KeyEventDispatcher false
+            }
+            true
+        }
+
+        keyboardFocusManager.addKeyEventDispatcher(dispatcher)
+        onDispose {
+            keyboardFocusManager.removeKeyEventDispatcher(dispatcher)
+        }
+    }
+}
 
 private object DesktopFullscreenState {
     var previousPlacement: WindowPlacement = WindowPlacement.Floating
