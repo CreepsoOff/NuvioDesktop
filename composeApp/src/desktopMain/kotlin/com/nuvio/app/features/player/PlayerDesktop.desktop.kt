@@ -29,6 +29,7 @@ import com.nuvio.app.core.sync.encodeSyncInt
 import com.nuvio.app.core.sync.encodeSyncString
 import com.nuvio.app.core.sync.encodeSyncStringSet
 import com.nuvio.app.desktop.DesktopPreferences
+import com.nuvio.app.desktop.DesktopRuntimeLog
 import com.nuvio.app.features.player.desktop.DesktopPlayerSurfaceHost
 import com.nuvio.app.features.details.MetaVideo
 import com.nuvio.app.features.streams.AddonStreamGroup
@@ -980,12 +981,28 @@ actual fun ManageFullscreenKeyboardShortcuts(isHomeRouteActive: Boolean) {
             }
             when (KeybindsStorage.actionForKeyCode(event.keyCode, event.modifiersEx)) {
                 "toggle_app_fullscreen" -> {
+                    DesktopRuntimeLog.info(
+                        "fullscreenShortcut: route=app action=toggle_app_fullscreen key=${event.keyCode} " +
+                            "modifiers=${event.modifiersEx} fullscreenBefore=${composeWindow.isPlayerFullscreen()}",
+                    )
                     composeWindow.toggleDesktopFullscreen()
+                    DesktopRuntimeLog.info(
+                        "fullscreenShortcut: route=app action=toggle_app_fullscreen " +
+                            "fullscreenAfter=${composeWindow.isPlayerFullscreen()}",
+                    )
                     true
                 }
                 "exit_fullscreen" -> {
+                    DesktopRuntimeLog.info(
+                        "fullscreenShortcut: route=app action=exit_fullscreen key=${event.keyCode} " +
+                            "modifiers=${event.modifiersEx} fullscreenBefore=${composeWindow.isPlayerFullscreen()}",
+                    )
                     if (composeWindow.isPlayerFullscreen()) {
                         composeWindow.exitDesktopFullscreen()
+                        DesktopRuntimeLog.info(
+                            "fullscreenShortcut: route=app action=exit_fullscreen " +
+                                "fullscreenAfter=${composeWindow.isPlayerFullscreen()}",
+                        )
                         true
                     } else {
                         false
@@ -1017,7 +1034,13 @@ actual fun BindPlayerKeyboardShortcuts(
                 return@KeyEventDispatcher false
             }
             when (KeybindsStorage.actionForKeyCode(event.keyCode, event.modifiersEx)) {
-                "toggle_fullscreen" -> latestHandlers.toggleFullscreen()
+                "toggle_fullscreen" -> {
+                    DesktopRuntimeLog.info(
+                        "fullscreenShortcut: route=player action=toggle_fullscreen key=${event.keyCode} " +
+                            "modifiers=${event.modifiersEx}",
+                    )
+                    latestHandlers.toggleFullscreen()
+                }
                 "play_pause" -> latestHandlers.togglePlayback()
                 "seek_forward_10s" -> latestHandlers.seekForward()
                 "seek_backward_10s" -> latestHandlers.seekBackward()

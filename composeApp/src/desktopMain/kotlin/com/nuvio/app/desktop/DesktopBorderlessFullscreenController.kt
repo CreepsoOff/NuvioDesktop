@@ -51,6 +51,10 @@ internal object DesktopBorderlessFullscreenController {
         get() = snapshot != null
 
     fun toggle(window: ComposeWindow) {
+        DesktopRuntimeLog.info(
+            "borderlessFullscreen: toggle requested fullscreen=${isFullscreen(window)} " +
+                "placement=${window.placement} extendedState=${window.extendedState} bounds=${window.bounds.shortLog()}",
+        )
         if (isFullscreen(window)) {
             exit(window)
         } else {
@@ -77,6 +81,11 @@ internal object DesktopBorderlessFullscreenController {
         val currentExStyle = native.getWindowLongPtr(handle, GWL_EXSTYLE)
         val previousBounds = Rectangle(window.bounds)
         val targetBounds = window.currentScreenBounds()
+        DesktopRuntimeLog.info(
+            "borderlessFullscreen: enter request hwnd=$handle placement=${window.placement} " +
+                "extendedState=${window.extendedState} bounds=${previousBounds.shortLog()} " +
+                "target=${targetBounds.shortLog()} style=${currentStyle.hexStyle()} exStyle=${currentExStyle.hexStyle()}",
+        )
 
         snapshot = FullscreenSnapshot(
             window = window,
@@ -103,8 +112,12 @@ internal object DesktopBorderlessFullscreenController {
             window.requestFocus()
             window.repaint()
         }.onSuccess {
+            val appliedStyle = native.getWindowLongPtr(handle, GWL_STYLE)
+            val appliedExStyle = native.getWindowLongPtr(handle, GWL_EXSTYLE)
             DesktopRuntimeLog.info(
-                "borderlessFullscreen: entered bounds=${targetBounds.shortLog()} previousPlacement=${snapshot?.placement}",
+                "borderlessFullscreen: entered bounds=${targetBounds.shortLog()} " +
+                    "previousPlacement=${snapshot?.placement} style=${appliedStyle.hexStyle()} " +
+                    "exStyle=${appliedExStyle.hexStyle()}",
             )
             bumpRevision()
         }.onFailure {
@@ -116,6 +129,10 @@ internal object DesktopBorderlessFullscreenController {
 
     fun exit(window: ComposeWindow) {
         val active = snapshot
+        DesktopRuntimeLog.info(
+            "borderlessFullscreen: exit requested hasSnapshot=${active != null} " +
+                "placement=${window.placement} extendedState=${window.extendedState} bounds=${window.bounds.shortLog()}",
+        )
         if (active?.window === window) {
             restoreSnapshot(window)
             DesktopRuntimeLog.info("borderlessFullscreen: exited mode=${active.mode}")
@@ -165,6 +182,12 @@ internal object DesktopBorderlessFullscreenController {
         val native = user32
         val restoreBoundsFirst = active.placement != WindowPlacement.Maximized &&
             active.extendedState and Frame.MAXIMIZED_BOTH == 0
+        DesktopRuntimeLog.info(
+            "borderlessFullscreen: restore snapshot mode=${active.mode} hwnd=$handle " +
+                "restoreBoundsFirst=$restoreBoundsFirst savedPlacement=${active.placement} " +
+                "savedExtendedState=${active.extendedState} savedBounds=${active.bounds.shortLog()} " +
+                "savedStyle=${active.style?.hexStyle() ?: "none"} savedExStyle=${active.exStyle?.hexStyle() ?: "none"}",
+        )
 
         if (handle != null && native != null && active.style != null && active.exStyle != null) {
             native.setWindowLongPtr(handle, GWL_STYLE, active.style)
@@ -190,6 +213,10 @@ internal object DesktopBorderlessFullscreenController {
             window.extendedState = active.extendedState or Frame.MAXIMIZED_BOTH
         }
         window.repaint()
+        DesktopRuntimeLog.info(
+            "borderlessFullscreen: restore complete placement=${window.placement} " +
+                "extendedState=${window.extendedState} bounds=${window.bounds.shortLog()}",
+        )
     }
 
     private fun resolveHandle(window: ComposeWindow): Pointer? =
@@ -238,6 +265,8 @@ internal object DesktopBorderlessFullscreenController {
     }
 
     private fun Rectangle.shortLog(): String = "${x},${y} ${width}x${height}"
+
+    private fun Long.hexStyle(): String = "0x${toULong().toString(16).uppercase()}"
 
     private enum class FullscreenMode {
         WindowsBorderless,
