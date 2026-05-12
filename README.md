@@ -26,6 +26,24 @@ The mobile app is built from a single shared codebase in [composeApp](./composeA
 
 ## Installation
 
+### Windows Desktop
+
+Nuvio Desktop is currently a Windows-first build. Download the latest
+installer or portable ZIP from the
+[Nuvio Desktop releases](https://github.com/CreepsoOff/NuvioDesktop/releases).
+
+Upgrade paths:
+
+- Installer builds: run the newer installer over the existing installation.
+- Portable ZIP builds: close Nuvio, extract the new ZIP, and replace the old
+  portable folder while keeping any user data stored under Windows AppData.
+- In-app updates: when available, use the updater from the app settings/about
+  screen and pick the installer or portable asset that matches your install.
+
+Linux and Wine are not supported release targets for Nuvio Desktop. They may
+start on some systems, but playback, fullscreen, notifications, and packaging
+behavior are only validated for Windows.
+
 ### Android
 
 Download the latest Android build from [GitHub Releases](https://github.com/NuvioMedia/NuvioMobile/releases/latest).
@@ -61,6 +79,18 @@ Useful commands:
 ```
 
 Versioning is driven from `iosApp/Configuration/Version.xcconfig`, which is used as the shared source of truth for both iOS and Android builds.
+
+## Desktop Playback Notes
+
+Nuvio is a client for user-configured addons, accounts, sources, and streams.
+The Desktop player supports direct media URLs returned by addons, including
+Torrentio-style addons when a debrid service resolves the item to a playable
+HTTP(S) stream. Raw `magnet:`, `.torrent`, or bare `infoHash` playback is not
+supported unless an addon or debrid resolver converts it to a direct stream URL.
+
+Windows HDR passthrough is a known limitation of the current Compose Desktop /
+MPV rendering path. Some systems may tone-map HDR content or lose HDR behavior
+during fullscreen until a future renderer path is validated.
 
 ## Legal & DMCA
 
