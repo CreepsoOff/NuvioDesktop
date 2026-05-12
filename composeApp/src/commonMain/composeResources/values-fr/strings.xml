@@ -465,10 +465,6 @@
     <string name="play_manually">Lire manuellement</string>
     <string name="poster_logo_content_description">Logo de %1$s</string>
     <string name="settings_account">Compte</string>
-    <string name="settings_account_delete_account">Supprimer le compte</string>
-    <string name="settings_account_delete_account_description">Cela supprimera définitivement votre compte et toutes les données associées.</string>
-    <string name="settings_account_delete_confirm_message">Cette action est irréversible. Toutes vos données, profils et historique de synchronisation seront définitivement supprimés.</string>
-    <string name="settings_account_delete_confirm_title">Supprimer le compte ?</string>
     <string name="settings_account_email">Adresse e-mail</string>
     <string name="settings_account_not_signed_in">Non connecté</string>
     <string name="settings_account_sign_out">Se déconnecter</string>

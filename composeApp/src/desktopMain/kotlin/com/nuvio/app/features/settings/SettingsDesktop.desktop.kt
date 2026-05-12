@@ -13,6 +13,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import nuvio.composeapp.generated.resources.Res
+import nuvio.composeapp.generated.resources.introdb_favicon
 import nuvio.composeapp.generated.resources.mdblist_logo
 import nuvio.composeapp.generated.resources.rating_tmdb
 import nuvio.composeapp.generated.resources.trakt_tv_favicon
@@ -122,4 +123,5 @@ internal actual fun integrationLogoPainter(logo: IntegrationLogo): Painter =
         IntegrationLogo.Tmdb -> painterResource(Res.drawable.rating_tmdb)
         IntegrationLogo.Trakt -> painterResource(Res.drawable.trakt_tv_favicon)
         IntegrationLogo.MdbList -> painterResource(Res.drawable.mdblist_logo)
+        IntegrationLogo.IntroDb -> painterResource(Res.drawable.introdb_favicon)
     }

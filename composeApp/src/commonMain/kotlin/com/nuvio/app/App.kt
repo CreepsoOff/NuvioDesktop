@@ -77,6 +77,7 @@ import coil3.ImageLoader
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.request.CachePolicy
 import coil3.request.crossfade
+import coil3.svg.SvgDecoder
 import com.nuvio.app.core.build.AppFeaturePolicy
 import com.nuvio.app.core.auth.AuthRepository
 import com.nuvio.app.core.auth.AuthState
@@ -152,6 +153,7 @@ import com.nuvio.app.features.settings.AddonsSettingsScreen
 import com.nuvio.app.features.settings.PluginsSettingsScreen
 import com.nuvio.app.features.settings.AccountSettingsScreen
 import com.nuvio.app.features.settings.SupportersContributorsSettingsScreen
+import com.nuvio.app.features.settings.LicensesAttributionsSettingsScreen
 import com.nuvio.app.features.settings.ThemeSettingsRepository
 import com.nuvio.app.features.collection.CollectionManagementScreen
 import com.nuvio.app.features.collection.CollectionEditorScreen
@@ -245,6 +247,9 @@ object AccountSettingsRoute
 object SupportersContributorsSettingsRoute
 
 @Serializable
+object LicensesAttributionsSettingsRoute
+
+@Serializable
 object CollectionsRoute
 
 @Serializable
@@ -307,6 +312,9 @@ fun App() {
             .crossfade(true)
             .diskCachePolicy(CachePolicy.ENABLED)
             .memoryCachePolicy(CachePolicy.ENABLED)
+            .components {
+                add(SvgDecoder.Factory())
+            }
             .configurePlatformImageLoader()
             .build()
     }
@@ -989,6 +997,7 @@ private fun MainAppContent(
                         val isTabletLayout = maxWidth >= 768.dp
                         val useNativeBottomTabs =
                             liquidGlassNativeTabBarSupported && liquidGlassNativeTabBarEnabled && initialHomeReady
+                        val tabsRouteActive = currentBackStackEntry?.destination?.hasRoute<TabsRoute>() == true
                         val onProfileSelected: (NuvioProfile) -> Unit = { profile ->
                             profileSwitchLoading = true
                             selectedTab = AppScreenTab.Home
@@ -1049,6 +1058,7 @@ private fun MainAppContent(
                                             .fillMaxSize()
                                             .padding(innerPadding),
                                         selectedTab = selectedTab,
+                                        animateHomeCollectionGifs = tabsRouteActive,
                                         onCatalogClick = onCatalogClick,
                                         onPosterClick = { meta ->
                                             navController.navigate(DetailRoute(type = meta.type, id = meta.id))
@@ -1077,6 +1087,9 @@ private fun MainAppContent(
                                         onAccountSettingsClick = { navController.navigate(AccountSettingsRoute) },
                                         onSupportersContributorsSettingsClick = {
                                             navController.navigate(SupportersContributorsSettingsRoute)
+                                        },
+                                        onLicensesAttributionsSettingsClick = {
+                                            navController.navigate(LicensesAttributionsSettingsRoute)
                                         },
                                         onCheckForUpdatesClick = if (AppFeaturePolicy.inAppUpdaterEnabled) {
                                             {
@@ -1719,6 +1732,15 @@ private fun MainAppContent(
                         onBack = onBack,
                     )
                 }
+                composable<LicensesAttributionsSettingsRoute> { backStackEntry ->
+                    val onBack = rememberGuardedPopBackStack(
+                        navController = navController,
+                        backStackEntry = backStackEntry,
+                    )
+                    LicensesAttributionsSettingsScreen(
+                        onBack = onBack,
+                    )
+                }
                 composable<CollectionsRoute> { backStackEntry ->
                     val onBack = rememberGuardedPopBackStack(
                         navController = navController,
@@ -2022,6 +2044,7 @@ private fun rememberGuardedPopBackStack(
 private fun AppTabHost(
     selectedTab: AppScreenTab,
     modifier: Modifier = Modifier,
+    animateHomeCollectionGifs: Boolean = true,
     onCatalogClick: ((HomeCatalogSection) -> Unit)? = null,
     onPosterClick: ((MetaPreview) -> Unit)? = null,
     onPosterLongClick: ((MetaPreview) -> Unit)? = null,
@@ -2038,6 +2061,7 @@ private fun AppTabHost(
     onPluginsSettingsClick: () -> Unit = {},
     onAccountSettingsClick: () -> Unit = {},
     onSupportersContributorsSettingsClick: () -> Unit = {},
+    onLicensesAttributionsSettingsClick: () -> Unit = {},
     onCheckForUpdatesClick: (() -> Unit)? = null,
     nightlyUpdateModeEnabled: Boolean = false,
     onNightlyUpdateModeChange: ((Boolean) -> Unit)? = null,
@@ -2053,6 +2077,7 @@ private fun AppTabHost(
                 AppScreenTab.Home -> {
                     HomeScreen(
                         modifier = Modifier.fillMaxSize(),
+                        animateCollectionGifs = animateHomeCollectionGifs,
                         onCatalogClick = onCatalogClick,
                         onPosterClick = onPosterClick,
                         onPosterLongClick = onPosterLongClick,
@@ -2091,6 +2116,7 @@ private fun AppTabHost(
                         onPluginsClick = onPluginsSettingsClick,
                         onAccountClick = onAccountSettingsClick,
                         onSupportersContributorsClick = onSupportersContributorsSettingsClick,
+                        onLicensesAttributionsClick = onLicensesAttributionsSettingsClick,
                         onCheckForUpdatesClick = onCheckForUpdatesClick,
                         nightlyUpdateModeEnabled = nightlyUpdateModeEnabled,
                         onNightlyUpdateModeChange = onNightlyUpdateModeChange,

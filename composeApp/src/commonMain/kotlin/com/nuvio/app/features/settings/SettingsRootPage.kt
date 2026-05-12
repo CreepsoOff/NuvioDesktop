@@ -26,6 +26,7 @@ import nuvio.composeapp.generated.resources.compose_about_version_format
 import nuvio.composeapp.generated.resources.compose_settings_page_account
 import nuvio.composeapp.generated.resources.compose_settings_page_appearance
 import nuvio.composeapp.generated.resources.compose_settings_page_integrations
+import nuvio.composeapp.generated.resources.compose_settings_page_licenses_attributions
 import nuvio.composeapp.generated.resources.compose_settings_page_notifications
 import nuvio.composeapp.generated.resources.compose_settings_page_playback
 import nuvio.composeapp.generated.resources.compose_settings_page_supporters_contributors
@@ -50,6 +51,7 @@ import nuvio.composeapp.generated.resources.compose_settings_page_content_discov
 import nuvio.composeapp.generated.resources.compose_settings_page_trakt
 import nuvio.composeapp.generated.resources.settings_playback_subtitle
 import nuvio.composeapp.generated.resources.about_supporters_contributors_subtitle
+import nuvio.composeapp.generated.resources.about_licenses_attributions_subtitle
 import org.jetbrains.compose.resources.stringResource
 
 internal fun LazyListScope.settingsRootContent(
@@ -61,6 +63,7 @@ internal fun LazyListScope.settingsRootContent(
     onIntegrationsClick: () -> Unit,
     onTraktClick: () -> Unit,
     onSupportersContributorsClick: () -> Unit,
+    onLicensesAttributionsClick: () -> Unit,
     onCheckForUpdatesClick: (() -> Unit)? = null,
     nightlyUpdateModeEnabled: Boolean = false,
     onNightlyUpdateModeChange: ((Boolean) -> Unit)? = null,
@@ -181,6 +184,14 @@ internal fun LazyListScope.settingsRootContent(
                         icon = Icons.Rounded.Favorite,
                         isTablet = isTablet,
                         onClick = onSupportersContributorsClick,
+                    )
+                    SettingsGroupDivider(isTablet = isTablet)
+                    SettingsNavigationRow(
+                        title = stringResource(Res.string.compose_settings_page_licenses_attributions),
+                        description = stringResource(Res.string.about_licenses_attributions_subtitle),
+                        icon = Icons.Rounded.Info,
+                        isTablet = isTablet,
+                        onClick = onLicensesAttributionsClick,
                     )
                     if (onCheckForUpdatesClick != null) {
                         SettingsGroupDivider(isTablet = isTablet)

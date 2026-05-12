@@ -25,6 +25,7 @@ import com.nuvio.app.core.ui.NuvioScreen
 import com.nuvio.app.core.ui.NuvioNetworkOfflineCard
 import com.nuvio.app.core.ui.NuvioScreenHeader
 import com.nuvio.app.core.ui.NuvioStatusModal
+import com.nuvio.app.core.ui.NuvioToastController
 import com.nuvio.app.core.ui.NuvioViewAllPillSize
 import com.nuvio.app.core.ui.NuvioShelfSection
 import com.nuvio.app.features.home.components.HomeEmptyStateCard
@@ -33,11 +34,13 @@ import com.nuvio.app.features.home.components.HomeSkeletonRow
 import com.nuvio.app.features.profiles.ProfileRepository
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 
-private data class PendingLibraryRemoval(
+private data class LibraryRemovalTarget(
     val item: LibraryItem,
-    val traktSectionKey: String? = null,
+    val listKey: String? = null,
+    val listTitle: String? = null,
 )
 
 @Composable
@@ -51,7 +54,7 @@ fun LibraryScreen(
         LibraryRepository.uiState
     }.collectAsStateWithLifecycle()
     val networkStatusUiState by NetworkStatusRepository.uiState.collectAsStateWithLifecycle()
-    var pendingRemovalItem by remember { mutableStateOf<PendingLibraryRemoval?>(null) }
+    var pendingRemovalTarget by remember { mutableStateOf<LibraryRemovalTarget?>(null) }
     var observedOfflineState by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     val isTraktSource = uiState.sourceMode == LibrarySourceMode.TRAKT
@@ -171,10 +174,15 @@ fun LibraryScreen(
                     onPosterClick = onPosterClick,
                     onSectionViewAllClick = onSectionViewAllClick,
                     onPosterLongClick = { item, section ->
-                        pendingRemovalItem = PendingLibraryRemoval(
-                            item = item,
-                            traktSectionKey = section.type.takeIf { isTraktSource },
-                        )
+                        pendingRemovalTarget = if (isTraktSource) {
+                            LibraryRemovalTarget(
+                                item = item,
+                                listKey = section.type,
+                                listTitle = section.displayTitle,
+                            )
+                        } else {
+                            LibraryRemovalTarget(item = item)
+                        }
                     },
                 )
             }
@@ -183,21 +191,38 @@ fun LibraryScreen(
 
     NuvioStatusModal(
         title = stringResource(Res.string.library_remove_title),
-        message = pendingRemovalItem?.let {
-            stringResource(Res.string.library_remove_message, it.item.name)
+        message = pendingRemovalTarget?.let { target ->
+            val listTitle = target.listTitle
+            if (listTitle.isNullOrBlank()) {
+                stringResource(Res.string.library_remove_message, target.item.name)
+            } else {
+                stringResource(Res.string.library_remove_from_list_message, target.item.name, listTitle)
+            }
         }.orEmpty(),
-        isVisible = pendingRemovalItem != null,
+        isVisible = pendingRemovalTarget != null,
         confirmText = stringResource(Res.string.library_remove_confirm),
         dismissText = stringResource(Res.string.action_cancel),
         onConfirm = {
-            pendingRemovalItem?.let { pending ->
-                pending.traktSectionKey?.let { sectionKey ->
-                    LibraryRepository.removeFromTraktSection(pending.item, sectionKey)
-                } ?: LibraryRepository.remove(pending.item.id)
+            val target = pendingRemovalTarget
+            pendingRemovalTarget = null
+            target?.let {
+                val listKey = target.listKey
+                if (listKey.isNullOrBlank()) {
+                    LibraryRepository.remove(target.item.id)
+                } else {
+                    coroutineScope.launch {
+                        runCatching {
+                            LibraryRepository.removeFromList(target.item, listKey)
+                        }.onFailure { error ->
+                            NuvioToastController.show(
+                                error.message ?: getString(Res.string.trakt_lists_update_failed),
+                            )
+                        }
+                    }
+                }
             }
-            pendingRemovalItem = null
         },
-        onDismiss = { pendingRemovalItem = null },
+        onDismiss = { pendingRemovalTarget = null },
     )
 }
 
