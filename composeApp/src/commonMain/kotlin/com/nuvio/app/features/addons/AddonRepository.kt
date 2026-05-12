@@ -1,6 +1,7 @@
 package com.nuvio.app.features.addons
 
 import co.touchlab.kermit.Logger
+import com.nuvio.app.core.logging.redactedUrlForLog
 import com.nuvio.app.core.network.SupabaseProvider
 import com.nuvio.app.features.profiles.ProfileRepository
 import io.github.jan.supabase.postgrest.postgrest
@@ -242,7 +243,7 @@ object AddonRepository {
 
     fun removeAddon(manifestUrl: String) {
         if (isUsingPrimaryAddonsFromSecondaryProfile()) return
-        log.i { "removeAddon() — $manifestUrl" }
+        log.i { "removeAddon() — ${manifestUrl.redactedUrlForLog()}" }
         _uiState.update { current ->
             current.copy(
                 addons = current.addons.filterNot { it.manifestUrl == manifestUrl },

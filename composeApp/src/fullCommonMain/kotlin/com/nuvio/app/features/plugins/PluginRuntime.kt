@@ -8,6 +8,7 @@ import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
 import com.fleeksoft.ksoup.nodes.Element
 import com.fleeksoft.ksoup.select.Elements
+import com.nuvio.app.core.logging.redactedUrlForLog
 import com.nuvio.app.features.addons.httpRequestRaw
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -107,7 +108,7 @@ internal object PluginRuntime {
                     try {
                         performNativeFetch(url, method, headersJson, body, followRedirects)
                     } catch (t: Throwable) {
-                        log.e(t) { "Fetch bridge error for $method $url" }
+                        log.e(t) { "Fetch bridge error for $method ${url.redactedUrlForLog()}" }
                         JsonObject(
                             mapOf(
                                 "ok" to JsonPrimitive(false),

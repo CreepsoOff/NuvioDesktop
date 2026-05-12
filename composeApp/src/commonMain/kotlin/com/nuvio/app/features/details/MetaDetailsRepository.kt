@@ -1,6 +1,7 @@
 package com.nuvio.app.features.details
 
 import co.touchlab.kermit.Logger
+import com.nuvio.app.core.logging.redactedUrlForLog
 import com.nuvio.app.features.addons.AddonManifest
 import com.nuvio.app.features.addons.AddonRepository
 import com.nuvio.app.features.addons.buildAddonResourceUrl
@@ -223,7 +224,7 @@ object MetaDetailsRepository {
 
         return try {
             TmdbSettingsRepository.ensureLoaded()
-            log.d { "Fetching meta from: $url" }
+            log.d { "Fetching meta from: ${url.redactedUrlForLog()}" }
             val payload = httpGetText(url)
             log.d { "Raw payload length=${payload.length}, first 500 chars: ${payload.take(500)}" }
             val result = MetaDetailsParser.parse(payload)
@@ -254,7 +255,10 @@ object MetaDetailsRepository {
             enriched
         } catch (e: Throwable) {
             if (e is CancellationException) throw e
-            log.e(e) { "Failed to fetch/parse meta from $url (manifest=${manifest.transportUrl})" }
+            log.e(e) {
+                "Failed to fetch/parse meta from ${url.redactedUrlForLog()} " +
+                    "(manifest=${manifest.transportUrl.redactedUrlForLog()})"
+            }
             null
         }
     }

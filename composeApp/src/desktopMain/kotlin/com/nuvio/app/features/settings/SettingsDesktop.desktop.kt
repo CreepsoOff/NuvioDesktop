@@ -1,6 +1,5 @@
 package com.nuvio.app.features.settings
 
-import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
 import com.nuvio.app.core.storage.ProfileScopedKey
@@ -114,8 +113,6 @@ internal actual object ThemeSettingsStorage {
     private fun loadProfileSelectedAppLanguage(): String? =
         DesktopPreferences.getString(preferencesName, ProfileScopedKey.of(selectedAppLanguageKey))
 }
-
-internal actual fun LazyListScope.pluginsSettingsContent() = Unit
 
 @Composable
 internal actual fun integrationLogoPainter(logo: IntegrationLogo): Painter =

@@ -50,11 +50,11 @@ import kotlin.math.max
 private const val DefaultGifDelayCentiseconds = 10
 private const val DecodeSizeBucketPx = 32
 private const val FallbackDecodeDimensionPx = 360
-private const val MaxDecodedGifEntries = 3
+private const val MaxDecodedGifEntries = 8
 private const val MaxDecodedDimensionPx = 1920
 private const val MaxGifSourceBytes = 16L * 1024 * 1024
 private const val MaxDecodedGifBytes = 64L * 1024 * 1024
-private const val MaxDecodedGifBytesTotal = 128L * 1024 * 1024
+private const val MaxDecodedGifBytesTotal = 192L * 1024 * 1024
 private const val MaxLogicalGifPixels = 4096L * 4096L
 private const val MaxGifDecodeUpscale = 3.0
 
@@ -204,13 +204,9 @@ internal actual fun CollectionCardRemoteImage(
             )
         }
 
-        LaunchedEffect(cacheKey, gifUrl, shouldAnimate) {
+        LaunchedEffect(cacheKey, gifUrl) {
             if (cacheKey == null || gifUrl == null) {
                 state = DesktopGifState.UseStaticCoil
-                return@LaunchedEffect
-            }
-            if (!shouldAnimate) {
-                state = DesktopDecodedGifCache.get(cacheKey)?.let(DesktopGifState::Ready) ?: DesktopGifState.Loading
                 return@LaunchedEffect
             }
             cachedGif?.let {

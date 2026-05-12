@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.nuvio.app.core.format.formatReleaseDateForDisplay
 import com.nuvio.app.core.ui.NuvioImageFilterQuality
+import com.nuvio.app.core.ui.upgradeTmdbImageQuality
 import com.nuvio.app.features.home.MetaPreview
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -168,8 +169,11 @@ fun HomeHeroSection(
                 modifier = Modifier.fillMaxSize(),
             ) {
                 visiblePages.forEach { layer ->
+                    val backgroundUrl = remember(items[layer.page].banner, items[layer.page].poster) {
+                        (items[layer.page].banner ?: items[layer.page].poster)?.upgradeTmdbImageQuality()
+                    }
                     AsyncImage(
-                        model = items[layer.page].banner ?: items[layer.page].poster,
+                        model = backgroundUrl,
                         contentDescription = items[layer.page].name,
                         modifier = Modifier
                             .fillMaxSize()

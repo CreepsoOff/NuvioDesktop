@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -25,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.graphicsLayer
 import coil3.compose.AsyncImage
 import com.nuvio.app.core.ui.NuvioImageFilterQuality
+import com.nuvio.app.core.ui.upgradeTmdbImageQuality
 import com.nuvio.app.features.details.MetaDetails
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -57,7 +59,9 @@ fun DetailHero(
                     .fillMaxSize(),
                 contentAlignment = Alignment.BottomCenter,
             ) {
-                val imageUrl = meta.background ?: meta.poster
+                val imageUrl = remember(meta.background, meta.poster) {
+                    (meta.background ?: meta.poster)?.upgradeTmdbImageQuality()
+                }
                 if (imageUrl != null) {
                     AsyncImage(
                         model = imageUrl,

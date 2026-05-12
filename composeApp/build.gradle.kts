@@ -391,10 +391,13 @@ kotlin {
             kotlin.srcDir(generatedRuntimeConfigDir)
         }
         val desktopMain by getting {
+            kotlin.srcDir(fullCommonSourceDir)
             dependencies {
                 implementation(compose.desktop.currentOs)
                 implementation(libs.ktor.client.java)
                 implementation(libs.kotlinx.coroutines.swing)
+                implementation(libs.quickjs.kt)
+                implementation(libs.ksoup)
                 implementation(libs.jna)
                 implementation("net.java.dev.jna:jna-platform:5.14.0")
                 implementation("com.squareup.okhttp3:okhttp:4.12.0")

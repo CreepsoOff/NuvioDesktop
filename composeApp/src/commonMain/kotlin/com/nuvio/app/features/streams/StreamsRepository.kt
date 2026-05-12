@@ -2,6 +2,7 @@ package com.nuvio.app.features.streams
 
 import co.touchlab.kermit.Logger
 import com.nuvio.app.core.build.AppFeaturePolicy
+import com.nuvio.app.core.logging.redactedUrlForLog
 import com.nuvio.app.features.addons.AddonRepository
 import com.nuvio.app.features.addons.buildAddonResourceUrl
 import com.nuvio.app.features.addons.httpGetText
@@ -268,7 +269,7 @@ object StreamsRepository {
                         type = type,
                         id = videoId,
                     )
-                    log.d { "Fetching streams from: $url" }
+                    log.d { "Fetching streams from: ${url.redactedUrlForLog()}" }
 
                     val displayName = addon.addonName
                     val group = runCatching {

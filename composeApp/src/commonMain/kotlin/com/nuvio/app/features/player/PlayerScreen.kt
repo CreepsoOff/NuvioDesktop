@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.features.addons.AddonRepository
+import com.nuvio.app.core.ui.NuvioToastController
 import com.nuvio.app.isDesktop
 import com.nuvio.app.features.details.MetaDetailsRepository
 import com.nuvio.app.features.details.MetaScreenSettingsRepository
@@ -185,6 +186,7 @@ fun PlayerScreen(
         val downloadedLabel = stringResource(Res.string.compose_player_downloaded)
         val airsPrefix = stringResource(Res.string.compose_player_airs_prefix)
         val tbaLabel = stringResource(Res.string.compose_player_tba)
+        val torrentUnsupportedText = stringResource(Res.string.streams_torrent_not_supported)
         val gestureController = rememberPlayerGestureController()
         val fullscreenController = rememberPlayerFullscreenController()
         val playerFocusRequester = remember { FocusRequester() }
@@ -888,6 +890,10 @@ fun PlayerScreen(
         }
 
         fun switchToSource(stream: StreamItem) {
+            if (stream.isTorrentStream) {
+                NuvioToastController.show(torrentUnsupportedText)
+                return
+            }
             val url = stream.directPlaybackUrl ?: return
             if (url == activeSourceUrl) return
             val resumeAtMs = (scrubbingPositionMs ?: playbackSnapshot.positionMs).coerceAtLeast(0L)
@@ -929,6 +935,10 @@ fun PlayerScreen(
         }
 
         fun switchToEpisodeStream(stream: StreamItem, episode: MetaVideo) {
+            if (stream.isTorrentStream) {
+                NuvioToastController.show(torrentUnsupportedText)
+                return
+            }
             val url = stream.directPlaybackUrl ?: return
             showNextEpisodeCard = false
             showSourcesPanel = false
