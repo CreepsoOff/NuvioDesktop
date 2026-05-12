@@ -914,19 +914,22 @@ actual fun ManagePlayerPictureInPicture(
 @Composable
 actual fun ManagePlayerCursorVisibility(visible: Boolean) {
     val window = LocalDesktopWindow.current
+    val composeWindow = window as? ComposeWindow
     val hiddenCursor = remember { createHiddenPlayerCursor() }
 
-    DisposableEffect(window) { val keybinds = KeybindsStorage.load().binds
-        val previousCursor = window?.cursor
+    DisposableEffect(window, composeWindow) {
+        val previousWindowCursor = window?.cursor
+        val previousContentPaneCursor = composeWindow?.contentPane?.cursor
         onDispose {
-            if (window != null && previousCursor != null) {
-                window.cursor = previousCursor
-            }
+            window?.cursor = previousWindowCursor ?: Cursor.getDefaultCursor()
+            composeWindow?.contentPane?.cursor = previousContentPaneCursor ?: Cursor.getDefaultCursor()
         }
     }
 
     SideEffect {
-        window?.cursor = if (visible) Cursor.getDefaultCursor() else hiddenCursor
+        val cursor = if (visible) Cursor.getDefaultCursor() else hiddenCursor
+        window?.cursor = cursor
+        composeWindow?.contentPane?.cursor = cursor
     }
 }
 
@@ -1049,7 +1052,7 @@ private fun ComposeWindow.isPlayerFullscreen(): Boolean {
 }
 
 private fun createHiddenPlayerCursor(): Cursor {
-    val image = BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB)
+    val image = BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB)
     return Toolkit.getDefaultToolkit().createCustomCursor(image, Point(0, 0), "nuvio-player-hidden-cursor")
 }
 

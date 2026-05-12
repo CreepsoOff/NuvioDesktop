@@ -96,6 +96,7 @@ internal class MpvDesktopPlayerBackend private constructor(
     init {
         observePlayerState()
         applyDecoderSettings()
+        applyCursorSettings()
         DesktopRuntimeLog.info("MPV backend created id=$id runtime=${runtime.directory?.safePath() ?: "none"}")
     }
 
@@ -278,6 +279,17 @@ internal class MpvDesktopPlayerBackend private constructor(
             DesktopRuntimeLog.info("MPV decoder: hwdec=$hwdecMode")
         }.onFailure {
             DesktopRuntimeLog.warn("MPV decoder: failed to set hwdec=$hwdecMode message=${'$'}{it.message}")
+        }
+    }
+
+    private fun applyCursorSettings() {
+        if (nativeClosed) return
+        runCatching {
+            mpvHandle.setMpvRuntimeOption("cursor-autohide", "1000")
+            mpvHandle.setMpvRuntimeOption("cursor-autohide-fs-only", "no")
+            DesktopRuntimeLog.info("MPV cursor autohide configured")
+        }.onFailure {
+            DesktopRuntimeLog.warn("MPV cursor autohide configuration failed message=${it.message}")
         }
     }
 
