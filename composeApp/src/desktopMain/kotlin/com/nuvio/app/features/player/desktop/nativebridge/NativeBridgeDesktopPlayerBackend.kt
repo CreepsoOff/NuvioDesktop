@@ -29,6 +29,7 @@ import com.nuvio.app.features.player.desktop.DesktopPlayerError
 import com.nuvio.app.features.player.desktop.DesktopPlayerPhase
 import com.nuvio.app.features.player.desktop.DesktopPlayerRequest
 import com.nuvio.app.features.player.desktop.DesktopPlayerState
+import com.nuvio.app.features.player.desktop.WindowsDisplayWakeLock
 import com.nuvio.app.features.player.desktop.mpv.redactedMediaUrl
 import com.nuvio.app.features.streams.AddonStreamGroup
 import com.nuvio.app.features.streams.StreamItem
@@ -58,6 +59,7 @@ internal class NativeBridgeDesktopPlayerBackend private constructor(
 
     @Volatile private var closed = false
     @Volatile private var attached = false
+    @Volatile private var displayWakeLockHeld = false
 
     private var onCloseCallback: (() -> Unit)? = null
     private var onAddonSubtitlesFetchCallback: (() -> Unit)? = null
@@ -93,6 +95,7 @@ internal class NativeBridgeDesktopPlayerBackend private constructor(
             setResizeMode(request.resizeMode)
             if (request.playWhenReady) bridge.nuvio_player_play(playerPtr) else bridge.nuvio_player_pause(playerPtr)
         }.onFailure {
+            releaseDisplayWakeLock("load-failed")
             stateFlow.value = stateFlow.value.copy(
                 phase = DesktopPlayerPhase.Error,
                 error = DesktopPlayerError.MediaLoadFailed(backendName, "Native bridge media load failed", it),
@@ -112,11 +115,13 @@ internal class NativeBridgeDesktopPlayerBackend private constructor(
 
     override fun releaseSoft() {
         if (closed) return
+        releaseDisplayWakeLock("releaseSoft")
         runCatching { bridge.nuvio_player_pause(playerPtr) }
     }
 
     override fun close() {
         if (closed) return
+        releaseDisplayWakeLock("close")
         closed = true
         scope.cancel()
         runCatching { bridge.nuvio_player_destroy(playerPtr) }
@@ -201,7 +206,7 @@ internal class NativeBridgeDesktopPlayerBackend private constructor(
                     close()
                     break
                 }
-                stateFlow.value = DesktopPlayerState(
+                val nextState = DesktopPlayerState(
                     phase = when {
                         pollState.error != null -> DesktopPlayerPhase.Error
                         pollState.snapshot.isEnded -> DesktopPlayerPhase.Ended
@@ -216,6 +221,8 @@ internal class NativeBridgeDesktopPlayerBackend private constructor(
                     backendName = backendName,
                     error = pollState.error?.let { DesktopPlayerError.PlaybackFailed(backendName, it) },
                 )
+                updateDisplayWakeLock(nextState.phase)
+                stateFlow.value = nextState
                 if (pollState.addonSubtitlesFetchRequested) onAddonSubtitlesFetchCallback?.invoke()
                 if (pollState.subtitleStyleChanged) {
                     val colorIndex = pollState.subtitleStyleColorIndex.coerceIn(0, SubtitleColorSwatches.lastIndex)
@@ -240,6 +247,22 @@ internal class NativeBridgeDesktopPlayerBackend private constructor(
                 if (pollState.episodeBackRequested) onEpisodeBackCallback?.invoke()
             }
         }
+    }
+
+    private fun updateDisplayWakeLock(phase: DesktopPlayerPhase) {
+        if (phase == DesktopPlayerPhase.Playing) {
+            if (!displayWakeLockHeld) {
+                displayWakeLockHeld = WindowsDisplayWakeLock.acquire("$backendName:$id:$phase")
+            }
+        } else {
+            releaseDisplayWakeLock("phase-$phase")
+        }
+    }
+
+    private fun releaseDisplayWakeLock(reason: String) {
+        if (!displayWakeLockHeld) return
+        displayWakeLockHeld = false
+        WindowsDisplayWakeLock.release("$backendName:$id:$reason")
     }
 
     private inner class NativeBridgeController : PlayerEngineController {

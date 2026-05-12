@@ -18,6 +18,7 @@ import com.nuvio.app.features.player.desktop.DesktopPlayerError
 import com.nuvio.app.features.player.desktop.DesktopPlayerPhase
 import com.nuvio.app.features.player.desktop.DesktopPlayerRequest
 import com.nuvio.app.features.player.desktop.DesktopPlayerState
+import com.nuvio.app.features.player.desktop.WindowsDisplayWakeLock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -80,6 +81,7 @@ internal class MpvDesktopPlayerBackend private constructor(
     @Volatile private var lastKnownPositionMs: Long = 0L
     @Volatile private var pendingSeekMs: Long = 0L
     @Volatile private var externalSubtitleActive = false
+    @Volatile private var displayWakeLockHeld = false
     @Volatile private var latestSubtitleStyle = SubtitleStyleState.DEFAULT
     private val externalSubtitleRequestCounter = AtomicInteger(0)
     private val externalSubtitleTempFiles = mutableSetOf<Path>()
@@ -136,6 +138,7 @@ internal class MpvDesktopPlayerBackend private constructor(
             DesktopRuntimeLog.info("MPV load success session=${request.sessionKey}")
         }.onFailure { throwable ->
             DesktopRuntimeLog.error("MPV load failed source=${request.sourceUrl.redactedMediaUrl()}", throwable)
+            releaseDisplayWakeLock("load-failed")
             fail(DesktopPlayerError.MediaLoadFailed(backendName, "MPV media load failed", throwable))
         }
     }
@@ -151,6 +154,7 @@ internal class MpvDesktopPlayerBackend private constructor(
         if (stopped) return
         stopped = true
         DesktopRuntimeLog.info("MPV releaseSoft id=$id")
+        releaseDisplayWakeLock("releaseSoft")
         resetExternalSubtitleState("releaseSoft")
         runCatching { mpvHandle.setPropertyBoolean("mute", true) }
         runCatching { mpvHandle.command("stop") }
@@ -160,6 +164,7 @@ internal class MpvDesktopPlayerBackend private constructor(
 
     override fun close() {
         if (nativeClosed) return
+        releaseDisplayWakeLock("close")
         resetExternalSubtitleState("close")
         nativeClosed = true
         scope.cancel()
@@ -232,10 +237,27 @@ internal class MpvDesktopPlayerBackend private constructor(
                 DesktopRuntimeLog.info("MPV seek after load executed target=${seekMs}ms ok=$ok duration=${mapped.durationMs}")
             }
             if (!nativeClosed) {
+                updateDisplayWakeLock(mapped.phase)
                 stateFlow.value = mapped
                 DesktopRuntimeLog.info("[WP-STATE] phase=${mapped.phase} pos=${mapped.positionMs}ms dur=${mapped.durationMs}ms")
             }
         }.launchIn(scope)
+    }
+
+    private fun updateDisplayWakeLock(phase: DesktopPlayerPhase) {
+        if (phase == DesktopPlayerPhase.Playing) {
+            if (!displayWakeLockHeld) {
+                displayWakeLockHeld = WindowsDisplayWakeLock.acquire("$backendName:$id:$phase")
+            }
+        } else {
+            releaseDisplayWakeLock("phase-$phase")
+        }
+    }
+
+    private fun releaseDisplayWakeLock(reason: String) {
+        if (!displayWakeLockHeld) return
+        displayWakeLockHeld = false
+        WindowsDisplayWakeLock.release("$backendName:$id:$reason")
     }
 
     
@@ -260,6 +282,7 @@ internal class MpvDesktopPlayerBackend private constructor(
     }
 
     private fun fail(error: DesktopPlayerError) {
+        releaseDisplayWakeLock("fail-${error::class.simpleName}")
         stateFlow.value = stateFlow.value.copy(
             phase = DesktopPlayerPhase.Error,
             error = error,
