@@ -11,6 +11,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.graphics.Color
@@ -66,6 +67,7 @@ actual fun PlatformPlayerSurface(
     onSnapshot: (PlayerPlaybackSnapshot) -> Unit,
     onError: (String?) -> Unit,
 ) {
+    ManageDesktopPlayerFrameTrace()
     if (isMacOS) {
         MacOSPlayerSurface(
             sourceUrl = sourceUrl,
@@ -935,6 +937,48 @@ actual fun ManagePlayerCursorVisibility(visible: Boolean) {
 }
 
 @Composable
+private fun ManageDesktopPlayerFrameTrace() {
+    LaunchedEffect(Unit) {
+        var lastFrameNanos = 0L
+        var lastLogNanos = 0L
+        var frameCount = 0
+        var totalMs = 0.0
+        var maxMs = 0.0
+        while (true) {
+            if (!DesktopRuntimeLog.debugEnabled) {
+                lastFrameNanos = 0L
+                lastLogNanos = 0L
+                frameCount = 0
+                totalMs = 0.0
+                maxMs = 0.0
+                delay(1_000)
+                continue
+            }
+            val frameNanos = withFrameNanos { it }
+            if (lastFrameNanos != 0L) {
+                val deltaMs = (frameNanos - lastFrameNanos) / 1_000_000.0
+                frameCount += 1
+                totalMs += deltaMs
+                if (deltaMs > maxMs) maxMs = deltaMs
+            }
+            if (lastLogNanos == 0L) {
+                lastLogNanos = frameNanos
+            } else if (frameNanos - lastLogNanos >= 2_000_000_000L && frameCount > 0) {
+                DesktopRuntimeLog.info(
+                    "PlayerFramePacing composeFrames=$frameCount " +
+                        "avgMs=${(totalMs / frameCount).formatOneDecimal()} maxMs=${maxMs.formatOneDecimal()}",
+                )
+                lastLogNanos = frameNanos
+                frameCount = 0
+                totalMs = 0.0
+                maxMs = 0.0
+            }
+            lastFrameNanos = frameNanos
+        }
+    }
+}
+
+@Composable
 actual fun rememberPlayerGestureController(): PlayerGestureController? = null
 
 @Composable
@@ -1073,6 +1117,8 @@ private fun ComposeWindow.exitDesktopFullscreen() {
 private fun ComposeWindow.isPlayerFullscreen(): Boolean {
     return DesktopBorderlessFullscreenController.isFullscreen(this)
 }
+
+private fun Double.formatOneDecimal(): String = String.format(Locale.US, "%.1f", this)
 
 private fun createHiddenPlayerCursor(): Cursor {
     val image = BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB)

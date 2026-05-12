@@ -23,6 +23,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -83,6 +84,7 @@ internal class MpvDesktopPlayerBackend private constructor(
     @Volatile private var externalSubtitleActive = false
     @Volatile private var displayWakeLockHeld = false
     @Volatile private var latestSubtitleStyle = SubtitleStyleState.DEFAULT
+    private val framePacingSamples = ArrayDeque<String>()
     private val externalSubtitleRequestCounter = AtomicInteger(0)
     private val externalSubtitleTempFiles = mutableSetOf<Path>()
     private val subtitleHttpClient = HttpClient.newBuilder()
@@ -95,6 +97,7 @@ internal class MpvDesktopPlayerBackend private constructor(
 
     init {
         observePlayerState()
+        observeFramePacing()
         applyDecoderSettings()
         applyCursorSettings()
         DesktopRuntimeLog.info("MPV backend created id=$id runtime=${runtime.directory?.safePath() ?: "none"}")
@@ -105,6 +108,9 @@ internal class MpvDesktopPlayerBackend private constructor(
         if (request.sourceUrl.isBlank()) {
             fail(DesktopPlayerError.InvalidSource(backendName, "Blank source URL"))
             return
+        }
+        if (currentRequest != null) {
+            emitFramePacingSummary("load")
         }
         currentRequest = request
         stopped = false
@@ -155,6 +161,7 @@ internal class MpvDesktopPlayerBackend private constructor(
         if (stopped) return
         stopped = true
         DesktopRuntimeLog.info("MPV releaseSoft id=$id")
+        emitFramePacingSummary("releaseSoft")
         releaseDisplayWakeLock("releaseSoft")
         resetExternalSubtitleState("releaseSoft")
         runCatching { mpvHandle.setPropertyBoolean("mute", true) }
@@ -165,6 +172,7 @@ internal class MpvDesktopPlayerBackend private constructor(
 
     override fun close() {
         if (nativeClosed) return
+        emitFramePacingSummary("close")
         releaseDisplayWakeLock("close")
         resetExternalSubtitleState("close")
         nativeClosed = true
@@ -243,6 +251,49 @@ internal class MpvDesktopPlayerBackend private constructor(
                 DesktopRuntimeLog.info("[WP-STATE] phase=${mapped.phase} pos=${mapped.positionMs}ms dur=${mapped.durationMs}ms")
             }
         }.launchIn(scope)
+    }
+
+    private fun observeFramePacing() {
+        scope.launch {
+            while (!nativeClosed) {
+                delay(2_000)
+                if (!DesktopRuntimeLog.debugEnabled || nativeClosed) continue
+                if (stateFlow.value.phase != DesktopPlayerPhase.Playing) continue
+                collectFramePacingSample()?.let { sample ->
+                    synchronized(framePacingSamples) {
+                        framePacingSamples.addLast(sample)
+                        while (framePacingSamples.size > 30) {
+                            framePacingSamples.removeFirst()
+                        }
+                    }
+                    DesktopRuntimeLog.info("MPV framePacing sample $sample")
+                }
+            }
+        }
+    }
+
+    private fun collectFramePacingSample(): String? =
+        runCatching {
+            val state = stateFlow.value
+            "phase=${state.phase} pos=${state.positionMs}ms " +
+                "vfFps=${mpvHandle.getMpvStringPropertyOrNull("estimated-vf-fps") ?: "n/a"} " +
+                "estimatedFrames=${mpvHandle.getMpvStringPropertyOrNull("estimated-frame-count") ?: "n/a"} " +
+                "dropped=${mpvHandle.getMpvStringPropertyOrNull("frame-drop-count") ?: "n/a"} " +
+                "delayed=${mpvHandle.getMpvStringPropertyOrNull("vo-delayed-frame-count") ?: "n/a"}"
+        }.onFailure {
+            DesktopRuntimeLog.warn("MPV framePacing sample failed message=${it.message}")
+        }.getOrNull()
+
+    private fun emitFramePacingSummary(reason: String) {
+        if (!DesktopRuntimeLog.debugEnabled) return
+        val samples = synchronized(framePacingSamples) {
+            framePacingSamples.toList().also { framePacingSamples.clear() }
+        }
+        if (samples.isEmpty()) return
+        DesktopRuntimeLog.info(
+            "MPV framePacing summary reason=$reason sampleCount=${samples.size} " +
+                "latest=${samples.takeLast(5).joinToString(separator = " | ")}",
+        )
     }
 
     private fun updateDisplayWakeLock(phase: DesktopPlayerPhase) {
