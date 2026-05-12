@@ -1961,6 +1961,7 @@ private fun MainAppContent(
 
             GlobalFullscreenExitButton(
                 controller = fullscreenController,
+                hideOnPlayerRoute = currentBackStackEntry?.destination?.hasRoute<PlayerRoute>() == true,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .zIndex(18f),
@@ -1984,10 +1985,11 @@ private fun MainAppContent(
 @Composable
 private fun GlobalFullscreenExitButton(
     controller: PlayerFullscreenController,
+    hideOnPlayerRoute: Boolean,
     modifier: Modifier = Modifier,
 ) {
     androidx.compose.animation.AnimatedVisibility(
-        visible = controller.isFullscreenSupported && controller.isFullscreen,
+        visible = controller.isFullscreenSupported && controller.isFullscreen && !hideOnPlayerRoute,
         enter = fadeIn(animationSpec = tween(140)),
         exit = fadeOut(animationSpec = tween(120)),
         modifier = modifier.padding(
