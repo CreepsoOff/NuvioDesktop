@@ -161,7 +161,7 @@ fun StreamsScreen(
         }
     }
 
-    LaunchedEffect(type, videoId, manualSelection) {
+    LaunchedEffect(type, videoId, seasonNumber, episodeNumber, manualSelection) {
         StreamsRepository.load(
             type = type,
             videoId = videoId,
