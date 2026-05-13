@@ -2,6 +2,7 @@ package com.nuvio.app.features.collection
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.BoxWithConstraints
+import com.nuvio.app.core.ui.upgradeTmdbImageQuality
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -187,8 +188,9 @@ private fun FolderCoverImage(
     title: String,
     modifier: Modifier = Modifier,
 ) {
+    val resolvedImageUrl = remember(imageUrl) { imageUrl.upgradeTmdbImageQuality() }
     AsyncImage(
-        model = imageUrl,
+        model = resolvedImageUrl,
         contentDescription = title,
         modifier = modifier
             .fillMaxWidth()

@@ -442,8 +442,5 @@ internal fun Modifier.posterCardClickable(
 
 internal fun String.upgradeTmdbImageQuality(): String {
     if (!contains("image.tmdb.org/t/p/", ignoreCase = true)) return this
-    return replace("/w300/", "/original/")
-        .replace("/w500/", "/original/")
-        .replace("/w780/", "/original/")
-        .replace("/w1280/", "/original/")
+    return replace(Regex("/[wh]\\d+/"), "/original/")
 }
