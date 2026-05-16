@@ -34,6 +34,7 @@ import com.nuvio.app.core.ui.PosterLandscapeAspectRatio
 import com.nuvio.app.core.ui.landscapePosterWidth
 import com.nuvio.app.core.ui.posterCardClickable
 import com.nuvio.app.core.ui.rememberPosterCardStyleUiState
+import com.nuvio.app.core.ui.upgradeTmdbImageQuality
 import com.nuvio.app.features.collection.Collection
 import com.nuvio.app.features.collection.CollectionFolder
 import com.nuvio.app.features.home.HomeCatalogSettingsRepository
@@ -211,7 +212,7 @@ private fun CollectionFolderCard(
 }
 
 private fun collectionFolderStaticCoverUrl(folder: CollectionFolder): String? =
-    firstNonBlank(folder.coverImageUrl)
+    firstNonBlank(folder.coverImageUrl)?.upgradeTmdbImageQuality()
 
 private fun collectionFolderFocusGifUrl(folder: CollectionFolder): String? =
     if (folder.focusGifEnabled) firstNonBlank(folder.focusGifUrl) else null

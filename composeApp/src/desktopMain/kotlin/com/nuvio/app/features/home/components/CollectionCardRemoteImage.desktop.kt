@@ -19,6 +19,8 @@ import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import com.nuvio.app.core.ui.NuvioImageFilterQuality
+import com.nuvio.app.core.ui.nuvioQualityDecodeDimensionPx
+import com.nuvio.app.core.ui.upgradeTmdbImageQuality
 import coil3.compose.LocalPlatformContext
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
@@ -157,6 +159,7 @@ internal actual fun CollectionCardRemoteImage(
     val alwaysAnimateGif = remember {
         DesktopPreferences.getBoolean("nuvio_home_settings", "always_animate_gif") ?: false
     }
+    val staticImageUrl = remember(imageUrl) { imageUrl.upgradeTmdbImageQuality() }
     val gifUrl = animatedImageUrl?.takeIf { animateIfPossible && it.isNotBlank() }
     val shouldAnimate = gifUrl != null && (alwaysAnimateGif || animateNow)
 
@@ -171,19 +174,21 @@ internal actual fun CollectionCardRemoteImage(
             .takeIf { it.isFinite() && it > 0f }
             ?.let { with(density) { maxHeight.roundToPx() } }
             ?: FallbackDecodeDimensionPx
+        val staticDecodeWidthPx = nuvioQualityDecodeDimensionPx(targetWidthPx.coerceAtLeast(1))
+        val staticDecodeHeightPx = nuvioQualityDecodeDimensionPx(targetHeightPx.coerceAtLeast(1))
         val decodeTarget = remember(targetWidthPx, targetHeightPx) {
             GifDecodeTarget(
                 widthPx = targetWidthPx.roundUpToDecodeBucket().coerceIn(1, MaxDecodedDimensionPx),
                 heightPx = targetHeightPx.roundUpToDecodeBucket().coerceIn(1, MaxDecodedDimensionPx),
             )
         }
-        val staticRequest = remember(platformContext, imageUrl, targetWidthPx, targetHeightPx) {
+        val staticRequest = remember(platformContext, staticImageUrl, staticDecodeWidthPx, staticDecodeHeightPx) {
             ImageRequest.Builder(platformContext)
-                .data(imageUrl)
-                .size(Size(targetWidthPx.coerceAtLeast(1), targetHeightPx.coerceAtLeast(1)))
+                .data(staticImageUrl)
+                .size(Size(staticDecodeWidthPx, staticDecodeHeightPx))
                 .precision(Precision.EXACT)
-                .memoryCacheKey("home-collection-static:$targetWidthPx:$targetHeightPx:${imageUrl.hashCode()}")
-                .diskCacheKey(imageUrl)
+                .memoryCacheKey("home-collection-static:$staticDecodeWidthPx:$staticDecodeHeightPx:${staticImageUrl.hashCode()}")
+                .diskCacheKey(staticImageUrl)
                 .build()
         }
         val cacheKey = remember(gifUrl, decodeTarget) {

@@ -175,14 +175,18 @@ fun NuvioPosterCard(
     val density = LocalDensity.current
     val resolvedImageUrl = remember(imageUrl) { imageUrl?.upgradeTmdbImageQuality() }
     val resolvedBottomLeftLogoUrl = remember(bottomLeftLogoUrl) { bottomLeftLogoUrl?.upgradeTmdbImageQuality() }
-    val imageRequest = remember(resolvedImageUrl, cardWidth, shape, density) {
+    val imageRequest = remember(platformContext, resolvedImageUrl, cardWidth, shape, density) {
         resolvedImageUrl?.let {
             val widthPx = with(density) { cardWidth.roundToPx() }.coerceAtLeast(1)
             val heightPx = (widthPx / shape.aspectRatio).roundToInt().coerceAtLeast(1)
+            val decodeWidthPx = nuvioQualityDecodeDimensionPx(widthPx)
+            val decodeHeightPx = nuvioQualityDecodeDimensionPx(heightPx)
             ImageRequest.Builder(platformContext)
                 .data(it)
-                .size(Size(widthPx, heightPx))
+                .size(Size(decodeWidthPx, decodeHeightPx))
                 .precision(Precision.EXACT)
+                .memoryCacheKey("poster-card:$decodeWidthPx:$decodeHeightPx:${it.hashCode()}")
+                .diskCacheKey(it)
                 .build()
         }
     }
