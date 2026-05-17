@@ -329,6 +329,11 @@ object TmdbCollectionSourceResolver {
             putIfNotBlank("with_original_language", filters.withOriginalLanguage)
             putIfNotBlank("with_origin_country", filters.withOriginCountry)
             putIfNotBlank("with_keywords", filters.withKeywords)
+            if (!filters.withWatchProviders.isNullOrBlank()) {
+                put("with_watch_providers", filters.withWatchProviders)
+                put("watch_region", filters.watchRegion?.takeIf { it.isNotBlank() } ?: "US")
+                put("with_watch_monetization_types", "flatrate|free|ads|rent|buy")
+            }
             putIfNotBlank("year", filters.year?.takeIf { mediaType == TmdbCollectionMediaType.MOVIE }?.toString())
             putIfNotBlank("first_air_date_year", filters.year?.takeIf { mediaType == TmdbCollectionMediaType.TV }?.toString())
             putIfNotBlank(
@@ -362,6 +367,7 @@ object TmdbCollectionSourceResolver {
                 compareByDescending<MetaPreview> { it.imdbRating?.toDoubleOrNull() ?: -1.0 }
                     .thenByDescending { it.rawReleaseDate ?: it.releaseInfo.orEmpty() },
             )
+            TmdbCollectionSort.VOTE_COUNT_DESC.value -> sortedByDescending { it.voteCount ?: 0 }
             TmdbCollectionSort.RELEASE_DATE_DESC.value,
             TmdbCollectionSort.FIRST_AIR_DATE_DESC.value -> sortedByDescending { it.rawReleaseDate ?: it.releaseInfo.orEmpty() }
             TmdbCollectionSort.POPULAR_DESC.value,
@@ -399,6 +405,7 @@ object TmdbCollectionSourceResolver {
                 TmdbCollectionMediaType.TV -> firstAirDate
             },
             popularity = popularity,
+            voteCount = voteCount,
             imdbRating = voteAverage?.let { ((it * 10).roundToInt() / 10.0).toString() },
         )
     }
@@ -416,6 +423,7 @@ object TmdbCollectionSourceResolver {
             releaseInfo = releaseDate?.take(4),
             rawReleaseDate = releaseDate,
             popularity = popularity,
+            voteCount = voteCount,
             imdbRating = voteAverage?.let { ((it * 10).roundToInt() / 10.0).toString() },
         )
     }
@@ -444,6 +452,7 @@ object TmdbCollectionSourceResolver {
                 TmdbCollectionMediaType.TV -> firstAirDate
             },
             popularity = popularity,
+            voteCount = voteCount,
             imdbRating = voteAverage?.let { ((it * 10).roundToInt() / 10.0).toString() },
         )
     }
@@ -472,6 +481,7 @@ object TmdbCollectionSourceResolver {
                 TmdbCollectionMediaType.TV -> firstAirDate
             },
             popularity = popularity,
+            voteCount = voteCount,
             imdbRating = voteAverage?.let { ((it * 10).roundToInt() / 10.0).toString() },
         )
     }
@@ -512,6 +522,7 @@ object TmdbCollectionSourceResolver {
         when (sortBy) {
             TmdbCollectionSort.FIRST_AIR_DATE_DESC.value -> TmdbCollectionSort.RELEASE_DATE_DESC.value
             TmdbCollectionSort.ORIGINAL.value -> TmdbCollectionSort.POPULAR_DESC.value
+            TmdbCollectionSort.VOTE_COUNT_DESC.value -> TmdbCollectionSort.VOTE_COUNT_DESC.value
             null, "" -> TmdbCollectionSort.POPULAR_DESC.value
             else -> sortBy
         }
@@ -520,6 +531,7 @@ object TmdbCollectionSourceResolver {
         when (sortBy) {
             TmdbCollectionSort.RELEASE_DATE_DESC.value -> TmdbCollectionSort.FIRST_AIR_DATE_DESC.value
             TmdbCollectionSort.ORIGINAL.value -> TmdbCollectionSort.POPULAR_DESC.value
+            TmdbCollectionSort.VOTE_COUNT_DESC.value -> TmdbCollectionSort.VOTE_COUNT_DESC.value
             null, "" -> TmdbCollectionSort.POPULAR_DESC.value
             else -> sortBy
         }
@@ -644,6 +656,7 @@ private data class TmdbPersonCreditCast(
     @SerialName("release_date") val releaseDate: String? = null,
     @SerialName("first_air_date") val firstAirDate: String? = null,
     @SerialName("vote_average") val voteAverage: Double? = null,
+    @SerialName("vote_count") val voteCount: Int? = null,
     val popularity: Double? = null,
 )
 
@@ -662,6 +675,7 @@ private data class TmdbPersonCreditCrew(
     @SerialName("first_air_date") val firstAirDate: String? = null,
     val job: String? = null,
     @SerialName("vote_average") val voteAverage: Double? = null,
+    @SerialName("vote_count") val voteCount: Int? = null,
     val popularity: Double? = null,
 )
 
@@ -679,6 +693,7 @@ private data class TmdbListItem(
     @SerialName("release_date") val releaseDate: String? = null,
     @SerialName("first_air_date") val firstAirDate: String? = null,
     @SerialName("vote_average") val voteAverage: Double? = null,
+    @SerialName("vote_count") val voteCount: Int? = null,
     val popularity: Double? = null,
 )
 
@@ -691,5 +706,6 @@ private data class TmdbCollectionPart(
     @SerialName("backdrop_path") val backdropPath: String? = null,
     @SerialName("release_date") val releaseDate: String? = null,
     @SerialName("vote_average") val voteAverage: Double? = null,
+    @SerialName("vote_count") val voteCount: Int? = null,
     val popularity: Double? = null,
 )

@@ -103,6 +103,7 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
         val contributionsExtra = resolveRuntimeValue("CONTRIBUTIONS_EXTRA", releaseProperties, localProperties)
         val imdbRatingsApiBaseUrl = resolveRuntimeValue("IMDB_RATINGS_API_BASE_URL", releaseProperties, localProperties)
         val imdbTapframeApiBaseUrl = resolveRuntimeValue("IMDB_TAPFRAME_API_BASE_URL", releaseProperties, localProperties)
+        val directDebridApiBaseUrl = resolveRuntimeValue("DIRECT_DEBRID_API_BASE_URL", releaseProperties, localProperties)
 
         val outDir = outputDir.get().asFile
         outDir.deleteRecursively()
@@ -159,6 +160,19 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
                 |object ImdbEpisodeRatingsConfig {
                 |    const val IMDB_RATINGS_API_BASE_URL = "${kotlinStringLiteral(imdbRatingsApiBaseUrl)}"
                 |    const val IMDB_TAPFRAME_API_BASE_URL = "${kotlinStringLiteral(imdbTapframeApiBaseUrl)}"
+                |}
+                """.trimMargin()
+            )
+        }
+
+        outDir.resolve("com/nuvio/app/features/debrid").apply {
+            mkdirs()
+            resolve("DebridConfig.kt").writeText(
+                """
+                |package com.nuvio.app.features.debrid
+                |
+                |object DebridConfig {
+                |    const val DIRECT_DEBRID_API_BASE_URL = "${kotlinStringLiteral(directDebridApiBaseUrl)}"
                 |}
                 """.trimMargin()
             )
