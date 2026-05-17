@@ -314,22 +314,32 @@ internal class MpvDesktopPlayerBackend private constructor(
 
     
     /**
-     * Applies Desktop decoder preferences (hwdec mode) to the running MPV player.
-     * Settings are read from DesktopPreferences under "nuvio_decoder_settings".
-     *
-     * Only hwdec is configurable at runtime. The GPU rendering backend is fixed
-     * to OpenGL because mpv's vo=libmpv render API only supports OpenGL contexts.
-     * For D3D11/Vulkan rendering, a native HWND-based approach (vo=gpu-next+wid)
-     * would be required - see stremio-community-v5 for an example of this pattern.
+     * Applies Desktop decoder and HDR preferences to the running MPV player.
+     * The GPU rendering backend stays on the existing libmpv/OpenGL path; true
+     * Windows HDR passthrough requires a native HWND renderer or external player.
      */
     private fun applyDecoderSettings() {
         if (nativeClosed) return
-        val hwdecMode = DesktopPreferences.getString("nuvio_decoder_settings", "hwdec_mode") ?: "auto"
+        val hwdecMode = DesktopPreferences.getString(DesktopDecoderPreferencesName, DesktopHwdecModeKey) ?: "auto"
+        val hdrMode = DesktopHdrMode.fromStorage(
+            DesktopPreferences.getString(DesktopDecoderPreferencesName, DesktopHdrModeKey),
+        )
         runCatching {
             mpvHandle.command("set", "hwdec", hwdecMode)
             DesktopRuntimeLog.info("MPV decoder: hwdec=$hwdecMode")
         }.onFailure {
             DesktopRuntimeLog.warn("MPV decoder: failed to set hwdec=$hwdecMode message=${'$'}{it.message}")
+        }
+        hdrRuntimeOptions(hdrMode).forEach { option ->
+            runCatching {
+                mpvHandle.setMpvRuntimeOption(option.name, option.value)
+            }.onSuccess { applied ->
+                DesktopRuntimeLog.info("MPV HDR: mode=${hdrMode.storageValue} ${option.name}=${option.value} applied=$applied")
+            }.onFailure {
+                DesktopRuntimeLog.warn(
+                    "MPV HDR: failed mode=${hdrMode.storageValue} ${option.name}=${option.value} message=${it.message}",
+                )
+            }
         }
     }
 

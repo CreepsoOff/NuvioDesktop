@@ -21,20 +21,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.nuvio.app.desktop.DesktopPreferences
-
-private const val preferencesName = "nuvio_decoder_settings"
-private const val hwdecModeKey = "hwdec_mode"
+import com.nuvio.app.features.player.desktop.mpv.DesktopDecoderPreferencesName
+import com.nuvio.app.features.player.desktop.mpv.DesktopHdrMode
+import com.nuvio.app.features.player.desktop.mpv.DesktopHdrModeKey
+import com.nuvio.app.features.player.desktop.mpv.DesktopHwdecModeKey
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal actual fun DesktopDecoderSettingsSection(isTablet: Boolean) {
     var hwdecMode by remember {
         mutableStateOf(
-            DesktopPreferences.getString(preferencesName, hwdecModeKey) ?: "auto"
+            DesktopPreferences.getString(DesktopDecoderPreferencesName, DesktopHwdecModeKey) ?: "auto"
+        )
+    }
+    var hdrMode by remember {
+        mutableStateOf(
+            DesktopHdrMode.fromStorage(
+                DesktopPreferences.getString(DesktopDecoderPreferencesName, DesktopHdrModeKey),
+            )
         )
     }
 
     var showHwdecDialog by remember { mutableStateOf(false) }
+    var showHdrDialog by remember { mutableStateOf(false) }
 
     val hwdecOptions = listOf(
         "auto" to "Auto (recommended)",
@@ -60,6 +69,13 @@ internal actual fun DesktopDecoderSettingsSection(isTablet: Boolean) {
                 isTablet = isTablet,
                 onClick = { showHwdecDialog = true },
             )
+            SettingsGroupDivider(isTablet = isTablet)
+            SettingsNavigationRow(
+                title = "HDR Handling",
+                description = hdrMode.label,
+                isTablet = isTablet,
+                onClick = { showHdrDialog = true },
+            )
         }
 
         SettingsGroup(isTablet = isTablet) {
@@ -76,7 +92,11 @@ internal actual fun DesktopDecoderSettingsSection(isTablet: Boolean) {
                     "would need to render into a native HWND window instead of the Compose " +
                     "canvas. This is the approach used by stremio-community-v5 " +
                     "(github.com/Zaarrg/stremio-community-v5) which uses mpv with " +
-                    "vo=gpu-next and native WebView2 window embedding.",
+                    "vo=gpu-next and native WebView2 window embedding.\n\n" +
+                    "HDR auto mode lets mpv choose the output behavior. Tone map to SDR " +
+                    "forces HDR content into the app's SDR desktop surface. For true " +
+                    "Windows HDR passthrough, use an external player configured with an " +
+                    "HDR-capable renderer such as MPC-HC with MPC Video Renderer or madVR.",
                 modifier = Modifier.padding(16.dp),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -117,7 +137,7 @@ internal actual fun DesktopDecoderSettingsSection(isTablet: Boolean) {
                                     .fillMaxWidth()
                                     .clickable {
                                         hwdecMode = mode
-                                        DesktopPreferences.putString(preferencesName, hwdecModeKey, mode)
+                                        DesktopPreferences.putString(DesktopDecoderPreferencesName, DesktopHwdecModeKey, mode)
                                         showHwdecDialog = false
                                     },
                                 shape = RoundedCornerShape(12.dp),
@@ -136,6 +156,77 @@ internal actual fun DesktopDecoderSettingsSection(isTablet: Boolean) {
                                             MaterialTheme.colorScheme.onSurface
                                         },
                                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (showHdrDialog) {
+        BasicAlertDialog(onDismissRequest = { showHdrDialog = false }) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surface,
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Text(
+                        text = "HDR Handling",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        DesktopHdrMode.entries.forEach { mode ->
+                            val isSelected = mode == hdrMode
+                            val containerColor = if (isSelected) {
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                            } else {
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+                            }
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        hdrMode = mode
+                                        DesktopPreferences.putString(
+                                            DesktopDecoderPreferencesName,
+                                            DesktopHdrModeKey,
+                                            mode.storageValue,
+                                        )
+                                        showHdrDialog = false
+                                    },
+                                shape = RoundedCornerShape(12.dp),
+                                color = containerColor,
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                                ) {
+                                    Text(
+                                        text = mode.label,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = if (isSelected) {
+                                            MaterialTheme.colorScheme.primary
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurface
+                                        },
+                                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                    )
+                                    Text(
+                                        text = mode.description,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
                             }
