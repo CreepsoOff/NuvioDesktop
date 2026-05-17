@@ -723,6 +723,7 @@
     <string name="settings_playback_external_player">External Player</string>
     <string name="settings_playback_external_player_app">External Player App</string>
     <string name="settings_playback_external_player_description_android">Open new playback with Android&apos;s default video app or system chooser.</string>
+    <string name="settings_playback_external_player_description_desktop">Open new playback with a detected Windows video player such as MPC-HC, MPC-BE, VLC, or mpv.</string>
     <string name="settings_playback_external_player_description_ios">Open new playback with the selected installed player.</string>
     <string name="settings_playback_external_player_none_available">No supported external players installed</string>
     <string name="settings_playback_hold_speed">Hold Speed</string>

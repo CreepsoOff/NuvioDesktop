@@ -305,9 +305,11 @@ private fun NativeNavigationTab.toAppScreenTab(): AppScreenTab = when (this) {
 private fun PlayerLaunch.toExternalPlayerPlaybackRequest(): ExternalPlayerPlaybackRequest =
     ExternalPlayerPlaybackRequest(
         sourceUrl = sourceUrl,
+        sourceAudioUrl = sourceAudioUrl,
         title = title,
         streamTitle = streamTitle,
         sourceHeaders = sourceHeaders,
+        initialPositionMs = initialPositionMs,
     )
 
 private enum class AppGateScreen {

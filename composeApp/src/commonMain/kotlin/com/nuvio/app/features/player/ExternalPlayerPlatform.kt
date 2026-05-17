@@ -7,9 +7,11 @@ data class ExternalPlayerApp(
 
 data class ExternalPlayerPlaybackRequest(
     val sourceUrl: String,
+    val sourceAudioUrl: String? = null,
     val title: String,
     val streamTitle: String? = null,
     val sourceHeaders: Map<String, String> = emptyMap(),
+    val initialPositionMs: Long = 0L,
 )
 
 enum class ExternalPlayerOpenResult {
