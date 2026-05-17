@@ -4,12 +4,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
@@ -19,6 +23,7 @@ import com.nuvio.app.core.deeplink.handleAppUrl
 import com.nuvio.app.core.build.AppVersionConfig
 import com.nuvio.app.core.network.SupabaseConfig
 import com.nuvio.app.desktop.DesktopBorderlessFullscreenController
+import com.nuvio.app.desktop.DesktopExternalPlaybackWindowController
 import com.nuvio.app.desktop.DesktopPlayerRegistry
 import com.nuvio.app.desktop.DesktopPreferences
 import com.nuvio.app.desktop.DesktopRuntimeLog
@@ -146,6 +151,7 @@ fun main(args: Array<String>) {
     configureMacOsNativeAppearance()
     application {
         DesktopRuntimeLog.info("window composition start pid=$pid")
+        var hiddenToTrayForExternalPlayback by remember { mutableStateOf(false) }
         val defaultWindowSize = computeStartupWindowSize()
         val savedWindow = DesktopWindowStateStore.load()
         val initialSize = savedWindow?.let {
@@ -161,7 +167,54 @@ fun main(args: Array<String>) {
             position = WindowPosition.Aligned(Alignment.Center),
             placement = initialPlacement,
         )
+        val trayIcon = painterResource(Res.drawable.nuvio_window_icon)
+
+        fun restoreWindowFromTray(reason: String) {
+            DesktopRuntimeLog.info("tray restore window reason=$reason")
+            hiddenToTrayForExternalPlayback = false
+            focusMainWindow()
+        }
+
+        if (hiddenToTrayForExternalPlayback) {
+            Tray(
+                icon = trayIcon,
+                tooltip = "Nuvio",
+                menu = {
+                    Item(
+                        text = "Open Nuvio",
+                        onClick = { restoreWindowFromTray("tray-menu-open") },
+                    )
+                    Item(
+                        text = "Quit Nuvio",
+                        onClick = {
+                            DesktopRuntimeLog.info("tray quit requested")
+                            DesktopPlayerRegistry.releaseAll("trayQuit")
+                            DesktopPlayerRegistry.closeAll("trayQuit")
+                            exitApplication()
+                        },
+                    )
+                },
+                onAction = { restoreWindowFromTray("tray-action") },
+            )
+        }
+
+        DisposableEffect(Unit) {
+            val callbacks = DesktopExternalPlaybackWindowController.Callbacks(
+                minimizeToTray = { playerId ->
+                    DesktopRuntimeLog.info("externalPlayer hiding Nuvio window to tray playerId=$playerId")
+                    hiddenToTrayForExternalPlayback = true
+                    (desktopMainWindow as? Frame)?.state = Frame.ICONIFIED
+                },
+                restoreFromTray = { reason -> restoreWindowFromTray(reason) },
+            )
+            DesktopExternalPlaybackWindowController.register(callbacks)
+            onDispose {
+                DesktopExternalPlaybackWindowController.clear(callbacks)
+            }
+        }
+
         Window(
+            visible = !hiddenToTrayForExternalPlayback,
             onCloseRequest = {
                 if (DesktopBorderlessFullscreenController.isFullscreenActive) {
                     DesktopRuntimeLog.info("windowClose skipped window-state save while borderless fullscreen is active")

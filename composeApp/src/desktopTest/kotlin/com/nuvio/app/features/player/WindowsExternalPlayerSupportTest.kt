@@ -52,10 +52,48 @@ class WindowsExternalPlayerSupportTest {
 
         assertEquals("C:/Tools/mpv/mpv.exe", command.first())
         assertTrue("--force-window=yes" in command)
+        assertTrue("--cache=yes" in command)
+        assertTrue("--demuxer-max-bytes=256MiB" in command)
+        assertTrue("--demuxer-max-back-bytes=128MiB" in command)
+        assertTrue("--demuxer-readahead-secs=60" in command)
         assertTrue("--start=90" in command)
         assertTrue("--audio-file=https://example.test/audio.m4a" in command)
         assertTrue("--http-header-fields=Referer: https://example.test,User-Agent: Nuvio" in command)
         assertEquals("https://example.test/movie.mkv", command.last())
+    }
+
+    @Test
+    fun vlcCommandUsesConservativeNetworkCaching() {
+        val command = buildWindowsExternalPlayerCommand(
+            install = install("vlc", "C:/Program Files/VideoLAN/VLC/vlc.exe"),
+            request = request(initialPositionMs = 5_000L),
+        ).command.orEmpty()
+
+        assertTrue("--network-caching=5000" in command)
+        assertTrue("--file-caching=2000" in command)
+        assertTrue("--live-caching=5000" in command)
+        assertTrue("--start-time=5" in command)
+        assertEquals("https://example.test/movie.mkv", command.last())
+    }
+
+    @Test
+    fun launchDiagnosticsRedactsUrlsAndHeaders() {
+        val install = install("mpv", "C:/Tools/mpv/mpv.exe")
+        val request = request(
+            sourceAudioUrl = "https://example.test/audio.m4a",
+            sourceHeaders = mapOf("Authorization" to "Bearer secret"),
+            initialPositionMs = 1_000L,
+        )
+        val command = buildWindowsExternalPlayerCommand(install, request).command.orEmpty()
+        val diagnostics = windowsExternalPlayerLaunchDiagnostics(install, request, command)
+
+        assertEquals("mpv", diagnostics.playerId)
+        assertEquals("https", diagnostics.sourceKind)
+        assertEquals("mkv", diagnostics.sourceExtension)
+        assertEquals(listOf("Authorization"), diagnostics.headerNames)
+        assertTrue("<source-url-redacted>" in diagnostics.commandPreview)
+        assertTrue("--http-header-fields=<redacted>" in diagnostics.commandPreview)
+        assertTrue("--audio-file=<redacted>" in diagnostics.commandPreview)
     }
 
     @Test

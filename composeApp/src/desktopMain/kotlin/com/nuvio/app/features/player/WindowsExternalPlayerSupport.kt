@@ -27,6 +27,21 @@ internal data class WindowsExternalPlayerCommandResult(
     val failureReason: String? = null,
 )
 
+internal data class WindowsExternalPlayerLaunchDiagnostics(
+    val playerId: String,
+    val playerName: String,
+    val kind: WindowsExternalPlayerKind,
+    val executablePath: String,
+    val sourceKind: String,
+    val sourceKey: String,
+    val sourceExtension: String?,
+    val hasSeparateAudio: Boolean,
+    val headerNames: List<String>,
+    val initialPositionMs: Long,
+    val commandPreview: List<String>,
+    val seekSupportNote: String,
+)
+
 internal val windowsExternalPlayerDefinitions = listOf(
     WindowsExternalPlayerDefinition(
         id = "mpc-hc",
@@ -125,7 +140,12 @@ private fun buildVlcCommand(
     if (!request.sourceAudioUrl.isNullOrBlank()) {
         return WindowsExternalPlayerCommandResult(null, "selected player does not support separate audio URLs")
     }
-    val command = mutableListOf(executablePath)
+    val command = mutableListOf(
+        executablePath,
+        "--network-caching=5000",
+        "--file-caching=2000",
+        "--live-caching=5000",
+    )
     request.initialPositionMs.toStartSeconds()?.let { startSeconds ->
         command += "--start-time=$startSeconds"
     }
@@ -137,7 +157,14 @@ private fun buildMpvCommand(
     executablePath: String,
     request: ExternalPlayerPlaybackRequest,
 ): WindowsExternalPlayerCommandResult {
-    val command = mutableListOf(executablePath, "--force-window=yes")
+    val command = mutableListOf(
+        executablePath,
+        "--force-window=yes",
+        "--cache=yes",
+        "--demuxer-max-bytes=256MiB",
+        "--demuxer-max-back-bytes=128MiB",
+        "--demuxer-readahead-secs=60",
+    )
     request.initialPositionMs.toStartSeconds()?.let { startSeconds ->
         command += "--start=$startSeconds"
     }
@@ -205,3 +232,66 @@ private fun Map<String, String>.toMpvHeaderFields(): String? {
     }
     return headers.takeIf { it.isNotEmpty() }?.joinToString(",")
 }
+
+internal fun windowsExternalPlayerLaunchDiagnostics(
+    install: WindowsExternalPlayerInstall,
+    request: ExternalPlayerPlaybackRequest,
+    command: List<String>,
+): WindowsExternalPlayerLaunchDiagnostics =
+    WindowsExternalPlayerLaunchDiagnostics(
+        playerId = install.definition.id,
+        playerName = install.definition.name,
+        kind = install.definition.kind,
+        executablePath = install.executablePath,
+        sourceKind = request.sourceUrl.toExternalSourceKind(),
+        sourceKey = request.sourceUrl.stableExternalLogKey(),
+        sourceExtension = request.sourceUrl.externalSourceExtension(),
+        hasSeparateAudio = !request.sourceAudioUrl.isNullOrBlank(),
+        headerNames = request.sourceHeaders.keys.map { it.trim() }.filter { it.isNotBlank() }.sorted(),
+        initialPositionMs = request.initialPositionMs.coerceAtLeast(0L),
+        commandPreview = command.redactExternalPlayerCommand(),
+        seekSupportNote = install.definition.seekSupportNote(),
+    )
+
+private fun WindowsExternalPlayerDefinition.seekSupportNote(): String = when (kind) {
+    WindowsExternalPlayerKind.Mpc ->
+        "MPC uses its own network splitter/cache; Nuvio can pass direct URL and start position only"
+    WindowsExternalPlayerKind.Vlc ->
+        "VLC receives conservative network/file/live cache flags from Nuvio"
+    WindowsExternalPlayerKind.Mpv ->
+        "mpv receives headers, audio URL, resume, and bounded demuxer cache flags from Nuvio"
+}
+
+private fun List<String>.redactExternalPlayerCommand(): List<String> =
+    mapIndexed { index, part ->
+        when {
+            index == 0 -> part
+            part.startsWith("--audio-file=") -> "--audio-file=<redacted>"
+            part.startsWith("--http-header-fields=") -> "--http-header-fields=<redacted>"
+            part.startsWith("http://", ignoreCase = true) ||
+                part.startsWith("https://", ignoreCase = true) ||
+                part.startsWith("file:", ignoreCase = true) -> "<source-url-redacted>"
+            else -> part
+        }
+    }
+
+private fun String.toExternalSourceKind(): String {
+    val normalized = trim()
+    return when {
+        normalized.startsWith("file:", ignoreCase = true) -> "file-uri"
+        normalized.startsWith("http://", ignoreCase = true) -> "http"
+        normalized.startsWith("https://", ignoreCase = true) -> "https"
+        File(normalized).isAbsolute -> "local-path"
+        else -> "unknown"
+    }
+}
+
+private fun String.externalSourceExtension(): String? {
+    val withoutQuery = substringBefore('?').substringBefore('#')
+    val lastSegment = withoutQuery.substringAfterLast('/').substringAfterLast('\\')
+    val extension = lastSegment.substringAfterLast('.', missingDelimiterValue = "")
+    return extension.takeIf { it.isNotBlank() }?.lowercase()
+}
+
+private fun String.stableExternalLogKey(): String =
+    hashCode().toUInt().toString(16)
