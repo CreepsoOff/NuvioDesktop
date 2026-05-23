@@ -4,8 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.nuvio.app.desktop.DesktopPlayerRegistry
-import com.nuvio.app.desktop.DesktopPreferences
-
 import com.nuvio.app.desktop.DesktopRuntimeLog
 import com.nuvio.app.features.player.AudioTrack
 import com.nuvio.app.features.player.PlayerAudioLevel
@@ -19,6 +17,18 @@ import com.nuvio.app.features.player.desktop.DesktopPlayerPhase
 import com.nuvio.app.features.player.desktop.DesktopPlayerRequest
 import com.nuvio.app.features.player.desktop.DesktopPlayerState
 import com.nuvio.app.features.player.desktop.WindowsDisplayWakeLock
+import com.nuvio.app.features.player.desktop.mpv.MpvDesktopPlayerSurface
+import com.nuvio.app.features.player.desktop.mpv.applyResizeMode
+import com.nuvio.app.features.player.desktop.mpv.audioTracks
+import com.nuvio.app.features.player.desktop.mpv.getMpvBooleanProperty
+import com.nuvio.app.features.player.desktop.mpv.getMpvIntProperty
+import com.nuvio.app.features.player.desktop.mpv.getMpvStringProperty
+import com.nuvio.app.features.player.desktop.mpv.getMpvStringPropertyOrNull
+import com.nuvio.app.features.player.desktop.mpv.redactedMediaUrl
+import com.nuvio.app.features.player.desktop.mpv.safePath
+import com.nuvio.app.features.player.desktop.mpv.setMpvProperty
+import com.nuvio.app.features.player.desktop.mpv.subtitleTracks
+import com.nuvio.app.features.player.desktop.mpv.toDesktopPhase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -27,6 +37,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -98,6 +109,7 @@ internal class MpvDesktopPlayerBackend private constructor(
     init {
         observePlayerState()
         observeFramePacing()
+        observePlaybackSettings()
         applyDecoderSettings()
         applyCursorSettings()
         DesktopRuntimeLog.info("MPV backend created id=$id runtime=${runtime.directory?.safePath() ?: "none"}")
@@ -200,7 +212,7 @@ internal class MpvDesktopPlayerBackend private constructor(
         val voConfigured = MutableStateFlow(false)
 
         // Listen for the actual mpv event forwarded from C++ through JNI → EventListener
-                player.onVideoReconfig?.onEach { voConfigured.value = true }?.launchIn(scope)
+        player.onVideoReconfig.onEach { voConfigured.value = true }.launchIn(scope)
 
         combine(
             player.playbackState,
@@ -296,6 +308,17 @@ internal class MpvDesktopPlayerBackend private constructor(
         )
     }
 
+    private fun observePlaybackSettings() {
+        DesktopMpvPlaybackSettingsSignal.version
+            .drop(1)
+            .onEach {
+                if (!nativeClosed) {
+                    applyDecoderSettings()
+                }
+            }
+            .launchIn(scope)
+    }
+
     private fun updateDisplayWakeLock(phase: DesktopPlayerPhase) {
         if (phase == DesktopPlayerPhase.Playing) {
             if (!displayWakeLockHeld) {
@@ -320,27 +343,35 @@ internal class MpvDesktopPlayerBackend private constructor(
      */
     private fun applyDecoderSettings() {
         if (nativeClosed) return
-        val hwdecMode = DesktopPreferences.getString(DesktopDecoderPreferencesName, DesktopHwdecModeKey) ?: "auto"
-        val hdrMode = DesktopHdrMode.fromStorage(
-            DesktopPreferences.getString(DesktopDecoderPreferencesName, DesktopHdrModeKey),
-        )
-        runCatching {
-            mpvHandle.command("set", "hwdec", hwdecMode)
-            DesktopRuntimeLog.info("MPV decoder: hwdec=$hwdecMode")
-        }.onFailure {
-            DesktopRuntimeLog.warn("MPV decoder: failed to set hwdec=$hwdecMode message=${'$'}{it.message}")
-        }
-        hdrRuntimeOptions(hdrMode).forEach { option ->
+        val tuning = loadDesktopMpvVideoTuning()
+        val options = mpvRuntimeOptions(tuning)
+        val appliedOptions = mutableListOf<String>()
+        val skippedOptions = mutableListOf<String>()
+
+        options.forEach { option ->
             runCatching {
                 mpvHandle.setMpvRuntimeOption(option.name, option.value)
             }.onSuccess { applied ->
-                DesktopRuntimeLog.info("MPV HDR: mode=${hdrMode.storageValue} ${option.name}=${option.value} applied=$applied")
+                val entry = "${option.name}=${option.value}"
+                if (applied) {
+                    appliedOptions += entry
+                } else {
+                    skippedOptions += entry
+                }
             }.onFailure {
                 DesktopRuntimeLog.warn(
-                    "MPV HDR: failed mode=${hdrMode.storageValue} ${option.name}=${option.value} message=${it.message}",
+                    "MPV video tuning: failed preset=${tuning.settings.outputPreset} " +
+                        "${option.name}=${option.value} message=${it.message}",
                 )
             }
         }
+
+        DesktopRuntimeLog.info(
+            "MPV video tuning: preset=${tuning.settings.outputPreset} legacyHdr=${tuning.legacyHdrMode.storageValue} " +
+                "applied=${appliedOptions.size}/${options.size} skipped=${skippedOptions.size} " +
+                "options=${appliedOptions.joinToString(",")}" +
+                if (skippedOptions.isNotEmpty()) " skippedOptions=${skippedOptions.joinToString(",")}" else "",
+        )
     }
 
     private fun applyCursorSettings() {

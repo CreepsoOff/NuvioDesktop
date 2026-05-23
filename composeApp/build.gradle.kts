@@ -3,9 +3,11 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.FileSystemOperations
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.tasks.Copy
+import org.gradle.api.services.BuildService
+import org.gradle.api.services.BuildServiceParameters
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFile
@@ -16,8 +18,141 @@ import org.gradle.api.tasks.TaskAction
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 import java.io.File
+import java.io.RandomAccessFile
 import java.util.Properties
 import javax.imageio.ImageIO
+import javax.inject.Inject
+
+abstract class WindowsPackageAppImageBuildService : BuildService<BuildServiceParameters.None>
+
+abstract class PackageWindowsNativeRuntimeTask : DefaultTask() {
+    @get:Internal
+    abstract val mediampNativeBuildDir: DirectoryProperty
+
+    @get:Internal
+    abstract val mediampPrebuiltDir: DirectoryProperty
+
+    @get:Internal
+    abstract val system32Dir: DirectoryProperty
+
+    @get:Internal
+    abstract val appDir: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val nativeDir: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val launcherDir: DirectoryProperty
+
+    @get:Internal
+    abstract val lockFile: RegularFileProperty
+
+    @get:Inject
+    abstract val fileSystemOperations: FileSystemOperations
+
+    @TaskAction
+    fun packageRuntime() {
+        val lock = lockFile.get().asFile
+        lock.parentFile.mkdirs()
+        RandomAccessFile(lock, "rw").channel.use { channel ->
+            channel.lock().use {
+                copyNativeDlls()
+                patchLauncherConfig()
+                copyLauncherFallbackDlls()
+                verifyRequiredDlls()
+            }
+        }
+    }
+
+    private fun copyNativeDlls() {
+        fileSystemOperations.copy {
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+            from(mediampNativeBuildDir) {
+                include("*.dll")
+            }
+            from(mediampNativeBuildDir.dir("Release")) {
+                include("*.dll")
+            }
+            from(mediampPrebuiltDir) {
+                include("*.dll")
+            }
+            from(system32Dir) {
+                include("MSVCP140.dll", "msvcp140.dll")
+                include("VCRUNTIME140.dll", "vcruntime140.dll")
+                include("VCRUNTIME140_1.dll", "vcruntime140_1.dll")
+            }
+            into(nativeDir)
+        }
+    }
+
+    private fun patchLauncherConfig() {
+        val cfgFile = appDir.get().asFile.resolve("Nuvio.cfg")
+        if (!cfgFile.isFile) return
+
+        val libraryPathOption = "java-options=-Djava.library.path=\$APPDIR/native"
+        val lines = cfgFile.readLines()
+        var replaced = false
+        val patchedLines = lines.map { line ->
+            if (line.startsWith("java-options=-Djava.library.path=")) {
+                replaced = true
+                libraryPathOption
+            } else {
+                line
+            }
+        }.toMutableList()
+        if (!replaced) {
+            val javaOptionsIndex = patchedLines.indexOf("[JavaOptions]")
+            if (javaOptionsIndex >= 0) {
+                patchedLines.add(javaOptionsIndex + 1, libraryPathOption)
+            } else {
+                patchedLines.add("")
+                patchedLines.add("[JavaOptions]")
+                patchedLines.add(libraryPathOption)
+            }
+        }
+        cfgFile.writeText(patchedLines.joinToString(System.lineSeparator()) + System.lineSeparator())
+    }
+
+    private fun copyLauncherFallbackDlls() {
+        val nativeDirectory = nativeDir.get().asFile
+        val launcherDirectory = launcherDir.get().asFile
+        launcherDirectory.mkdirs()
+        nativeDirectory.listFiles { file -> file.isFile && file.extension.equals("dll", ignoreCase = true) }
+            .orEmpty()
+            .forEach { dll ->
+                dll.copyTo(launcherDirectory.resolve(dll.name), overwrite = true)
+            }
+    }
+
+    private fun verifyRequiredDlls() {
+        val nativeDirectory = nativeDir.get().asFile
+        val launcherDirectory = launcherDir.get().asFile
+        val requiredDlls = listOf(
+            "mediampv.dll",
+            "libmpv-2.dll",
+            "avcodec-61.dll",
+            "avformat-61.dll",
+            "avutil-59.dll",
+            "swscale-8.dll",
+            "vulkan-1.dll",
+            "MSVCP140.dll",
+            "VCRUNTIME140.dll",
+            "VCRUNTIME140_1.dll",
+        )
+
+        fun File.hasDll(name: String): Boolean =
+            listFiles { file -> file.isFile && file.name.equals(name, ignoreCase = true) }?.isNotEmpty() == true
+
+        val missingFromNative = requiredDlls.filterNot { nativeDirectory.hasDll(it) }
+        val missingFromLauncher = requiredDlls.filterNot { launcherDirectory.hasDll(it) }
+        check(missingFromNative.isEmpty()) {
+            "Windows native runtime is incomplete in ${nativeDirectory.absolutePath}: missing ${missingFromNative.joinToString()}"
+        }
+        check(missingFromLauncher.isEmpty()) {
+            "Windows launcher native fallback is incomplete in ${launcherDirectory.absolutePath}: missing ${missingFromLauncher.joinToString()}"
+        }
+    }
+}
 
 abstract class GenerateRuntimeConfigsTask : DefaultTask() {
     private val defaultSupabaseUrl = "https://dpyhjjcoabcglfmgecug.supabase.co"
@@ -543,7 +678,9 @@ compose.desktop {
     }
 }
 
-val packageWindowsNativeRuntime = tasks.register<Copy>("packageWindowsNativeRuntime") {
+val windowsNativeRuntimeLockFile = layout.buildDirectory.file("compose/tmp/windows-native-runtime.lock")
+
+val packageWindowsNativeRuntime = tasks.register<PackageWindowsNativeRuntimeTask>("packageWindowsNativeRuntime") {
     val mediampRootDir = rootProject.file("mediamp")
     val mediampNativeBuildDir = mediampRootDir.resolve("mediamp-mpv/build-ci")
     val mediampPrebuiltDir = mediampRootDir.resolve("mediamp-mpv/libmpv/lib/windows/x86_64")
@@ -554,84 +691,25 @@ val packageWindowsNativeRuntime = tasks.register<Copy>("packageWindowsNativeRunt
 
     group = "compose desktop"
     description = "Copies MediaMP/MPV native DLLs into the Windows app image and points java.library.path at them."
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
-    from(mediampNativeBuildDir) {
-        include("*.dll")
-    }
-    from(mediampNativeBuildDir.resolve("Release")) {
-        include("*.dll")
-    }
-    from(mediampPrebuiltDir) {
-        include("*.dll")
-    }
-    from(system32Dir) {
-        include("MSVCP140.dll", "msvcp140.dll")
-        include("VCRUNTIME140.dll", "vcruntime140.dll")
-        include("VCRUNTIME140_1.dll", "vcruntime140_1.dll")
-    }
-    into(nativeDir)
+    this.mediampNativeBuildDir.set(mediampNativeBuildDir)
+    this.mediampPrebuiltDir.set(mediampPrebuiltDir)
+    this.system32Dir.set(system32Dir)
+    this.appDir.set(appDir)
+    this.nativeDir.set(nativeDir)
+    this.launcherDir.set(launcherDir)
+    this.lockFile.set(windowsNativeRuntimeLockFile)
+}
 
-    doLast {
-        val appDirectory = appDir.get().asFile
-        val nativeDirectory = nativeDir.get().asFile
-        val launcherDirectory = launcherDir.get().asFile
-        val cfgFile = appDirectory.resolve("Nuvio.cfg")
-        if (!cfgFile.isFile) return@doLast
+val windowsPackageAppImageService = gradle.sharedServices.registerIfAbsent(
+    "windowsPackageAppImage",
+    WindowsPackageAppImageBuildService::class,
+) {
+    maxParallelUsages.set(1)
+}
 
-        val libraryPathOption = "java-options=-Djava.library.path=\$APPDIR/native"
-        val lines = cfgFile.readLines()
-        var replaced = false
-        val patchedLines = lines.map { line ->
-            if (line.startsWith("java-options=-Djava.library.path=")) {
-                replaced = true
-                libraryPathOption
-            } else {
-                line
-            }
-        }.toMutableList()
-        if (!replaced) {
-            val javaOptionsIndex = patchedLines.indexOf("[JavaOptions]")
-            if (javaOptionsIndex >= 0) {
-                patchedLines.add(javaOptionsIndex + 1, libraryPathOption)
-            } else {
-                patchedLines.add("")
-                patchedLines.add("[JavaOptions]")
-                patchedLines.add(libraryPathOption)
-            }
-        }
-        cfgFile.writeText(patchedLines.joinToString(System.lineSeparator()) + System.lineSeparator())
-
-        nativeDirectory.listFiles { file -> file.isFile && file.extension.equals("dll", ignoreCase = true) }
-            .orEmpty()
-            .forEach { dll ->
-                dll.copyTo(launcherDirectory.resolve(dll.name), overwrite = true)
-            }
-
-        val requiredDlls = listOf(
-            "mediampv.dll",
-            "libmpv-2.dll",
-            "avcodec-61.dll",
-            "avformat-61.dll",
-            "avutil-59.dll",
-            "swscale-8.dll",
-            "vulkan-1.dll",
-            "MSVCP140.dll",
-            "VCRUNTIME140.dll",
-            "VCRUNTIME140_1.dll",
-        )
-        fun File.hasDll(name: String): Boolean =
-            listFiles { file -> file.isFile && file.name.equals(name, ignoreCase = true) }?.isNotEmpty() == true
-
-        val missingFromNative = requiredDlls.filterNot { nativeDirectory.hasDll(it) }
-        val missingFromLauncher = requiredDlls.filterNot { launcherDirectory.hasDll(it) }
-        check(missingFromNative.isEmpty()) {
-            "Windows native runtime is incomplete in ${nativeDirectory.absolutePath}: missing ${missingFromNative.joinToString()}"
-        }
-        check(missingFromLauncher.isEmpty()) {
-            "Windows launcher native fallback is incomplete in ${launcherDirectory.absolutePath}: missing ${missingFromLauncher.joinToString()}"
-        }
-    }
+packageWindowsNativeRuntime.configure {
+    usesService(windowsPackageAppImageService)
 }
 
 tasks.matching { it.name == "createReleaseDistributable" }.configureEach {
@@ -663,6 +741,7 @@ tasks.matching {
         it.name == "packageReleaseExe" ||
         it.name == "packageReleaseMsi"
 }.configureEach {
+    usesService(windowsPackageAppImageService)
     dependsOn("createReleaseDistributable")
     dependsOn(packageWindowsNativeRuntime)
     dependsOn(syncWindowsPackageResources)
@@ -682,6 +761,7 @@ tasks.matching { it.name == "runReleaseDistributable" }.configureEach {
 val packageReleaseInnoExe = tasks.register<Exec>("packageReleaseInnoExe") {
     group = "compose desktop"
     description = "Builds a Windows installer with Inno Setup (no WiX), using the release app image."
+    usesService(windowsPackageAppImageService)
     dependsOn("createReleaseDistributable")
     dependsOn(packageWindowsNativeRuntime)
 
@@ -719,6 +799,7 @@ val packageReleaseInnoExe = tasks.register<Exec>("packageReleaseInnoExe") {
 tasks.register<Zip>("packageReleasePortableZip") {
     group = "compose desktop"
     description = "Builds a portable Windows ZIP package (no installer, no WiX/NSIS/Inno)."
+    usesService(windowsPackageAppImageService)
     dependsOn("createReleaseDistributable")
     dependsOn(packageWindowsNativeRuntime)
 

@@ -62,6 +62,65 @@ enum class PlayerResizeMode {
     Zoom,
 }
 
+enum class PlayerVideoOutputPreset {
+    Native,
+    ToneMappedSdr,
+    Compatibility,
+    Custom,
+}
+
+enum class PlayerToneMappingMode(val mpvValue: String) {
+    Auto("auto"),
+    Bt2390("bt.2390"),
+    Mobius("mobius"),
+    Reinhard("reinhard"),
+    Hable("hable"),
+    Gamma("gamma"),
+    Clip("clip"),
+}
+
+enum class PlayerTargetPrimaries(val mpvValue: String) {
+    Auto("auto"),
+    Bt709("bt.709"),
+    DisplayP3("display-p3"),
+    Bt2020("bt.2020"),
+}
+
+enum class PlayerTargetTransfer(val mpvValue: String) {
+    Auto("auto"),
+    Srgb("srgb"),
+    Bt1886("bt.1886"),
+    Gamma22("gamma2.2"),
+    Gamma24("gamma2.4"),
+    Pq("pq"),
+    Hlg("hlg"),
+}
+
+enum class PlayerHardwareDecoderMode(val mpvValue: String) {
+    Auto("auto"),
+    Off("no"),
+    D3d11va("d3d11va"),
+    D3d11vaCopy("d3d11va-copy"),
+    Dxva2("dxva2"),
+    Nvdec("nvdec"),
+    NvdecCopy("nvdec-copy"),
+}
+
+data class PlayerVideoTuningSettings(
+    val outputPreset: PlayerVideoOutputPreset = PlayerVideoOutputPreset.Native,
+    val hardwareDecoderMode: PlayerHardwareDecoderMode = PlayerHardwareDecoderMode.Auto,
+    val toneMappingMode: PlayerToneMappingMode = PlayerToneMappingMode.Auto,
+    val targetPrimaries: PlayerTargetPrimaries = PlayerTargetPrimaries.Auto,
+    val targetTransfer: PlayerTargetTransfer = PlayerTargetTransfer.Auto,
+    val hdrComputePeakEnabled: Boolean = true,
+    val debandEnabled: Boolean = false,
+    val interpolationEnabled: Boolean = false,
+    val brightness: Int = 0,
+    val contrast: Int = 0,
+    val saturation: Int = 0,
+    val gamma: Int = 0,
+)
+
 data class PlayerPlaybackSnapshot(
     val isLoading: Boolean = true,
     val isPlaying: Boolean = false,
