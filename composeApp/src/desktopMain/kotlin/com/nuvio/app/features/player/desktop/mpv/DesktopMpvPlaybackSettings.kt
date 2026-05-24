@@ -153,43 +153,62 @@ internal fun storeDesktopIntTuning(key: String, value: Int) {
 }
 
 internal fun storeDesktopVideoTuningFromPlayerSettings(settings: PlayerSettingsUiState) {
+    val outputPreset = settings.iosVideoOutputPreset.toDesktopPreset()
+    val nextSettings = PlayerVideoTuningSettings(
+        outputPreset = outputPreset,
+        hardwareDecoderMode = settings.iosHardwareDecoderMode.toDesktopHardwareDecoderMode(),
+        toneMappingMode = settings.iosToneMappingMode.toDesktopToneMappingMode(),
+        targetPrimaries = settings.iosTargetPrimaries.toDesktopTargetPrimaries(),
+        targetTransfer = settings.iosTargetTransfer.toDesktopTargetTransfer(),
+        hdrComputePeakEnabled = settings.iosHdrComputePeakEnabled,
+        debandEnabled = settings.iosDebandEnabled,
+        interpolationEnabled = settings.iosInterpolationEnabled,
+        brightness = settings.iosBrightness.coerceVideoEq(),
+        contrast = settings.iosContrast.coerceVideoEq(),
+        saturation = settings.iosSaturation.coerceVideoEq(),
+        gamma = settings.iosGamma.coerceVideoEq(),
+    )
+    val nextLegacyHdrMode = outputPreset.toLegacyHdrMode()
+    val previous = loadDesktopMpvVideoTuning()
+    if (previous.settings == nextSettings && previous.legacyHdrMode == nextLegacyHdrMode) return
+
     DesktopPreferences.putString(
         DesktopDecoderPreferencesName,
         DesktopVideoOutputPresetKey,
-        settings.iosVideoOutputPreset.toDesktopPreset().name,
+        nextSettings.outputPreset.name,
     )
     DesktopPreferences.putString(
         DesktopDecoderPreferencesName,
         DesktopHwdecModeKey,
-        settings.iosHardwareDecoderMode.toDesktopHardwareDecoderMode().name,
+        nextSettings.hardwareDecoderMode.name,
     )
     DesktopPreferences.putString(
         DesktopDecoderPreferencesName,
         DesktopToneMappingModeKey,
-        settings.iosToneMappingMode.toDesktopToneMappingMode().name,
+        nextSettings.toneMappingMode.name,
     )
     DesktopPreferences.putString(
         DesktopDecoderPreferencesName,
         DesktopTargetPrimariesKey,
-        settings.iosTargetPrimaries.toDesktopTargetPrimaries().name,
+        nextSettings.targetPrimaries.name,
     )
     DesktopPreferences.putString(
         DesktopDecoderPreferencesName,
         DesktopTargetTransferKey,
-        settings.iosTargetTransfer.toDesktopTargetTransfer().name,
+        nextSettings.targetTransfer.name,
     )
     DesktopPreferences.putString(
         DesktopDecoderPreferencesName,
         DesktopHdrModeKey,
-        settings.iosVideoOutputPreset.toDesktopPreset().toLegacyHdrMode().storageValue,
+        nextLegacyHdrMode.storageValue,
     )
-    DesktopPreferences.putBoolean(DesktopDecoderPreferencesName, DesktopHdrComputePeakKey, settings.iosHdrComputePeakEnabled)
-    DesktopPreferences.putBoolean(DesktopDecoderPreferencesName, DesktopDebandEnabledKey, settings.iosDebandEnabled)
-    DesktopPreferences.putBoolean(DesktopDecoderPreferencesName, DesktopInterpolationEnabledKey, settings.iosInterpolationEnabled)
-    DesktopPreferences.putInt(DesktopDecoderPreferencesName, DesktopBrightnessKey, settings.iosBrightness.coerceVideoEq())
-    DesktopPreferences.putInt(DesktopDecoderPreferencesName, DesktopContrastKey, settings.iosContrast.coerceVideoEq())
-    DesktopPreferences.putInt(DesktopDecoderPreferencesName, DesktopSaturationKey, settings.iosSaturation.coerceVideoEq())
-    DesktopPreferences.putInt(DesktopDecoderPreferencesName, DesktopGammaKey, settings.iosGamma.coerceVideoEq())
+    DesktopPreferences.putBoolean(DesktopDecoderPreferencesName, DesktopHdrComputePeakKey, nextSettings.hdrComputePeakEnabled)
+    DesktopPreferences.putBoolean(DesktopDecoderPreferencesName, DesktopDebandEnabledKey, nextSettings.debandEnabled)
+    DesktopPreferences.putBoolean(DesktopDecoderPreferencesName, DesktopInterpolationEnabledKey, nextSettings.interpolationEnabled)
+    DesktopPreferences.putInt(DesktopDecoderPreferencesName, DesktopBrightnessKey, nextSettings.brightness)
+    DesktopPreferences.putInt(DesktopDecoderPreferencesName, DesktopContrastKey, nextSettings.contrast)
+    DesktopPreferences.putInt(DesktopDecoderPreferencesName, DesktopSaturationKey, nextSettings.saturation)
+    DesktopPreferences.putInt(DesktopDecoderPreferencesName, DesktopGammaKey, nextSettings.gamma)
     DesktopMpvPlaybackSettingsSignal.notifyChanged()
 }
 

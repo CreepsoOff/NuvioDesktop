@@ -35,9 +35,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -313,9 +315,11 @@ internal class MpvDesktopPlayerBackend private constructor(
         )
     }
 
+    @OptIn(FlowPreview::class)
     private fun observePlaybackSettings() {
         DesktopMpvPlaybackSettingsSignal.version
             .drop(1)
+            .debounce(220)
             .onEach {
                 if (!nativeClosed) {
                     applyDecoderSettings()

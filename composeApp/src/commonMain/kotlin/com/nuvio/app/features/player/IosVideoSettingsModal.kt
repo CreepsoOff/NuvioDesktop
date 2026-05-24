@@ -34,13 +34,18 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.nuvio.app.isDesktop
 import kotlin.math.roundToInt
 
 @Composable
@@ -255,6 +260,13 @@ private fun PictureSlider(
     value: Int,
     onValueChanged: (Int) -> Unit,
 ) {
+    val commitOnRelease = isDesktop
+    var draftValue by remember(title) { mutableStateOf(value) }
+    LaunchedEffect(value) {
+        draftValue = value
+    }
+    val displayedValue = if (commitOnRelease) draftValue else value
+
     Column {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -266,11 +278,27 @@ private fun PictureSlider(
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.weight(1f),
             )
-            Text(text = value.toString(), color = MaterialTheme.colorScheme.primary)
+            Text(text = displayedValue.toString(), color = MaterialTheme.colorScheme.primary)
         }
         Slider(
-            value = value.toFloat(),
-            onValueChange = { onValueChanged(it.roundToInt().coerceIn(-50, 50)) },
+            value = displayedValue.toFloat(),
+            onValueChange = {
+                val nextValue = it.roundToInt().coerceIn(-50, 50)
+                if (commitOnRelease) {
+                    draftValue = nextValue
+                } else {
+                    onValueChanged(nextValue)
+                }
+            },
+            onValueChangeFinished = if (commitOnRelease) {
+                {
+                    if (draftValue != value) {
+                        onValueChanged(draftValue)
+                    }
+                }
+            } else {
+                null
+            },
             valueRange = -50f..50f,
             steps = 99,
         )
