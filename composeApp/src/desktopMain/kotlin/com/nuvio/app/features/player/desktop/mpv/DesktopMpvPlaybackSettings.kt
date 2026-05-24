@@ -173,7 +173,9 @@ internal fun mpvRuntimeOptions(tuning: DesktopMpvVideoTuning): List<MpvRuntimeOp
 
 internal fun stremioBaselineRuntimeOptions(): List<MpvRuntimeOption> =
     listOf(
-        MpvRuntimeOption("vo", "gpu-next"),
+        // Stremio uses `wid` + `vo=gpu-next` against a native HWND. Nuvio's
+        // current in-window path uses libmpv's render API into the Compose GL
+        // surface, so `vo` must stay `libmpv` or MPV opens its own native window.
         MpvRuntimeOption("demuxer-lavf-probesize", "524288"),
         MpvRuntimeOption("demuxer-lavf-analyzeduration", "0.5"),
         MpvRuntimeOption("demuxer-max-bytes", stremioCacheBytes()),
