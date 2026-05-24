@@ -23,6 +23,7 @@ import com.nuvio.app.core.deeplink.handleAppUrl
 import com.nuvio.app.core.build.AppVersionConfig
 import com.nuvio.app.core.network.SupabaseConfig
 import com.nuvio.app.desktop.DesktopBorderlessFullscreenController
+import com.nuvio.app.desktop.DesktopDevStreamMode
 import com.nuvio.app.desktop.DesktopExternalPlaybackWindowController
 import com.nuvio.app.desktop.DesktopPlayerRegistry
 import com.nuvio.app.desktop.DesktopPreferences
@@ -123,7 +124,13 @@ fun main(args: Array<String>) {
     DesktopRuntimeLog.info("supabase.url=${SupabaseConfig.URL}")
     DesktopRuntimeLog.info("supabase.anon.present=${SupabaseConfig.ANON_KEY.isNotBlank()} length=${SupabaseConfig.ANON_KEY.length}")
     ensureWindowsUrlProtocolRegistration()
-    val startupUrls = extractStartupDeepLinks(args)
+    val rawStartupUrls = extractStartupDeepLinks(args)
+    val devStreamMode = DesktopDevStreamMode.from(args, rawStartupUrls)
+    val startupUrls = if (devStreamMode != null && rawStartupUrls.none { it.contains("://dev", ignoreCase = true) }) {
+        rawStartupUrls + devStreamMode.forwardingDeepLink()
+    } else {
+        rawStartupUrls
+    }
     when (
         val ipcResult = DesktopSingleInstanceManager.resolveStartup(
             startupUrls = startupUrls,
@@ -146,7 +153,7 @@ fun main(args: Array<String>) {
             // IPC disabled; full app still starts (no second short-circuit exit).
         }
     }
-    startupUrls.forEach(::handleIncomingDeepLink)
+    rawStartupUrls.forEach(::handleIncomingDeepLink)
     WindowsNativeBootstrap.bootstrap()
     configureMacOsNativeAppearance()
     application {
@@ -249,6 +256,7 @@ fun main(args: Array<String>) {
                 window.background = DesktopWindowBackground
                 window.contentPane.background = DesktopWindowBackground
                 window.rootPane.background = DesktopWindowBackground
+                devStreamMode?.startDiagnostics { desktopMainWindow }
                 onDispose { desktopMainWindow = null }
             }
 
@@ -258,7 +266,7 @@ fun main(args: Array<String>) {
                 LocalUriHandler provides desktopUriHandler,
             ) {
                 Box(modifier = Modifier.fillMaxSize()) {
-                    App()
+                    App(startupPlayerLaunch = devStreamMode?.launch)
                 }
             }
         }

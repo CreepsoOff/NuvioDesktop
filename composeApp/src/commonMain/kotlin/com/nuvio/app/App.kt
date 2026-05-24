@@ -312,6 +312,24 @@ private fun PlayerLaunch.toExternalPlayerPlaybackRequest(): ExternalPlayerPlayba
         initialPositionMs = initialPositionMs,
     )
 
+private fun AppDeepLink.DevStream.toPlayerLaunch(): PlayerLaunch =
+    PlayerLaunch(
+        title = title,
+        sourceUrl = url,
+        sourceAudioUrl = audioUrl,
+        sourceHeaders = sanitizePlaybackHeaders(headers),
+        poster = poster,
+        background = background,
+        streamTitle = streamTitle,
+        streamSubtitle = "Custom dev stream",
+        providerName = providerName,
+        providerAddonId = "dev-stream",
+        contentType = contentType,
+        videoId = videoId,
+        parentMetaId = parentMetaId,
+        parentMetaType = parentMetaType,
+    )
+
 private enum class AppGateScreen {
     Loading,
     Auth,
@@ -323,7 +341,9 @@ private enum class AppGateScreen {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @Preview
-fun App() {
+fun App(
+    startupPlayerLaunch: PlayerLaunch? = null,
+) {
     setSingletonImageLoaderFactory { context ->
         ImageLoader.Builder(context)
             .crossfade(true)
@@ -413,6 +433,10 @@ fun App() {
 
             when (authState) {
                 is AuthState.Loading -> {
+                    if (startupPlayerLaunch != null) {
+                        gateScreen = AppGateScreen.Main.name
+                        return@LaunchedEffect
+                    }
                     if (allowOfflineProfileAccess) {
                         enterProfileGate(cachedProfiles, syncOnEnter = false)
                     } else {
@@ -420,6 +444,10 @@ fun App() {
                     }
                 }
                 is AuthState.Unauthenticated -> {
+                    if (startupPlayerLaunch != null) {
+                        gateScreen = AppGateScreen.Main.name
+                        return@LaunchedEffect
+                    }
                     if (allowOfflineProfileAccess) {
                         enterProfileGate(cachedProfiles, syncOnEnter = false)
                     } else {
@@ -519,6 +547,7 @@ fun App() {
                 }
                 AppGateScreen.Main.name -> {
                     MainAppContent(
+                        startupPlayerLaunch = startupPlayerLaunch,
                         onSwitchProfile = {
                             autoSkipProfileSelection = false
                             gateScreen = AppGateScreen.ProfileSelection.name
@@ -533,6 +562,7 @@ fun App() {
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 private fun MainAppContent(
+    startupPlayerLaunch: PlayerLaunch? = null,
     onSwitchProfile: () -> Unit = {},
 ) {
         val navController = rememberNavController()
@@ -607,6 +637,7 @@ private fun MainAppContent(
     val isTraktLibrarySource = libraryUiState.sourceMode == LibrarySourceMode.TRAKT
     var initialHomeReady by rememberSaveable { mutableStateOf(false) }
     var offlineLaunchRouteHandled by rememberSaveable { mutableStateOf(false) }
+    var startupPlayerLaunchHandled by rememberSaveable { mutableStateOf(false) }
     var networkToastBaselineReady by rememberSaveable { mutableStateOf(false) }
     var lastNetworkToastCondition by rememberSaveable { mutableStateOf(NetworkCondition.Unknown.name) }
 
@@ -670,6 +701,16 @@ private fun MainAppContent(
     LaunchedEffect(Unit) {
         AppForegroundMonitor.events().collect {
             NetworkStatusRepository.requestRefresh(force = true)
+        }
+    }
+
+    LaunchedEffect(navController, startupPlayerLaunch) {
+        val launch = startupPlayerLaunch ?: return@LaunchedEffect
+        if (startupPlayerLaunchHandled) return@LaunchedEffect
+        startupPlayerLaunchHandled = true
+        val launchId = PlayerLaunchStore.put(launch)
+        navController.navigate(PlayerRoute(launchId = launchId)) {
+            launchSingleTop = true
         }
     }
 
@@ -787,6 +828,14 @@ private fun MainAppContent(
                     AppDeepLink.Downloads -> {
                         selectedTab = AppScreenTab.Settings
                         navController.navigate(DownloadsSettingsRoute) {
+                            launchSingleTop = true
+                        }
+                        AppDeepLinkRepository.markConsumed(deepLink)
+                    }
+
+                    is AppDeepLink.DevStream -> {
+                        val launchId = PlayerLaunchStore.put(deepLink.toPlayerLaunch())
+                        navController.navigate(PlayerRoute(launchId = launchId)) {
                             launchSingleTop = true
                         }
                         AppDeepLinkRepository.markConsumed(deepLink)

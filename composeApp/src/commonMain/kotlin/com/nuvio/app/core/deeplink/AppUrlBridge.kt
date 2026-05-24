@@ -14,6 +14,21 @@ sealed interface AppDeepLink {
     ) : AppDeepLink
 
     data object Downloads : AppDeepLink
+
+    data class DevStream(
+        val url: String,
+        val title: String,
+        val audioUrl: String? = null,
+        val poster: String? = null,
+        val background: String? = null,
+        val streamTitle: String = title,
+        val providerName: String = "Dev stream",
+        val contentType: String = "movie",
+        val videoId: String = "dev-stream",
+        val parentMetaId: String = videoId,
+        val parentMetaType: String = contentType,
+        val headers: Map<String, String> = emptyMap(),
+    ) : AppDeepLink
 }
 
 object AppDeepLinkRepository {
@@ -53,7 +68,7 @@ fun buildMetaDeepLinkUrl(
 
 fun buildDownloadsDeepLinkUrl(): String = "nuvio://downloads"
 
-private fun parseAppDeepLink(url: String): AppDeepLink? {
+internal fun parseAppDeepLink(url: String): AppDeepLink? {
     val parsedUrl = runCatching { Url(url) }.getOrNull() ?: return null
     if (!parsedUrl.protocol.name.equals("nuvio", ignoreCase = true)) return null
 
@@ -66,6 +81,55 @@ private fun parseAppDeepLink(url: String): AppDeepLink? {
 
         "downloads" -> AppDeepLink.Downloads
 
+        "dev" -> {
+            if (!parsedUrl.encodedPath.equals("/play", ignoreCase = true)) {
+                null
+            } else {
+                parseDevStreamDeepLink(parsedUrl)
+            }
+        }
+
+        "dev-stream" -> parseDevStreamDeepLink(parsedUrl)
+
         else -> null
     }
+}
+
+private fun parseDevStreamDeepLink(parsedUrl: Url): AppDeepLink.DevStream? {
+    val streamUrl = parsedUrl.parameters["url"]?.trim().orEmpty()
+    if (streamUrl.isBlank()) return null
+
+    val title = parsedUrl.parameters["title"]?.trim()?.takeIf { it.isNotBlank() } ?: "Dev stream"
+    val streamTitle = parsedUrl.parameters["streamTitle"]?.trim()?.takeIf { it.isNotBlank() } ?: title
+    val providerName = parsedUrl.parameters["provider"]?.trim()?.takeIf { it.isNotBlank() } ?: "Dev stream"
+    val contentType = parsedUrl.parameters["type"]?.trim()?.takeIf { it.isNotBlank() } ?: "movie"
+    val videoId = parsedUrl.parameters["videoId"]?.trim()?.takeIf { it.isNotBlank() } ?: "dev-stream"
+    val parentMetaId = parsedUrl.parameters["parentMetaId"]?.trim()?.takeIf { it.isNotBlank() } ?: videoId
+    val parentMetaType = parsedUrl.parameters["parentMetaType"]?.trim()?.takeIf { it.isNotBlank() } ?: contentType
+
+    return AppDeepLink.DevStream(
+        url = streamUrl,
+        title = title,
+        audioUrl = parsedUrl.parameters["audioUrl"]?.trim()?.takeIf { it.isNotBlank() },
+        poster = parsedUrl.parameters["poster"]?.trim()?.takeIf { it.isNotBlank() },
+        background = parsedUrl.parameters["background"]?.trim()?.takeIf { it.isNotBlank() },
+        streamTitle = streamTitle,
+        providerName = providerName,
+        contentType = contentType,
+        videoId = videoId,
+        parentMetaId = parentMetaId,
+        parentMetaType = parentMetaType,
+        headers = parsedUrl.parameters.getAll("header")
+            ?.mapNotNull(::parseHeaderParameter)
+            ?.toMap()
+            .orEmpty(),
+    )
+}
+
+private fun parseHeaderParameter(value: String): Pair<String, String>? {
+    val separatorIndex = value.indexOf(':').takeIf { it > 0 } ?: value.indexOf('=').takeIf { it > 0 } ?: return null
+    val name = value.substring(0, separatorIndex).trim()
+    val headerValue = value.substring(separatorIndex + 1).trim()
+    if (name.isBlank() || headerValue.isBlank()) return null
+    return name to headerValue
 }

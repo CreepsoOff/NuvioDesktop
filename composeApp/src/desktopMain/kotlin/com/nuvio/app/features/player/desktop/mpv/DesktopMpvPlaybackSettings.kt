@@ -153,6 +153,7 @@ internal fun mpvRuntimeOptions(tuning: DesktopMpvVideoTuning): List<MpvRuntimeOp
         else -> "auto"
     }
     return listOf(
+        *stremioBaselineRuntimeOptions().toTypedArray(),
         MpvRuntimeOption("hwdec", settings.hardwareDecoderMode.mpvValue),
         MpvRuntimeOption("tone-mapping", settings.toneMappingMode.mpvValue),
         MpvRuntimeOption("hdr-compute-peak", if (settings.hdrComputePeakEnabled) "auto" else "no"),
@@ -168,6 +169,33 @@ internal fun mpvRuntimeOptions(tuning: DesktopMpvVideoTuning): List<MpvRuntimeOp
         MpvRuntimeOption("saturation", settings.saturation.toString()),
         MpvRuntimeOption("gamma", settings.gamma.toString()),
     )
+}
+
+internal fun stremioBaselineRuntimeOptions(): List<MpvRuntimeOption> =
+    listOf(
+        MpvRuntimeOption("vo", "gpu-next"),
+        MpvRuntimeOption("demuxer-lavf-probesize", "524288"),
+        MpvRuntimeOption("demuxer-lavf-analyzeduration", "0.5"),
+        MpvRuntimeOption("demuxer-max-bytes", stremioCacheBytes()),
+        MpvRuntimeOption("demuxer-max-packets", "150000000"),
+        MpvRuntimeOption("cache", "yes"),
+        MpvRuntimeOption("cache-pause", "no"),
+        MpvRuntimeOption("cache-secs", "60"),
+        MpvRuntimeOption("vd-lavc-threads", "0"),
+        MpvRuntimeOption("ad-lavc-threads", "0"),
+        MpvRuntimeOption("audio-fallback-to-null", "yes"),
+        MpvRuntimeOption("audio-client-name", "Nuvio"),
+        MpvRuntimeOption("title", "Nuvio"),
+    )
+
+private fun stremioCacheBytes(): String {
+    val configured = System.getProperty("nuvio.mpv.demuxer.maxBytes")
+        ?: System.getenv("NUVIO_MPV_DEMUXER_MAX_BYTES")
+    return configured
+        ?.toLongOrNull()
+        ?.coerceIn(32L * 1024L * 1024L, 300L * 1024L * 1024L)
+        ?.toString()
+        ?: (128L * 1024L * 1024L).toString()
 }
 
 private fun loadHardwareDecoderMode(): PlayerHardwareDecoderMode {

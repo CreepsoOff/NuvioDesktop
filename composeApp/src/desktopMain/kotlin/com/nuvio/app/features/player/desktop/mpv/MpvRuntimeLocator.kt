@@ -1,6 +1,9 @@
 package com.nuvio.app.features.player.desktop.mpv
 
+import com.nuvio.app.desktop.DesktopRuntimeLog
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 
 internal data class MpvRuntimeResolution(
     val directory: File?,
@@ -67,16 +70,70 @@ internal object MpvRuntimeLocator {
             }
         }
 
+        val stremioHybrid = resolveStremioHybridRuntime(candidates.values)
+        stremioHybrid?.let { add("stremio:hybrid-runtime", it) }
+
         val checked = candidates.map { (label, dir) ->
             "$label=${dir.safePath()} exists=${dir.isDirectory} mediampv=${dir.resolve("mediampv.dll").isFile}"
         }
-        val selected = candidates.values.firstOrNull { it.resolve("mediampv.dll").isFile }
+        val selected = stremioHybrid?.takeIf { it.resolve("mediampv.dll").isFile }
+            ?: candidates.values.firstOrNull { it.resolve("mediampv.dll").isFile }
         return MpvRuntimeResolution(
             directory = selected,
             checkedDirectories = checked,
             diagnostics = "selected=${selected?.safePath() ?: "none"} checked=${checked.joinToString(" | ")}",
         )
     }
+
+    private fun resolveStremioHybridRuntime(baseCandidates: Collection<File>): File? {
+        val stremioDir = stremioLibmpvDir() ?: return null
+        val stremioLibmpv = stremioDir.resolve("libmpv-2.dll")
+        if (!stremioLibmpv.isFile) {
+            DesktopRuntimeLog.warn("stremioHybrid: libmpv-2.dll missing dir=${stremioDir.safePath()}")
+            return null
+        }
+        val baseRuntime = baseCandidates.firstOrNull { it.resolve("mediampv.dll").isFile } ?: return null
+        val hybridDir = localAppDataDir()
+            ?.resolve("Nuvio")
+            ?.resolve("cache")
+            ?.resolve("mpv-stremio-hybrid")
+            ?: return null
+
+        return runCatching {
+            Files.createDirectories(hybridDir.toPath())
+            baseRuntime.listFiles { file -> file.isFile && file.extension.equals("dll", ignoreCase = true) }
+                .orEmpty()
+                .forEach { source ->
+                    val target = hybridDir.resolve(source.name)
+                    if (!target.isFile || target.length() != source.length()) {
+                        Files.copy(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING)
+                    }
+                }
+            Files.copy(
+                stremioLibmpv.toPath(),
+                hybridDir.resolve("libmpv-2.dll").toPath(),
+                StandardCopyOption.REPLACE_EXISTING,
+            )
+            DesktopRuntimeLog.info(
+                "stremioHybrid: prepared runtime dir=${hybridDir.safePath()} " +
+                    "base=${baseRuntime.safePath()} libmpvSize=${stremioLibmpv.length()}",
+            )
+            hybridDir
+        }.onFailure {
+            DesktopRuntimeLog.warn("stremioHybrid: prepare failed message=${it.message}")
+        }.getOrNull()
+    }
+
+    private fun stremioLibmpvDir(): File? {
+        val configured = System.getProperty("nuvio.stremio.libmpv.dir")
+            ?: System.getenv("NUVIO_STREMIO_LIBMPV_DIR")
+        return configured?.toFileOrNull()
+    }
+
+    private fun localAppDataDir(): File? =
+        System.getenv("LOCALAPPDATA")
+            ?.takeIf { it.isNotBlank() }
+            ?.let(::File)
 
     private fun devLookupEnabled(): Boolean =
         System.getenv("NUVIO_DEV_PLAYER_LOOKUP").equals("true", ignoreCase = true) ||
