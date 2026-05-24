@@ -44,6 +44,10 @@ abstract class PackageWindowsNativeRuntimeTask : DefaultTask() {
     @get:OutputDirectory
     abstract val launcherDir: DirectoryProperty
 
+    @get:Optional
+    @get:Input
+    abstract val stremioLibmpvDir: Property<String>
+
     @get:Internal
     abstract val lockFile: RegularFileProperty
 
@@ -57,6 +61,7 @@ abstract class PackageWindowsNativeRuntimeTask : DefaultTask() {
         RandomAccessFile(lock, "rw").channel.use { channel ->
             channel.lock().use {
                 copyNativeDlls()
+                overrideLibmpvFromStremioIfConfigured()
                 patchLauncherConfig()
                 copyLauncherFallbackDlls()
                 verifyRequiredDlls()
@@ -82,6 +87,28 @@ abstract class PackageWindowsNativeRuntimeTask : DefaultTask() {
                 include("VCRUNTIME140_1.dll", "vcruntime140_1.dll")
             }
             into(nativeDir)
+        }
+    }
+
+    private fun overrideLibmpvFromStremioIfConfigured() {
+        val configuredDir = stremioLibmpvDir.orNull
+            ?: System.getProperty("nuvio.stremio.libmpv.dir")
+            ?: System.getenv("NUVIO_STREMIO_LIBMPV_DIR")
+        if (configuredDir.isNullOrBlank()) return
+
+        val source = File(configuredDir).resolve("libmpv-2.dll")
+        if (!source.isFile) {
+            logger.warn("packageWindowsNativeRuntime: Stremio libmpv override ignored (missing libmpv-2.dll at ${source.absolutePath})")
+            return
+        }
+
+        val destination = nativeDir.get().asFile.resolve("libmpv-2.dll")
+        runCatching {
+            source.copyTo(destination, overwrite = true)
+        }.onSuccess {
+            logger.lifecycle("packageWindowsNativeRuntime: using Stremio libmpv-2.dll from ${source.absolutePath}")
+        }.onFailure {
+            logger.warn("packageWindowsNativeRuntime: failed to override libmpv-2.dll from ${source.absolutePath}: ${it.message}")
         }
     }
 
@@ -698,6 +725,10 @@ val packageWindowsNativeRuntime = tasks.register<PackageWindowsNativeRuntimeTask
     this.appDir.set(appDir)
     this.nativeDir.set(nativeDir)
     this.launcherDir.set(launcherDir)
+    this.stremioLibmpvDir.set(
+        providers.gradleProperty("nuvio.stremio.libmpv.dir")
+            .orElse(providers.environmentVariable("NUVIO_STREMIO_LIBMPV_DIR")),
+    )
     this.lockFile.set(windowsNativeRuntimeLockFile)
 }
 
