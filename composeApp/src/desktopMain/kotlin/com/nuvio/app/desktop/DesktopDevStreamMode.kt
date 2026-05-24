@@ -73,7 +73,11 @@ internal data class DesktopDevStreamMode(
                     ?.toLongOrNull()
                     ?.coerceAtLeast(1_000L)
                     ?: 8_000L,
-                performanceSampleIntervalMs = (values["perf-sample-ms"] ?: System.getenv("NUVIO_DEV_STREAM_PERF_SAMPLE_MS"))
+                performanceSampleIntervalMs = (
+                    values["perf-sample-ms"]
+                        ?: System.getenv("NUVIO_DEV_STREAM_PERF_SAMPLE_MS")
+                        ?: System.getenv("NUVIO_DEV_STREAM_PERF_SAMPLE_INTERVAL_MS")
+                    )
                     ?.toLongOrNull()
                     ?.coerceAtLeast(1_000L)
                     ?: 5_000L,
@@ -167,7 +171,7 @@ internal data class DesktopDevStreamMode(
                             "nuvio-dev-stream-${Instant.now().toString().replace(':', '-')}.png",
                         )
                         ImageIO.write(capture, "png", output.toFile())
-                        DesktopRuntimeLog.info("devStream screenshot written path=${output.toSafePath()}")
+                        DesktopRuntimeLog.info("devStream screenshot written path=${DesktopRuntimeLog.safePath(output)}")
                     }.onFailure {
                         DesktopRuntimeLog.warn("devStream screenshot failed message=${it.message}")
                     }
@@ -252,5 +256,3 @@ private fun String.redactedMediaUrl(): String {
         }
     }
 }
-
-private fun Path.toSafePath(): String = toAbsolutePath().toString().replace("\\", "/")

@@ -2,7 +2,7 @@ package com.nuvio.app.core.ui
 
 private const val DesktopQualityDecodeMultiplier = 2.0f
 private const val DesktopQualityDecodeBucketPx = 64
-private const val DesktopQualityDecodeMaxDimensionPx = 1600
+private const val DesktopQualityDecodeMaxDimensionPx = 2560
 
 /**
  * Desktop images are decoded above their exact layout size to keep posters sharp under

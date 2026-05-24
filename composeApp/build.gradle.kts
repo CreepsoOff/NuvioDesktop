@@ -15,6 +15,7 @@ import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
+import org.gradle.process.ExecOperations
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 import java.io.File
@@ -53,6 +54,9 @@ abstract class PackageWindowsNativeRuntimeTask : DefaultTask() {
 
     @get:Inject
     abstract val fileSystemOperations: FileSystemOperations
+
+    @get:Inject
+    abstract val execOperations: ExecOperations
 
     @TaskAction
     fun packageRuntime() {
@@ -96,20 +100,57 @@ abstract class PackageWindowsNativeRuntimeTask : DefaultTask() {
             ?: System.getenv("NUVIO_STREMIO_LIBMPV_DIR")
         if (configuredDir.isNullOrBlank()) return
 
-        val source = File(configuredDir).resolve("libmpv-2.dll")
-        if (!source.isFile) {
-            logger.warn("packageWindowsNativeRuntime: Stremio libmpv override ignored (missing libmpv-2.dll at ${source.absolutePath})")
-            return
+        val baseDir = File(configuredDir)
+        check(baseDir.isDirectory) {
+            "Stremio libmpv directory is required but was not found: ${baseDir.absolutePath}. " +
+                "Run `git submodule update --init --recursive stremio-community-v5` or set NUVIO_STREMIO_LIBMPV_DIR."
+        }
+        val source = baseDir.resolve("libmpv-2.dll")
+        val resolvedSource = when {
+            source.isFile -> source
+            else -> extractLibmpvFromRarIfNeeded(baseDir)
+        }
+        check(resolvedSource != null && resolvedSource.isFile) {
+            "Stremio libmpv-2.dll is required but could not be resolved from ${baseDir.absolutePath}. " +
+                "Expected libmpv-2.dll or extractable libmpv-2.dll.rar; set NUVIO_7Z if 7z is not on PATH."
         }
 
         val destination = nativeDir.get().asFile.resolve("libmpv-2.dll")
         runCatching {
-            source.copyTo(destination, overwrite = true)
+            resolvedSource.copyTo(destination, overwrite = true)
         }.onSuccess {
-            logger.lifecycle("packageWindowsNativeRuntime: using Stremio libmpv-2.dll from ${source.absolutePath}")
+            logger.lifecycle("packageWindowsNativeRuntime: using Stremio libmpv-2.dll from ${resolvedSource.absolutePath}")
         }.onFailure {
-            logger.warn("packageWindowsNativeRuntime: failed to override libmpv-2.dll from ${source.absolutePath}: ${it.message}")
+            logger.warn(
+                "packageWindowsNativeRuntime: failed to override libmpv-2.dll from ${resolvedSource.absolutePath}: ${it.message}",
+            )
         }
+    }
+
+    private fun extractLibmpvFromRarIfNeeded(baseDir: File): File? {
+        val rarFile = baseDir.resolve("libmpv-2.dll.rar")
+        if (!rarFile.isFile) return null
+
+        val outputDir = File(temporaryDir, "stremio-libmpv").apply { mkdirs() }
+        val outputDll = outputDir.resolve("libmpv-2.dll")
+        if (outputDll.isFile && outputDll.length() > 0) return outputDll
+
+        val sevenZip = System.getenv("NUVIO_7Z")?.takeIf(String::isNotBlank) ?: "7z"
+        return runCatching {
+            logger.lifecycle("packageWindowsNativeRuntime: extracting Stremio libmpv-2.dll from ${rarFile.absolutePath}")
+            execOperations.exec {
+                commandLine(
+                    sevenZip,
+                    "x",
+                    "-y",
+                    "-o${outputDir.absolutePath}",
+                    rarFile.absolutePath,
+                )
+            }.assertNormalExitValue()
+            outputDll.takeIf { it.isFile }
+        }.onFailure {
+            logger.warn("packageWindowsNativeRuntime: failed to extract Stremio libmpv from ${rarFile.absolutePath}: ${it.message}")
+        }.getOrNull()
     }
 
     private fun patchLauncherConfig() {
@@ -266,6 +307,7 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
         val imdbRatingsApiBaseUrl = resolveRuntimeValue("IMDB_RATINGS_API_BASE_URL", releaseProperties, localProperties)
         val imdbTapframeApiBaseUrl = resolveRuntimeValue("IMDB_TAPFRAME_API_BASE_URL", releaseProperties, localProperties)
         val directDebridApiBaseUrl = resolveRuntimeValue("DIRECT_DEBRID_API_BASE_URL", releaseProperties, localProperties)
+        val premiumizeClientId = resolveRuntimeValue("PREMIUMIZE_CLIENT_ID", releaseProperties, localProperties)
 
         val outDir = outputDir.get().asFile
         outDir.deleteRecursively()
@@ -334,7 +376,7 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
                 |package com.nuvio.app.features.debrid
                 |
                 |object PremiumizeConfig {
-                |    const val CLIENT_ID = "${props.getProperty("PREMIUMIZE_CLIENT_ID", "")}"
+                |    const val CLIENT_ID = "${kotlinStringLiteral(premiumizeClientId)}"
                 |}
                 """.trimMargin()
             )
@@ -725,9 +767,11 @@ val packageWindowsNativeRuntime = tasks.register<PackageWindowsNativeRuntimeTask
     this.appDir.set(appDir)
     this.nativeDir.set(nativeDir)
     this.launcherDir.set(launcherDir)
+    val defaultStremioDir = rootProject.file("stremio-community-v5/deps/libmpv/x86_64")
     this.stremioLibmpvDir.set(
         providers.gradleProperty("nuvio.stremio.libmpv.dir")
-            .orElse(providers.environmentVariable("NUVIO_STREMIO_LIBMPV_DIR")),
+            .orElse(providers.environmentVariable("NUVIO_STREMIO_LIBMPV_DIR"))
+            .orElse(defaultStremioDir.absolutePath),
     )
     this.lockFile.set(windowsNativeRuntimeLockFile)
 }

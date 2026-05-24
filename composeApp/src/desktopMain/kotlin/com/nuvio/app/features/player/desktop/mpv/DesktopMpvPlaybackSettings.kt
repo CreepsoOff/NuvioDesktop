@@ -1,7 +1,13 @@
 package com.nuvio.app.features.player.desktop.mpv
 
 import com.nuvio.app.desktop.DesktopPreferences
+import com.nuvio.app.features.player.IosHardwareDecoderMode
+import com.nuvio.app.features.player.IosTargetPrimaries
+import com.nuvio.app.features.player.IosTargetTransfer
+import com.nuvio.app.features.player.IosToneMappingMode
+import com.nuvio.app.features.player.IosVideoOutputPreset
 import com.nuvio.app.features.player.PlayerHardwareDecoderMode
+import com.nuvio.app.features.player.PlayerSettingsUiState
 import com.nuvio.app.features.player.PlayerTargetPrimaries
 import com.nuvio.app.features.player.PlayerTargetTransfer
 import com.nuvio.app.features.player.PlayerToneMappingMode
@@ -146,6 +152,47 @@ internal fun storeDesktopIntTuning(key: String, value: Int) {
     DesktopMpvPlaybackSettingsSignal.notifyChanged()
 }
 
+internal fun storeDesktopVideoTuningFromPlayerSettings(settings: PlayerSettingsUiState) {
+    DesktopPreferences.putString(
+        DesktopDecoderPreferencesName,
+        DesktopVideoOutputPresetKey,
+        settings.iosVideoOutputPreset.toDesktopPreset().name,
+    )
+    DesktopPreferences.putString(
+        DesktopDecoderPreferencesName,
+        DesktopHwdecModeKey,
+        settings.iosHardwareDecoderMode.toDesktopHardwareDecoderMode().name,
+    )
+    DesktopPreferences.putString(
+        DesktopDecoderPreferencesName,
+        DesktopToneMappingModeKey,
+        settings.iosToneMappingMode.toDesktopToneMappingMode().name,
+    )
+    DesktopPreferences.putString(
+        DesktopDecoderPreferencesName,
+        DesktopTargetPrimariesKey,
+        settings.iosTargetPrimaries.toDesktopTargetPrimaries().name,
+    )
+    DesktopPreferences.putString(
+        DesktopDecoderPreferencesName,
+        DesktopTargetTransferKey,
+        settings.iosTargetTransfer.toDesktopTargetTransfer().name,
+    )
+    DesktopPreferences.putString(
+        DesktopDecoderPreferencesName,
+        DesktopHdrModeKey,
+        settings.iosVideoOutputPreset.toDesktopPreset().toLegacyHdrMode().storageValue,
+    )
+    DesktopPreferences.putBoolean(DesktopDecoderPreferencesName, DesktopHdrComputePeakKey, settings.iosHdrComputePeakEnabled)
+    DesktopPreferences.putBoolean(DesktopDecoderPreferencesName, DesktopDebandEnabledKey, settings.iosDebandEnabled)
+    DesktopPreferences.putBoolean(DesktopDecoderPreferencesName, DesktopInterpolationEnabledKey, settings.iosInterpolationEnabled)
+    DesktopPreferences.putInt(DesktopDecoderPreferencesName, DesktopBrightnessKey, settings.iosBrightness.coerceVideoEq())
+    DesktopPreferences.putInt(DesktopDecoderPreferencesName, DesktopContrastKey, settings.iosContrast.coerceVideoEq())
+    DesktopPreferences.putInt(DesktopDecoderPreferencesName, DesktopSaturationKey, settings.iosSaturation.coerceVideoEq())
+    DesktopPreferences.putInt(DesktopDecoderPreferencesName, DesktopGammaKey, settings.iosGamma.coerceVideoEq())
+    DesktopMpvPlaybackSettingsSignal.notifyChanged()
+}
+
 internal fun mpvRuntimeOptions(tuning: DesktopMpvVideoTuning): List<MpvRuntimeOption> {
     val settings = tuning.settings
     val targetPeak = when (settings.outputPreset) {
@@ -168,6 +215,7 @@ internal fun mpvRuntimeOptions(tuning: DesktopMpvVideoTuning): List<MpvRuntimeOp
         MpvRuntimeOption("contrast", settings.contrast.toString()),
         MpvRuntimeOption("saturation", settings.saturation.toString()),
         MpvRuntimeOption("gamma", settings.gamma.toString()),
+        *diagnosticRuntimeOptions().toTypedArray(),
     )
 }
 
@@ -198,6 +246,52 @@ private fun stremioCacheBytes(): String {
         ?.coerceIn(32L * 1024L * 1024L, 300L * 1024L * 1024L)
         ?.toString()
         ?: (128L * 1024L * 1024L).toString()
+}
+
+private fun diagnosticRuntimeOptions(): List<MpvRuntimeOption> =
+    listOfNotNull(
+        boundedDiagnosticOption(
+            name = "hwdec",
+            propertyName = "nuvio.mpv.diagnostic.hwdec",
+            envName = "NUVIO_MPV_DIAGNOSTIC_HWDEC",
+            allowedValues = setOf("auto", "no", "d3d11va", "d3d11va-copy", "dxva2", "nvdec", "nvdec-copy"),
+        ),
+        boundedDiagnosticOption(
+            name = "framedrop",
+            propertyName = "nuvio.mpv.diagnostic.framedrop",
+            envName = "NUVIO_MPV_DIAGNOSTIC_FRAMEDROP",
+            allowedValues = setOf("no", "vo", "decoder", "decoder+vo"),
+        ),
+        boundedDiagnosticOption(
+            name = "video-sync",
+            propertyName = "nuvio.mpv.diagnostic.videoSync",
+            envName = "NUVIO_MPV_DIAGNOSTIC_VIDEO_SYNC",
+            allowedValues = setOf(
+                "audio",
+                "display-resample",
+                "display-resample-vdrop",
+                "display-resample-desync",
+                "display-vdrop",
+                "display-adrop",
+                "display-desync",
+                "desync",
+            ),
+        ),
+    )
+
+private fun boundedDiagnosticOption(
+    name: String,
+    propertyName: String,
+    envName: String,
+    allowedValues: Set<String>,
+): MpvRuntimeOption? {
+    val value = (System.getProperty(propertyName) ?: System.getenv(envName))
+        ?.trim()
+        ?.lowercase()
+        ?: return null
+    return value
+        .takeIf { it in allowedValues }
+        ?.let { MpvRuntimeOption(name, it) }
 }
 
 private fun loadHardwareDecoderMode(): PlayerHardwareDecoderMode {
@@ -254,6 +348,51 @@ private fun PlayerVideoOutputPreset.defaultTransfer(): PlayerTargetTransfer =
     when (this) {
         PlayerVideoOutputPreset.ToneMappedSdr -> PlayerTargetTransfer.Srgb
         else -> PlayerTargetTransfer.Auto
+    }
+
+private fun IosVideoOutputPreset.toDesktopPreset(): PlayerVideoOutputPreset =
+    when (this) {
+        IosVideoOutputPreset.NativeEdr -> PlayerVideoOutputPreset.Native
+        IosVideoOutputPreset.SdrToneMapped -> PlayerVideoOutputPreset.ToneMappedSdr
+        IosVideoOutputPreset.Compatibility -> PlayerVideoOutputPreset.Compatibility
+        IosVideoOutputPreset.Custom -> PlayerVideoOutputPreset.Custom
+    }
+
+private fun IosHardwareDecoderMode.toDesktopHardwareDecoderMode(): PlayerHardwareDecoderMode =
+    when (this) {
+        IosHardwareDecoderMode.Auto,
+        IosHardwareDecoderMode.VideoToolbox -> PlayerHardwareDecoderMode.Auto
+        IosHardwareDecoderMode.Off -> PlayerHardwareDecoderMode.Off
+    }
+
+private fun IosToneMappingMode.toDesktopToneMappingMode(): PlayerToneMappingMode =
+    when (this) {
+        IosToneMappingMode.Auto -> PlayerToneMappingMode.Auto
+        IosToneMappingMode.Bt2390 -> PlayerToneMappingMode.Bt2390
+        IosToneMappingMode.Mobius -> PlayerToneMappingMode.Mobius
+        IosToneMappingMode.Reinhard -> PlayerToneMappingMode.Reinhard
+        IosToneMappingMode.Hable -> PlayerToneMappingMode.Hable
+        IosToneMappingMode.Gamma -> PlayerToneMappingMode.Gamma
+        IosToneMappingMode.Clip -> PlayerToneMappingMode.Clip
+    }
+
+private fun IosTargetPrimaries.toDesktopTargetPrimaries(): PlayerTargetPrimaries =
+    when (this) {
+        IosTargetPrimaries.Auto -> PlayerTargetPrimaries.Auto
+        IosTargetPrimaries.Bt709 -> PlayerTargetPrimaries.Bt709
+        IosTargetPrimaries.DisplayP3 -> PlayerTargetPrimaries.DisplayP3
+        IosTargetPrimaries.Bt2020 -> PlayerTargetPrimaries.Bt2020
+    }
+
+private fun IosTargetTransfer.toDesktopTargetTransfer(): PlayerTargetTransfer =
+    when (this) {
+        IosTargetTransfer.Auto -> PlayerTargetTransfer.Auto
+        IosTargetTransfer.Srgb -> PlayerTargetTransfer.Srgb
+        IosTargetTransfer.Bt1886 -> PlayerTargetTransfer.Bt1886
+        IosTargetTransfer.Gamma22 -> PlayerTargetTransfer.Gamma22
+        IosTargetTransfer.Gamma24 -> PlayerTargetTransfer.Gamma24
+        IosTargetTransfer.Pq -> PlayerTargetTransfer.Pq
+        IosTargetTransfer.Hlg -> PlayerTargetTransfer.Hlg
     }
 
 private fun Int.coerceVideoEq(): Int = coerceIn(-100, 100)

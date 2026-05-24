@@ -45,6 +45,8 @@ AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
+PrivilegesRequired=lowest
+PrivilegesRequiredOverridesAllowed=dialog
 OutputDir=$($outputDirResolved.Replace('\', '\\'))
 OutputBaseFilename=Nuvio-$AppVersion-$AppBuild-x64
 Compression=lzma
@@ -70,10 +72,10 @@ Name: "{group}\Nuvio"; Filename: "{app}\Nuvio.exe"; IconFilename: "{app}\Nuvio.e
 Name: "{autodesktop}\Nuvio"; Filename: "{app}\Nuvio.exe"; IconFilename: "{app}\Nuvio.exe"; Tasks: desktopicon
 
 [Registry]
-Root: HKCU; Subkey: "Software\Classes\nuvio"; ValueType: string; ValueData: "URL:Nuvio Protocol"; Flags: uninsdeletekey
-Root: HKCU; Subkey: "Software\Classes\nuvio"; ValueType: string; ValueName: "URL Protocol"; ValueData: ""; Flags: uninsdeletevalue
-Root: HKCU; Subkey: "Software\Classes\nuvio\DefaultIcon"; ValueType: string; ValueData: """{app}\Nuvio.exe"",0"
-Root: HKCU; Subkey: "Software\Classes\nuvio\shell\open\command"; ValueType: string; ValueData: """{app}\Nuvio.exe"" ""%1"""
+Root: HKA; Subkey: "Software\Classes\nuvio"; ValueType: string; ValueData: "URL:Nuvio Protocol"; Flags: uninsdeletekey
+Root: HKA; Subkey: "Software\Classes\nuvio"; ValueType: string; ValueName: "URL Protocol"; ValueData: ""; Flags: uninsdeletevalue
+Root: HKA; Subkey: "Software\Classes\nuvio\DefaultIcon"; ValueType: string; ValueData: """{app}\Nuvio.exe"",0"
+Root: HKA; Subkey: "Software\Classes\nuvio\shell\open\command"; ValueType: string; ValueData: """{app}\Nuvio.exe"" ""%1"""
 
 [Run]
 Filename: "{app}\Nuvio.exe"; Description: "{cm:LaunchProgram,Nuvio}"; Flags: nowait postinstall skipifsilent

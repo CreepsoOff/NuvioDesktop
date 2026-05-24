@@ -177,9 +177,11 @@ internal actual fun CollectionCardRemoteImage(
         val staticDecodeWidthPx = nuvioQualityDecodeDimensionPx(targetWidthPx.coerceAtLeast(1))
         val staticDecodeHeightPx = nuvioQualityDecodeDimensionPx(targetHeightPx.coerceAtLeast(1))
         val decodeTarget = remember(targetWidthPx, targetHeightPx) {
+            val qualityWidthPx = nuvioQualityDecodeDimensionPx(targetWidthPx.coerceAtLeast(1))
+            val qualityHeightPx = nuvioQualityDecodeDimensionPx(targetHeightPx.coerceAtLeast(1))
             GifDecodeTarget(
-                widthPx = targetWidthPx.roundUpToDecodeBucket().coerceIn(1, MaxDecodedDimensionPx),
-                heightPx = targetHeightPx.roundUpToDecodeBucket().coerceIn(1, MaxDecodedDimensionPx),
+                widthPx = qualityWidthPx.roundUpToDecodeBucket().coerceIn(1, MaxDecodedDimensionPx),
+                heightPx = qualityHeightPx.roundUpToDecodeBucket().coerceIn(1, MaxDecodedDimensionPx),
             )
         }
         val staticRequest = remember(platformContext, staticImageUrl, staticDecodeWidthPx, staticDecodeHeightPx) {

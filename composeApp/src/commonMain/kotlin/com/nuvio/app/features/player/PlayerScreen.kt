@@ -2235,7 +2235,7 @@ fun PlayerScreen(
                         refreshTracks()
                         showAudioModal = true
                     },
-                    onVideoSettingsClick = if (isIos) {
+                    onVideoSettingsClick = if (isIos || isDesktop) {
                         {
                             showVideoSettingsModal = true
                             controlsVisible = true

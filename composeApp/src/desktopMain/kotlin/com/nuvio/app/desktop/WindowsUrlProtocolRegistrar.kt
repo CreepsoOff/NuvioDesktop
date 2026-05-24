@@ -37,9 +37,9 @@ internal object WindowsUrlProtocolRegistrar {
         val currentCommand = queryDefaultValue(CommandKey)
         val needsRepair = currentCommand == null || !sameCommand(currentCommand, expectedCommand)
         val diagnostics = mutableListOf(
-            "currentExecutablePath=$executable",
-            "currentCommand=${currentCommand ?: "<missing>"}",
-            "expectedCommand=$expectedCommand",
+            "currentExecutablePath=${DesktopRuntimeLog.safePath(executable)}",
+            "currentCommand=${currentCommand?.redactCommandForLog(executable) ?: "<missing>"}",
+            "expectedCommand=${expectedCommand.redactCommandForLog(executable)}",
             "needsRepair=$needsRepair",
         )
         if (!needsRepair) {
@@ -99,6 +99,9 @@ internal object WindowsUrlProtocolRegistrar {
         val normalizedExpected = expected.trim().lowercase(Locale.US)
         return normalizedActual == normalizedExpected
     }
+
+    private fun String.redactCommandForLog(executable: String): String =
+        replace(executable, DesktopRuntimeLog.safePath(executable), ignoreCase = true)
 
     private fun currentExecutablePath(): String? {
         val candidate = runCatching {

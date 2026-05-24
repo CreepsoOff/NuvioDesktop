@@ -9,6 +9,7 @@ import com.nuvio.app.features.player.AudioTrack
 import com.nuvio.app.features.player.PlayerAudioLevel
 import com.nuvio.app.features.player.PlayerEngineController
 import com.nuvio.app.features.player.PlayerResizeMode
+import com.nuvio.app.features.player.PlayerSettingsUiState
 import com.nuvio.app.features.player.SubtitleStyleState
 import com.nuvio.app.features.player.SubtitleTrack
 import com.nuvio.app.features.player.desktop.DesktopPlayerBackend
@@ -290,8 +291,12 @@ internal class MpvDesktopPlayerBackend private constructor(
             "phase=${state.phase} pos=${state.positionMs}ms " +
                 "vfFps=${mpvHandle.getMpvStringPropertyOrNull("estimated-vf-fps") ?: "n/a"} " +
                 "estimatedFrames=${mpvHandle.getMpvStringPropertyOrNull("estimated-frame-count") ?: "n/a"} " +
-                "dropped=${mpvHandle.getMpvStringPropertyOrNull("frame-drop-count") ?: "n/a"} " +
-                "delayed=${mpvHandle.getMpvStringPropertyOrNull("vo-delayed-frame-count") ?: "n/a"}"
+                "voDropped=${mpvHandle.getMpvStringPropertyOrNull("frame-drop-count") ?: "n/a"} " +
+                "decoderDropped=${mpvHandle.getMpvStringPropertyOrNull("decoder-frame-drop-count") ?: "n/a"} " +
+                "mistimed=${mpvHandle.getMpvStringPropertyOrNull("mistimed-frame-count") ?: "n/a"} " +
+                "delayed=${mpvHandle.getMpvStringPropertyOrNull("vo-delayed-frame-count") ?: "n/a"} " +
+                "displaySync=${mpvHandle.getMpvStringPropertyOrNull("display-sync-active") ?: "n/a"} " +
+                "avsync=${mpvHandle.getMpvStringPropertyOrNull("avsync") ?: "n/a"}"
         }.onFailure {
             DesktopRuntimeLog.warn("MPV framePacing sample failed message=${it.message}")
         }.getOrNull()
@@ -457,6 +462,12 @@ internal class MpvDesktopPlayerBackend private constructor(
         }
 
         override fun retry() = play()
+
+        override fun configureIosVideoOutput(settings: PlayerSettingsUiState) {
+            if (!canReceiveCommands()) return
+            storeDesktopVideoTuningFromPlayerSettings(settings)
+            applyDecoderSettings()
+        }
 
         override fun setPlaybackSpeed(speed: Float) {
             if (!canReceiveCommands()) return

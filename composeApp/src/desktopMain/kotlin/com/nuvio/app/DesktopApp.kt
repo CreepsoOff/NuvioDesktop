@@ -94,7 +94,7 @@ fun main(args: Array<String>) {
     DesktopRuntimeLog.info("app startup pid=$pid")
     DesktopRuntimeLog.info(
         "NUVIO_RUNTIME_PATCH_MARKER=cursor-player-session-render-shutdown-v2 " +
-            "pid=$pid ts=${System.currentTimeMillis()} user.dir=${System.getProperty("user.dir")} " +
+            "pid=$pid ts=${System.currentTimeMillis()} user.dir=${DesktopRuntimeLog.safePath(System.getProperty("user.dir"))} " +
             "buildCommit=${System.getProperty("nuvio.git.commit") ?: "unknown"} " +
             "buildBranch=${System.getProperty("nuvio.git.branch") ?: "unknown"}",
     )
@@ -118,11 +118,13 @@ fun main(args: Array<String>) {
     DesktopRuntimeLog.info("version=${AppVersionConfig.VERSION_NAME}(${AppVersionConfig.VERSION_CODE})")
     DesktopRuntimeLog.info("os=${System.getProperty("os.name")} ${System.getProperty("os.version")}")
     DesktopRuntimeLog.info("java=${System.getProperty("java.version")}")
-    DesktopRuntimeLog.info("user.dir=${System.getProperty("user.dir")}")
-    DesktopRuntimeLog.info("compose.resources.dir=${System.getProperty("compose.application.resources.dir") ?: "unset"}")
-    DesktopRuntimeLog.info("java.library.path=${System.getProperty("java.library.path") ?: "unset"}")
-    DesktopRuntimeLog.info("supabase.url=${SupabaseConfig.URL}")
-    DesktopRuntimeLog.info("supabase.anon.present=${SupabaseConfig.ANON_KEY.isNotBlank()} length=${SupabaseConfig.ANON_KEY.length}")
+    DesktopRuntimeLog.info("user.dir=${DesktopRuntimeLog.safePath(System.getProperty("user.dir"))}")
+    DesktopRuntimeLog.info(
+        "compose.resources.dir=${DesktopRuntimeLog.safePath(System.getProperty("compose.application.resources.dir"))}",
+    )
+    DesktopRuntimeLog.info("java.library.path=${DesktopRuntimeLog.safePathList(System.getProperty("java.library.path"))}")
+    DesktopRuntimeLog.info("supabase.url.present=${SupabaseConfig.URL.isNotBlank()}")
+    DesktopRuntimeLog.info("supabase.anon.present=${SupabaseConfig.ANON_KEY.isNotBlank()}")
     ensureWindowsUrlProtocolRegistration()
     val rawStartupUrls = extractStartupDeepLinks(args)
     val devStreamMode = DesktopDevStreamMode.from(args, rawStartupUrls)

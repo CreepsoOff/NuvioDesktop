@@ -3,6 +3,7 @@ package com.nuvio.app.desktop
 import java.awt.AWTEvent
 import java.awt.EventQueue
 import java.awt.Toolkit
+import java.io.File
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.nio.charset.StandardCharsets
@@ -104,6 +105,48 @@ internal object DesktopRuntimeLog {
 
     fun processPid(): Long = processId
 
+    fun safePath(value: String?): String {
+        if (value.isNullOrBlank()) return "unset"
+        return runCatching { safePath(File(value)) }.getOrElse { "<local>" }
+    }
+
+    fun safePath(file: File?): String {
+        if (file == null) return "unset"
+        val normalized = file.absoluteFile.path.replace("\\", "/")
+        val knownRoots = listOfNotNull(
+            System.getenv("LOCALAPPDATA")?.takeIf { it.isNotBlank() }?.let { "%LOCALAPPDATA%" to it },
+            System.getenv("APPDATA")?.takeIf { it.isNotBlank() }?.let { "%APPDATA%" to it },
+            System.getenv("TEMP")?.takeIf { it.isNotBlank() }?.let { "%TEMP%" to it },
+            System.getProperty("user.home")?.takeIf { it.isNotBlank() }?.let { "~" to it },
+            System.getProperty("user.dir")?.takeIf { it.isNotBlank() }?.let { "\$WORKDIR" to it },
+        )
+
+        knownRoots.forEach { (label, root) ->
+            val normalizedRoot = File(root).absoluteFile.path.replace("\\", "/").trimEnd('/')
+            if (normalized.equals(normalizedRoot, ignoreCase = true)) return label
+            if (normalized.startsWith("$normalizedRoot/", ignoreCase = true)) {
+                return label + normalized.removePrefixIgnoreCase(normalizedRoot)
+            }
+        }
+
+        return "<local>/" + normalized
+            .split('/')
+            .filter { it.isNotBlank() }
+            .takeLast(3)
+            .joinToString("/")
+    }
+
+    fun safePath(path: Path?): String = safePath(path?.toFile())
+
+    fun safePathList(value: String?): String {
+        if (value.isNullOrBlank()) return "unset"
+        return value.split(File.pathSeparatorChar)
+            .map(String::trim)
+            .filter(String::isNotEmpty)
+            .joinToString(File.pathSeparator) { safePath(it) }
+            .ifBlank { "unset" }
+    }
+
     @Synchronized
     fun logNonDaemonThreads(tag: String, limit: Int = 40) {
         val entries = Thread.getAllStackTraces().keys
@@ -164,4 +207,7 @@ internal object DesktopRuntimeLog {
         throwable.printStackTrace(PrintWriter(writer))
         return writer.toString()
     }
+
+    private fun String.removePrefixIgnoreCase(prefix: String): String =
+        if (startsWith(prefix, ignoreCase = true)) substring(prefix.length) else this
 }

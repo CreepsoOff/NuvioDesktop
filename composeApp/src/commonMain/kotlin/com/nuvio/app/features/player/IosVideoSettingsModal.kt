@@ -150,6 +150,28 @@ internal fun IosVideoSettingsModal(
                             },
                         )
 
+                        OptionGroup(
+                            title = "Target primaries",
+                            options = IosTargetPrimaries.entries,
+                            selected = settings.iosTargetPrimaries,
+                            label = { it.label },
+                            onSelect = {
+                                PlayerSettingsRepository.setIosTargetPrimaries(it)
+                                onSettingsChanged()
+                            },
+                        )
+
+                        OptionGroup(
+                            title = "Target transfer",
+                            options = IosTargetTransfer.entries,
+                            selected = settings.iosTargetTransfer,
+                            label = { it.label },
+                            onSelect = {
+                                PlayerSettingsRepository.setIosTargetTransfer(it)
+                                onSettingsChanged()
+                            },
+                        )
+
                         ToggleRow(
                             title = "Deband",
                             description = "Reduce color banding at a small performance cost.",

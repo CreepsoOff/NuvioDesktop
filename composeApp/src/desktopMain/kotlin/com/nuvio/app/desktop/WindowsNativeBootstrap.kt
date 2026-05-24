@@ -78,7 +78,10 @@ internal object WindowsNativeBootstrap {
         }
 
         val nativeDir = resolveNativeDir()
-        DesktopRuntimeLog.info("nativeBootstrap mode=${nativeDir?.mode ?: "unresolved"} nativeDir=${nativeDir?.dir?.safePath() ?: "unresolved"}")
+        DesktopRuntimeLog.info(
+            "nativeBootstrap mode=${nativeDir?.mode ?: "unresolved"} " +
+                "nativeDir=${nativeDir?.dir?.safePath() ?: "unresolved"}",
+        )
         val nativeDirectory = nativeDir?.dir
         if (nativeDirectory == null || !nativeDirectory.isDirectory) {
             DesktopRuntimeLog.error("nativeBootstrap failed: native directory not found")
@@ -182,7 +185,7 @@ internal object WindowsNativeBootstrap {
         DesktopRuntimeLog.info("nativeBootstrap dlls=${dlls.joinToString(",") { it.name }}")
     }
 
-    private fun File.safePath(): String = absolutePath.replace("\\", "/")
+    private fun File.safePath(): String = DesktopRuntimeLog.safePath(this)
 
     private fun File.hasDll(name: String): Boolean =
         listFiles { file -> file.isFile && file.name.equals(name, ignoreCase = true) }?.isNotEmpty() == true
