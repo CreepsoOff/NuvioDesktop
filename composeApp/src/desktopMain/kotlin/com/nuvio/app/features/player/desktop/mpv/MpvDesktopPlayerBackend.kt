@@ -466,7 +466,6 @@ internal class MpvDesktopPlayerBackend private constructor(
         override fun configureIosVideoOutput(settings: PlayerSettingsUiState) {
             if (!canReceiveCommands()) return
             storeDesktopVideoTuningFromPlayerSettings(settings)
-            applyDecoderSettings()
         }
 
         override fun setPlaybackSpeed(speed: Float) {
