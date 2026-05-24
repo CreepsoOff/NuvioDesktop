@@ -42,6 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.nuvio.app.core.ui.NuvioImageFilterQuality
 import nuvio.composeapp.generated.resources.*
@@ -56,6 +57,7 @@ import com.nuvio.app.features.tmdb.TmdbEntityKind
 import com.nuvio.app.features.tmdb.TmdbEntityMediaType
 import com.nuvio.app.features.tmdb.TmdbEntityRailType
 import com.nuvio.app.features.tmdb.TmdbMetadataService
+import com.nuvio.app.features.watched.WatchedRepository
 
 private sealed interface EntityBrowseUiState {
     data object Loading : EntityBrowseUiState
@@ -76,6 +78,10 @@ fun TmdbEntityBrowseScreen(
     var uiState by remember(entityKind, entityId) {
         mutableStateOf<EntityBrowseUiState>(EntityBrowseUiState.Loading)
     }
+    val watchedUiState by remember {
+        WatchedRepository.ensureLoaded()
+        WatchedRepository.uiState
+    }.collectAsStateWithLifecycle()
     val loadFailedMessage = stringResource(Res.string.details_browse_load_failed, entityName)
 
     LaunchedEffect(entityKind, entityId) {
@@ -107,6 +113,7 @@ fun TmdbEntityBrowseScreen(
                 is EntityBrowseUiState.Success -> EntityBrowseContent(
                     data = state.data,
                     sourceType = sourceType,
+                    watchedKeys = watchedUiState.watchedKeys,
                     onOpenMeta = onOpenMeta,
                 )
             }
@@ -132,6 +139,7 @@ fun TmdbEntityBrowseScreen(
 private fun EntityBrowseContent(
     data: TmdbEntityBrowseData,
     sourceType: String,
+    watchedKeys: Set<String>,
     onOpenMeta: (MetaPreview) -> Unit,
 ) {
     val backgroundUrl = remember(data.rails, sourceType) {
@@ -210,7 +218,7 @@ private fun EntityBrowseContent(
                     DetailPosterRailSection(
                         title = railTitle,
                         items = rail.items,
-                        watchedKeys = emptySet(),
+                        watchedKeys = watchedKeys,
                         headerHorizontalPadding = 20.dp,
                         onPosterClick = onOpenMeta,
                     )

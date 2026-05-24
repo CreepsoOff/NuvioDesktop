@@ -329,12 +329,12 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
 
         outDir.resolve("com/nuvio/app/features/debrid").apply {
             mkdirs()
-            resolve("DebridConfig.kt").writeText(
+            resolve("PremiumizeConfig.kt").writeText(
                 """
                 |package com.nuvio.app.features.debrid
                 |
-                |object DebridConfig {
-                |    const val DIRECT_DEBRID_API_BASE_URL = "${kotlinStringLiteral(directDebridApiBaseUrl)}"
+                |object PremiumizeConfig {
+                |    const val CLIENT_ID = "${props.getProperty("PREMIUMIZE_CLIENT_ID", "")}"
                 |}
                 """.trimMargin()
             )

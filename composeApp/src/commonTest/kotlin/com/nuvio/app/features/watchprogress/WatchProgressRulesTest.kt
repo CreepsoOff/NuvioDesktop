@@ -1,5 +1,6 @@
 package com.nuvio.app.features.watchprogress
 
+import com.nuvio.app.features.cloud.TorboxCloudLibraryPosterUrl
 import com.nuvio.app.features.details.MetaVideo
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -96,6 +97,23 @@ class WatchProgressRulesTest {
     }
 
     @Test
+    fun `cloud continue watching uses provider poster fallback`() {
+        val item = WatchProgressEntry(
+            contentType = "cloud",
+            parentMetaId = "torbox:Torrent:29773238",
+            parentMetaType = "cloud",
+            videoId = "torbox:Torrent:29773238:8",
+            title = "Cloud file",
+            lastPositionMs = 120_000L,
+            durationMs = 1_000_000L,
+            lastUpdatedEpochMs = 1L,
+        ).toContinueWatchingItem()
+
+        assertEquals(TorboxCloudLibraryPosterUrl, item.poster)
+        assertEquals(TorboxCloudLibraryPosterUrl, item.imageUrl)
+    }
+
+    @Test
     fun `continue watching excludes explicit 100 percent entries even when completion flag is false`() {
         val completedByPercent = entry(
             videoId = "movie-complete",
@@ -171,6 +189,34 @@ class WatchProgressRulesTest {
         )
 
         assertFalse(history.shouldTreatAsInProgressForContinueWatching())
+    }
+
+    @Test
+    fun `completed progress does not cascade to watched history while Trakt progress is active`() {
+        val completed = entry(
+            videoId = "movie-complete",
+            isCompleted = true,
+        )
+        val inProgress = completed.copy(isCompleted = false)
+
+        assertFalse(
+            shouldCascadeCompletedProgressToWatchedHistory(
+                entry = completed,
+                isUsingTraktProgress = true,
+            ),
+        )
+        assertTrue(
+            shouldCascadeCompletedProgressToWatchedHistory(
+                entry = completed,
+                isUsingTraktProgress = false,
+            ),
+        )
+        assertFalse(
+            shouldCascadeCompletedProgressToWatchedHistory(
+                entry = inProgress,
+                isUsingTraktProgress = false,
+            ),
+        )
     }
 
     @Test

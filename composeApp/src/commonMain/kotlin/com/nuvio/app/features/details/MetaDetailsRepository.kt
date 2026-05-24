@@ -5,6 +5,7 @@ import com.nuvio.app.core.logging.redactedUrlForLog
 import com.nuvio.app.features.addons.AddonManifest
 import com.nuvio.app.features.addons.AddonRepository
 import com.nuvio.app.features.addons.buildAddonResourceUrl
+import com.nuvio.app.features.addons.enabledAddons
 import com.nuvio.app.features.addons.httpGetText
 import com.nuvio.app.features.home.HomeCatalogSettingsRepository
 import com.nuvio.app.features.home.filterReleasedItems
@@ -265,6 +266,7 @@ object MetaDetailsRepository {
 
     private fun findMetaManifests(type: String, id: String): List<AddonManifest> =
         AddonRepository.uiState.value.addons
+            .enabledAddons()
             .mapNotNull { it.manifest }
             .filter { manifest ->
                 manifest.resources.any { resource ->

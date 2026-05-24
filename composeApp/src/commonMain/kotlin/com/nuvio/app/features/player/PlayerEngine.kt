@@ -88,6 +88,7 @@ interface PlayerEngineController {
      * native/controller chrome.
      */
     fun switchSource(url: String, audioUrl: String?, headersJson: String?) {}
+    fun configureIosVideoOutput(settings: PlayerSettingsUiState) {}
 }
 
 internal fun sanitizePlaybackHeaders(headers: Map<String, String>?): Map<String, String> {

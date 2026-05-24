@@ -1,10 +1,19 @@
 package com.nuvio.app.features.home
 
+import com.nuvio.app.features.cloud.CloudLibraryFile
+import com.nuvio.app.features.cloud.CloudLibraryItem
+import com.nuvio.app.features.cloud.CloudLibraryItemType
+import com.nuvio.app.features.cloud.CloudLibraryProviderState
+import com.nuvio.app.features.cloud.CloudLibraryUiState
+import com.nuvio.app.features.cloud.playbackVideoId
+import com.nuvio.app.features.debrid.DebridProviders
 import com.nuvio.app.features.watchprogress.ContinueWatchingItem
 import com.nuvio.app.features.watchprogress.WatchProgressEntry
+import com.nuvio.app.features.watched.WatchedItem
 import com.nuvio.app.features.trakt.TRAKT_CONTINUE_WATCHING_DAYS_CAP_ALL
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class HomeScreenTest {
 
@@ -32,7 +41,6 @@ class HomeScreenTest {
         val result = buildHomeContinueWatchingItems(
             visibleEntries = listOf(inProgress, movie),
             nextUpItemsBySeries = mapOf("tt0944947" to (200L to nextUp)),
-            upNextFromFurthestEpisode = false,
         )
 
         assertEquals(listOf("tt0944947:1:4", "movie-1"), result.map(ContinueWatchingItem::videoId))
@@ -56,7 +64,6 @@ class HomeScreenTest {
         val result = buildHomeContinueWatchingItems(
             visibleEntries = listOf(inProgress),
             nextUpItemsBySeries = mapOf("show" to (500L to nextUp)),
-            upNextFromFurthestEpisode = false,
         )
 
         assertEquals(1, result.size)
@@ -80,7 +87,6 @@ class HomeScreenTest {
         val result = buildHomeContinueWatchingItems(
             visibleEntries = listOf(inProgress),
             nextUpItemsBySeries = mapOf("show" to (500L to nextUp)),
-            upNextFromFurthestEpisode = false,
         )
 
         assertEquals(listOf("show:1:4"), result.map(ContinueWatchingItem::videoId))
@@ -88,51 +94,42 @@ class HomeScreenTest {
     }
 
     @Test
-    fun `build home continue watching items prefers furthest next up over earlier replay when enabled`() {
-        val replayInProgress = progressEntry(
-            videoId = "show:1:12",
-            title = "Show",
-            episodeNumber = 12,
-            episodeTitle = "Replay",
-            lastUpdatedEpochMs = 1_000L,
+    fun `build home continue watching items enriches cloud title from library file`() {
+        val file = CloudLibraryFile(id = "8", name = "GOAT.2026.2160p.UHD.mkv")
+        val cloudItem = CloudLibraryItem(
+            providerId = DebridProviders.TORBOX_ID,
+            providerName = DebridProviders.Torbox.displayName,
+            id = "29773238",
+            type = CloudLibraryItemType.Torrent,
+            name = "GOAT torrent",
+            files = listOf(file),
         )
-        val nextUp = continueWatchingItem(
-            videoId = "show:1:15",
-            subtitle = "S1E15 • Furthest",
-        )
-
-        val result = buildHomeContinueWatchingItems(
-            visibleEntries = listOf(replayInProgress),
-            nextUpItemsBySeries = mapOf("show" to (500L to nextUp)),
-            upNextFromFurthestEpisode = true,
-        )
-
-        assertEquals(listOf("show:1:15"), result.map(ContinueWatchingItem::videoId))
-        assertEquals("S1E15 • Furthest", result.single().subtitle)
-    }
-
-    @Test
-    fun `build home continue watching items shows earlier replay when furthest next up is disabled`() {
-        val replayInProgress = progressEntry(
-            videoId = "show:1:12",
-            title = "Show",
-            episodeNumber = 12,
-            episodeTitle = "Replay",
-            lastUpdatedEpochMs = 1_000L,
-        )
-        val nextUp = continueWatchingItem(
-            videoId = "show:1:15",
-            subtitle = "S1E15 • Furthest",
+        val progress = WatchProgressEntry(
+            contentType = "cloud",
+            parentMetaId = cloudItem.stableKey,
+            parentMetaType = "cloud",
+            videoId = cloudItem.playbackVideoId(file),
+            title = cloudItem.stableKey,
+            lastPositionMs = 120_000L,
+            durationMs = 1_000_000L,
+            lastUpdatedEpochMs = 500L,
         )
 
         val result = buildHomeContinueWatchingItems(
-            visibleEntries = listOf(replayInProgress),
-            nextUpItemsBySeries = mapOf("show" to (500L to nextUp)),
-            upNextFromFurthestEpisode = false,
+            visibleEntries = listOf(progress),
+            nextUpItemsBySeries = emptyMap(),
+            cloudLibraryUiState = CloudLibraryUiState(
+                isLoaded = true,
+                providers = listOf(
+                    CloudLibraryProviderState(
+                        provider = DebridProviders.Torbox,
+                        items = listOf(cloudItem),
+                    ),
+                ),
+            ),
         )
 
-        assertEquals(listOf("show:1:12"), result.map(ContinueWatchingItem::videoId))
-        assertEquals("S1E12 • Replay", result.single().subtitle)
+        assertEquals("GOAT.2026.2160p.UHD.mkv", result.single().title)
     }
 
     @Test
@@ -197,6 +194,85 @@ class HomeScreenTest {
         assertEquals(listOf("old", "recent"), result.map(WatchProgressEntry::videoId))
     }
 
+    @Test
+    fun `home next up seed uses completed progress when watched item lags on Nuvio Sync`() {
+        val completedProgress = progressEntry(
+            videoId = "show:4:14",
+            title = "Show",
+            seasonNumber = 4,
+            episodeNumber = 14,
+            lastUpdatedEpochMs = 2_000L,
+            isCompleted = true,
+        )
+        val olderWatchedItem = watchedItem(
+            id = "show",
+            season = 4,
+            episode = 10,
+            markedAtEpochMs = 1_000L,
+        )
+
+        val result = buildHomeNextUpSeedCandidates(
+            progressEntries = listOf(completedProgress),
+            watchedItems = listOf(olderWatchedItem),
+            isTraktProgressActive = false,
+            preferFurthestEpisode = true,
+            nowEpochMs = 3_000L,
+        )
+
+        assertEquals(1, result.size)
+        assertEquals("show", result.single().content.id)
+        assertEquals(4, result.single().seasonNumber)
+        assertEquals(14, result.single().episodeNumber)
+    }
+
+    @Test
+    fun `home next up seed uses furthest watched item when progress is older`() {
+        val olderCompletedProgress = progressEntry(
+            videoId = "show:4:10",
+            title = "Show",
+            seasonNumber = 4,
+            episodeNumber = 10,
+            lastUpdatedEpochMs = 2_000L,
+            isCompleted = true,
+        )
+        val newerWatchedItem = watchedItem(
+            id = "show",
+            season = 4,
+            episode = 14,
+            markedAtEpochMs = 1_000L,
+        )
+
+        val result = buildHomeNextUpSeedCandidates(
+            progressEntries = listOf(olderCompletedProgress),
+            watchedItems = listOf(newerWatchedItem),
+            isTraktProgressActive = false,
+            preferFurthestEpisode = true,
+            nowEpochMs = 3_000L,
+        )
+
+        assertEquals(4, result.single().seasonNumber)
+        assertEquals(14, result.single().episodeNumber)
+    }
+
+    @Test
+    fun `stale live next up item is dropped when current seed advances`() {
+        val staleNextUp = continueWatchingItem(
+            videoId = "show:4:11",
+            subtitle = "Up Next • S4E11",
+            seedSeasonNumber = 4,
+            seedEpisodeNumber = 10,
+        )
+
+        val result = filterNextUpItemsByCurrentSeeds(
+            nextUpItemsBySeries = mapOf("show" to (1_000L to staleNextUp)),
+            activeSeedContentIds = setOf("show"),
+            currentSeedByContentId = mapOf("show" to (4 to 14)),
+            shouldDropItemsWithoutActiveSeed = true,
+        )
+
+        assertTrue(result.isEmpty())
+    }
+
     private fun progressEntry(
         videoId: String,
         title: String,
@@ -204,6 +280,7 @@ class HomeScreenTest {
         seasonNumber: Int? = 1,
         episodeNumber: Int? = 4,
         episodeTitle: String? = "Episode",
+        isCompleted: Boolean = false,
     ): WatchProgressEntry =
         WatchProgressEntry(
             contentType = if (seasonNumber != null && episodeNumber != null) "series" else "movie",
@@ -217,15 +294,23 @@ class HomeScreenTest {
             lastPositionMs = if (seasonNumber != null && episodeNumber != null) 120_000L else 60_000L,
             durationMs = 1_000_000L,
             lastUpdatedEpochMs = lastUpdatedEpochMs,
+            isCompleted = isCompleted,
         )
 
     private fun continueWatchingItem(
         videoId: String,
         subtitle: String,
+        seasonNumber: Int? = null,
+        episodeNumber: Int? = null,
+        seedSeasonNumber: Int? = seasonNumber,
+        seedEpisodeNumber: Int? = episodeNumber,
     ): ContinueWatchingItem {
         val parts = videoId.split(':')
-        val season = parts.getOrNull(1)?.toIntOrNull() ?: 1
-        val episode = parts.getOrNull(2)?.toIntOrNull() ?: 4
+        val resolvedSeasonNumber = seasonNumber ?: parts.getOrNull(1)?.toIntOrNull()
+        val resolvedEpisodeNumber = episodeNumber ?: parts.getOrNull(2)?.toIntOrNull()
+        val resolvedSeedSeasonNumber = seedSeasonNumber ?: resolvedSeasonNumber
+        val resolvedSeedEpisodeNumber = seedEpisodeNumber ?: resolvedEpisodeNumber
+
         return ContinueWatchingItem(
             parentMetaId = videoId.substringBefore(':'),
             parentMetaType = "series",
@@ -233,14 +318,32 @@ class HomeScreenTest {
             title = "Show",
             subtitle = subtitle,
             imageUrl = null,
-            seasonNumber = season,
-            episodeNumber = episode,
+            seasonNumber = resolvedSeasonNumber,
+            episodeNumber = resolvedEpisodeNumber,
             episodeTitle = subtitle.substringAfterLast(" • ", "Episode"),
+            isNextUp = true,
+            nextUpSeedSeasonNumber = resolvedSeedSeasonNumber,
+            nextUpSeedEpisodeNumber = resolvedSeedEpisodeNumber,
             resumePositionMs = 0L,
             durationMs = 0L,
             progressFraction = 0f,
         )
     }
+
+    private fun watchedItem(
+        id: String,
+        season: Int,
+        episode: Int,
+        markedAtEpochMs: Long,
+    ): WatchedItem =
+        WatchedItem(
+            id = id,
+            type = "series",
+            name = "Show",
+            season = season,
+            episode = episode,
+            markedAtEpochMs = markedAtEpochMs,
+        )
 
     private companion object {
         const val MILLIS_PER_DAY = 24L * 60L * 60L * 1000L

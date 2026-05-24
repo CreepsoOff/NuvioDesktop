@@ -5,3 +5,6 @@
 	path = mediamp
 	url = https://github.com/CreepsoOff/mediamp-nuvio.git
 	branch = windows-nuvio
+[submodule "stremio-community-v5"]
+	path = stremio-community-v5
+	url = https://github.com/Zaarrg/stremio-community-v5.git

@@ -103,6 +103,7 @@ fun DetailSeriesContent(
     blurUnwatchedEpisodes: Boolean = false,
     onEpisodeClick: ((MetaVideo) -> Unit)? = null,
     onEpisodeLongPress: ((MetaVideo) -> Unit)? = null,
+    onSeasonLongPress: ((Int) -> Unit)? = null,
 ) {
     val hasVideos = meta.videos.isNotEmpty()
     if (meta.type != "series" && !hasVideos) return
@@ -235,12 +236,14 @@ fun DetailSeriesContent(
                                     currentSeason = currentSeason,
                                     sizing = sizing,
                                     onSelect = { selectedSeasonOverride = it },
+                                    onLongPress = onSeasonLongPress,
                                 )
                                 SeasonViewMode.Text -> SeasonTextChipScrollRow(
                                     seasons = seasons,
                                     currentSeason = currentSeason,
                                     sizing = sizing,
                                     onSelect = { selectedSeasonOverride = it },
+                                    onLongPress = onSeasonLongPress,
                                 )
                             }
                         }
@@ -250,6 +253,7 @@ fun DetailSeriesContent(
                             currentSeason = currentSeason,
                             sizing = sizing,
                             onSelect = { selectedSeasonOverride = it },
+                            onLongPress = onSeasonLongPress,
                         )
                     }
                 }
@@ -377,12 +381,14 @@ private fun SeasonViewModeToggle(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun SeasonTextChipScrollRow(
     seasons: List<Int>,
     currentSeason: Int,
     sizing: SeriesContentSizing,
     onSelect: (Int) -> Unit,
+    onLongPress: ((Int) -> Unit)?,
 ) {
     val seasonListState = rememberLazyListState()
     var hasPositionedSeasonRow by remember(seasons) { mutableStateOf(false) }
@@ -418,7 +424,10 @@ private fun SeasonTextChipScrollRow(
                             Color.Transparent
                         },
                     )
-                    .clickable { onSelect(season) }
+                    .combinedClickable(
+                        onClick = { onSelect(season) },
+                        onLongClick = onLongPress?.let { handler -> { handler(season) } },
+                    )
                     .padding(
                         horizontal = sizing.seasonChipHorizontalPadding,
                         vertical = sizing.seasonChipVerticalPadding,
@@ -450,6 +459,7 @@ private fun SeasonPosterScrollRow(
     currentSeason: Int,
     sizing: SeriesContentSizing,
     onSelect: (Int) -> Unit,
+    onLongPress: ((Int) -> Unit)?,
 ) {
     val seasonListState = rememberLazyListState()
     var hasPositionedSeasonRow by remember(seasons) { mutableStateOf(false) }
@@ -484,11 +494,13 @@ private fun SeasonPosterScrollRow(
                 isSelected = season == currentSeason,
                 sizing = sizing,
                 onClick = { onSelect(season) },
+                onLongClick = onLongPress?.let { handler -> { handler(season) } },
             )
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun SeasonPosterButton(
     label: String,
@@ -496,11 +508,15 @@ private fun SeasonPosterButton(
     isSelected: Boolean,
     sizing: SeriesContentSizing,
     onClick: () -> Unit,
+    onLongClick: (() -> Unit)?,
 ) {
     Column(
         modifier = Modifier
             .width(sizing.seasonPosterWidth)
-            .clickable(onClick = onClick),
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick,
+            ),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Box(

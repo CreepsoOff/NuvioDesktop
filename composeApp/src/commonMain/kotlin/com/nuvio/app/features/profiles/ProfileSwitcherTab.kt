@@ -56,7 +56,6 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -79,6 +78,8 @@ import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
+import kotlin.math.max
+import kotlin.math.min
 
 @Composable
 fun ProfileSwitcherTab(
@@ -127,9 +128,9 @@ fun ProfileSwitcherTab(
 
     fun updateDragTarget(localPosition: Offset) {
         val trigger = triggerCoordinates ?: return
-        val windowPosition = trigger.localToWindow(localPosition)
+        val screenPosition = trigger.localToScreen(localPosition)
         val nextTargetProfileIndex = profileBubbleBounds.entries
-            .firstOrNull { (_, bounds) -> bounds.contains(windowPosition) }
+            .firstOrNull { (_, bounds) -> bounds.contains(screenPosition) }
             ?.key
         if (nextTargetProfileIndex != null && nextTargetProfileIndex != dragTargetProfileIndex) {
             performProfileHoverHaptic()
@@ -464,7 +465,7 @@ private fun PopupProfileBubble(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .onGloballyPositioned { coordinates ->
-                onBoundsChanged(coordinates.boundsInWindow())
+                onBoundsChanged(coordinates.boundsOnScreen())
             }
             .graphicsLayer {
                 alpha = itemAlpha.value
@@ -584,6 +585,17 @@ private fun PopupProfileBubble(
             modifier = Modifier.width(56.dp),
         )
     }
+}
+
+private fun LayoutCoordinates.boundsOnScreen(): Rect {
+    val topLeft = localToScreen(Offset.Zero)
+    val bottomRight = localToScreen(Offset(size.width.toFloat(), size.height.toFloat()))
+    return Rect(
+        left = min(topLeft.x, bottomRight.x),
+        top = min(topLeft.y, bottomRight.y),
+        right = max(topLeft.x, bottomRight.x),
+        bottom = max(topLeft.y, bottomRight.y),
+    )
 }
 
 /**
