@@ -375,7 +375,7 @@ internal class MpvDesktopPlayerBackend private constructor(
     private fun applyDecoderSettings(
         reason: String,
         forceAll: Boolean = false,
-        allowPlaybackHeavy: Boolean = stateFlow.value.phase != DesktopPlayerPhase.Playing,
+        allowPlaybackHeavy: Boolean = stateFlow.value.phase.canApplyPlaybackHeavyTuning(),
     ) {
         if (nativeClosed) return
         val tuning = loadDesktopMpvVideoTuning()
@@ -448,9 +448,22 @@ internal class MpvDesktopPlayerBackend private constructor(
     }
 
     private fun applyPendingPlaybackHeavyTuning(phase: DesktopPlayerPhase) {
-        if (phase == DesktopPlayerPhase.Playing || !playbackHeavyTuningPending || nativeClosed) return
+        if (!phase.canApplyPlaybackHeavyTuning() || !playbackHeavyTuningPending || nativeClosed) return
         applyDecoderSettings(reason = "phase-$phase", allowPlaybackHeavy = true)
     }
+
+    private fun DesktopPlayerPhase.canApplyPlaybackHeavyTuning(): Boolean =
+        when (this) {
+            DesktopPlayerPhase.Idle,
+            DesktopPlayerPhase.Ready,
+            DesktopPlayerPhase.Paused,
+            DesktopPlayerPhase.Ended,
+            DesktopPlayerPhase.Error,
+            DesktopPlayerPhase.Closed -> true
+            DesktopPlayerPhase.Preparing,
+            DesktopPlayerPhase.Playing,
+            DesktopPlayerPhase.Buffering -> false
+        }
 
     private fun List<MpvRuntimeOption>.dedupeRuntimeOptions(): List<MpvRuntimeOption> =
         asReversed()
