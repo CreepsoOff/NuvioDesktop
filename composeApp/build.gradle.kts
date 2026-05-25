@@ -20,6 +20,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 import java.io.File
 import java.io.RandomAccessFile
+import java.security.MessageDigest
 import java.util.Properties
 import javax.imageio.ImageIO
 import javax.inject.Inject
@@ -116,15 +117,17 @@ abstract class PackageWindowsNativeRuntimeTask : DefaultTask() {
         }
 
         val destination = nativeDir.get().asFile.resolve("libmpv-2.dll")
-        runCatching {
-            resolvedSource.copyTo(destination, overwrite = true)
-        }.onSuccess {
-            logger.lifecycle("packageWindowsNativeRuntime: using Stremio libmpv-2.dll from ${resolvedSource.absolutePath}")
-        }.onFailure {
-            logger.warn(
-                "packageWindowsNativeRuntime: failed to override libmpv-2.dll from ${resolvedSource.absolutePath}: ${it.message}",
-            )
+        resolvedSource.copyTo(destination, overwrite = true)
+
+        val sourceHash = resolvedSource.sha256()
+        val destinationHash = destination.sha256()
+        check(sourceHash == destinationHash) {
+            "Stremio libmpv-2.dll copy verification failed: source sha256=$sourceHash destination sha256=$destinationHash"
         }
+        logger.lifecycle(
+            "packageWindowsNativeRuntime: using Stremio libmpv-2.dll " +
+                "size=${destination.length()} sha256=${destinationHash.take(12)}...",
+        )
     }
 
     private fun extractLibmpvFromRarIfNeeded(baseDir: File): File? {
@@ -219,6 +222,19 @@ abstract class PackageWindowsNativeRuntimeTask : DefaultTask() {
         check(missingFromLauncher.isEmpty()) {
             "Windows launcher native fallback is incomplete in ${launcherDirectory.absolutePath}: missing ${missingFromLauncher.joinToString()}"
         }
+    }
+
+    private fun File.sha256(): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        inputStream().use { input ->
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            while (true) {
+                val read = input.read(buffer)
+                if (read < 0) break
+                digest.update(buffer, 0, read)
+            }
+        }
+        return digest.digest().joinToString(separator = "") { byte -> "%02x".format(byte) }
     }
 }
 
