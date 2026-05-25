@@ -44,7 +44,14 @@ internal object DesktopMpvPlaybackSettingsSignal {
 internal data class MpvRuntimeOption(
     val name: String,
     val value: String,
+    val applyTiming: MpvRuntimeOptionApplyTiming = MpvRuntimeOptionApplyTiming.PlaybackHeavy,
 )
+
+internal enum class MpvRuntimeOptionApplyTiming {
+    LoadOnly,
+    PlaybackHeavy,
+    PlaybackSafe,
+}
 
 internal data class DesktopMpvVideoTuning(
     val settings: PlayerVideoTuningSettings,
@@ -220,7 +227,7 @@ internal fun mpvRuntimeOptions(tuning: DesktopMpvVideoTuning): List<MpvRuntimeOp
     }
     return listOf(
         *stremioBaselineRuntimeOptions().toTypedArray(),
-        MpvRuntimeOption("hwdec", settings.hardwareDecoderMode.mpvValue),
+        MpvRuntimeOption("hwdec", settings.hardwareDecoderMode.mpvValue, MpvRuntimeOptionApplyTiming.LoadOnly),
         MpvRuntimeOption("tone-mapping", settings.toneMappingMode.mpvValue),
         MpvRuntimeOption("hdr-compute-peak", if (settings.hdrComputePeakEnabled) "auto" else "no"),
         MpvRuntimeOption("target-prim", settings.targetPrimaries.mpvValue),
@@ -230,10 +237,10 @@ internal fun mpvRuntimeOptions(tuning: DesktopMpvVideoTuning): List<MpvRuntimeOp
         MpvRuntimeOption("deband", if (settings.debandEnabled) "yes" else "no"),
         MpvRuntimeOption("interpolation", if (settings.interpolationEnabled) "yes" else "no"),
         MpvRuntimeOption("video-sync", if (settings.interpolationEnabled) "display-resample" else "audio"),
-        MpvRuntimeOption("brightness", settings.brightness.toString()),
-        MpvRuntimeOption("contrast", settings.contrast.toString()),
-        MpvRuntimeOption("saturation", settings.saturation.toString()),
-        MpvRuntimeOption("gamma", settings.gamma.toString()),
+        MpvRuntimeOption("brightness", settings.brightness.toString(), MpvRuntimeOptionApplyTiming.PlaybackSafe),
+        MpvRuntimeOption("contrast", settings.contrast.toString(), MpvRuntimeOptionApplyTiming.PlaybackSafe),
+        MpvRuntimeOption("saturation", settings.saturation.toString(), MpvRuntimeOptionApplyTiming.PlaybackSafe),
+        MpvRuntimeOption("gamma", settings.gamma.toString(), MpvRuntimeOptionApplyTiming.PlaybackSafe),
         *diagnosticRuntimeOptions().toTypedArray(),
     )
 }
@@ -243,18 +250,18 @@ internal fun stremioBaselineRuntimeOptions(): List<MpvRuntimeOption> =
         // Stremio uses `wid` + `vo=gpu-next` against a native HWND. Nuvio's
         // current in-window path uses libmpv's render API into the Compose GL
         // surface, so `vo` must stay `libmpv` or MPV opens its own native window.
-        MpvRuntimeOption("demuxer-lavf-probesize", "524288"),
-        MpvRuntimeOption("demuxer-lavf-analyzeduration", "0.5"),
-        MpvRuntimeOption("demuxer-max-bytes", stremioCacheBytes()),
-        MpvRuntimeOption("demuxer-max-packets", "150000000"),
-        MpvRuntimeOption("cache", "yes"),
-        MpvRuntimeOption("cache-pause", "no"),
-        MpvRuntimeOption("cache-secs", "60"),
-        MpvRuntimeOption("vd-lavc-threads", "0"),
-        MpvRuntimeOption("ad-lavc-threads", "0"),
-        MpvRuntimeOption("audio-fallback-to-null", "yes"),
-        MpvRuntimeOption("audio-client-name", "Nuvio"),
-        MpvRuntimeOption("title", "Nuvio"),
+        MpvRuntimeOption("demuxer-lavf-probesize", "524288", MpvRuntimeOptionApplyTiming.LoadOnly),
+        MpvRuntimeOption("demuxer-lavf-analyzeduration", "0.5", MpvRuntimeOptionApplyTiming.LoadOnly),
+        MpvRuntimeOption("demuxer-max-bytes", stremioCacheBytes(), MpvRuntimeOptionApplyTiming.LoadOnly),
+        MpvRuntimeOption("demuxer-max-packets", "150000000", MpvRuntimeOptionApplyTiming.LoadOnly),
+        MpvRuntimeOption("cache", "yes", MpvRuntimeOptionApplyTiming.LoadOnly),
+        MpvRuntimeOption("cache-pause", "no", MpvRuntimeOptionApplyTiming.LoadOnly),
+        MpvRuntimeOption("cache-secs", "60", MpvRuntimeOptionApplyTiming.LoadOnly),
+        MpvRuntimeOption("vd-lavc-threads", "0", MpvRuntimeOptionApplyTiming.LoadOnly),
+        MpvRuntimeOption("ad-lavc-threads", "0", MpvRuntimeOptionApplyTiming.LoadOnly),
+        MpvRuntimeOption("audio-fallback-to-null", "yes", MpvRuntimeOptionApplyTiming.LoadOnly),
+        MpvRuntimeOption("audio-client-name", "Nuvio", MpvRuntimeOptionApplyTiming.LoadOnly),
+        MpvRuntimeOption("title", "Nuvio", MpvRuntimeOptionApplyTiming.LoadOnly),
     )
 
 private fun stremioCacheBytes(): String {

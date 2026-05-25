@@ -100,6 +100,9 @@ internal class MpvDesktopPlayerBackend private constructor(
     @Volatile private var externalSubtitleActive = false
     @Volatile private var displayWakeLockHeld = false
     @Volatile private var latestSubtitleStyle = SubtitleStyleState.DEFAULT
+    @Volatile private var playbackHeavyTuningPending = false
+    private val decoderSettingsLock = Any()
+    private val appliedRuntimeOptions = mutableMapOf<String, String>()
     private val framePacingSamples = ArrayDeque<String>()
     private val externalSubtitleRequestCounter = AtomicInteger(0)
     private val externalSubtitleTempFiles = mutableSetOf<Path>()
@@ -115,7 +118,7 @@ internal class MpvDesktopPlayerBackend private constructor(
         observePlayerState()
         observeFramePacing()
         observePlaybackSettings()
-        applyDecoderSettings()
+        applyDecoderSettings(reason = "init", forceAll = true, allowPlaybackHeavy = true)
         applyCursorSettings()
         DesktopRuntimeLog.info("MPV backend created id=$id runtime=${runtime.directory?.safePath() ?: "none"}")
     }
@@ -139,7 +142,8 @@ internal class MpvDesktopPlayerBackend private constructor(
                     "audio=${request.sourceAudioUrl?.redactedMediaUrl() ?: "none"} headersPresent=${headers.isNotEmpty()}",
             )
             resetExternalSubtitleState("load")
-                        player.setMediaData(UriMediaData(request.sourceUrl, headers))
+            applyDecoderSettings(reason = "load", allowPlaybackHeavy = true)
+            player.setMediaData(UriMediaData(request.sourceUrl, headers))
             applyMpvNetworkHeaders(headers)
             // Defer seek to after vo-configured (duration > 0)
             if (request.seekTargetMs > 0L) {
@@ -266,6 +270,7 @@ internal class MpvDesktopPlayerBackend private constructor(
             if (!nativeClosed) {
                 updateDisplayWakeLock(mapped.phase)
                 stateFlow.value = mapped
+                applyPendingPlaybackHeavyTuning(mapped.phase)
                 DesktopRuntimeLog.info("[WP-STATE] phase=${mapped.phase} pos=${mapped.positionMs}ms dur=${mapped.durationMs}ms")
             }
         }.launchIn(scope)
@@ -325,7 +330,7 @@ internal class MpvDesktopPlayerBackend private constructor(
             .debounce(220)
             .onEach {
                 if (!nativeClosed) {
-                    applyDecoderSettings()
+                    applyDecoderSettings(reason = "settings")
                 }
             }
             .launchIn(scope)
@@ -353,14 +358,52 @@ internal class MpvDesktopPlayerBackend private constructor(
      * The GPU rendering backend stays on the existing libmpv/OpenGL path; true
      * Windows HDR passthrough requires a native HWND renderer or external player.
      */
-    private fun applyDecoderSettings() {
+    private fun applyDecoderSettings(
+        reason: String,
+        forceAll: Boolean = false,
+        allowPlaybackHeavy: Boolean = stateFlow.value.phase != DesktopPlayerPhase.Playing,
+    ) {
         if (nativeClosed) return
         val tuning = loadDesktopMpvVideoTuning()
-        val options = mpvRuntimeOptions(tuning)
+        val options = mpvRuntimeOptions(tuning).dedupeRuntimeOptions()
+        val phase = stateFlow.value.phase
+        val changedOptions = synchronized(decoderSettingsLock) {
+            if (forceAll) {
+                options
+            } else {
+                options.filter { option -> appliedRuntimeOptions[option.name] != option.value }
+            }
+        }
+        if (changedOptions.isEmpty()) {
+            synchronized(decoderSettingsLock) {
+                if (allowPlaybackHeavy) playbackHeavyTuningPending = false
+            }
+            return
+        }
+        val deferredOptions = if (allowPlaybackHeavy) {
+            emptyList()
+        } else {
+            changedOptions.filter { it.applyTiming != MpvRuntimeOptionApplyTiming.PlaybackSafe }
+        }
+        val optionsToApply = if (allowPlaybackHeavy) {
+            changedOptions
+        } else {
+            changedOptions.filter { it.applyTiming == MpvRuntimeOptionApplyTiming.PlaybackSafe }
+        }
+        synchronized(decoderSettingsLock) {
+            playbackHeavyTuningPending = deferredOptions.isNotEmpty()
+        }
+        if (deferredOptions.isNotEmpty()) {
+            DesktopRuntimeLog.info(
+                "MPV video tuning deferred reason=$reason phase=$phase deferred=${deferredOptions.size} " +
+                    "names=${deferredOptions.joinToString(",") { it.name }}",
+            )
+        }
+        if (optionsToApply.isEmpty()) return
         val appliedOptions = mutableListOf<String>()
         val skippedOptions = mutableListOf<String>()
 
-        options.forEach { option ->
+        optionsToApply.forEach { option ->
             runCatching {
                 mpvHandle.setMpvRuntimeOption(option.name, option.value)
             }.onSuccess { applied ->
@@ -369,6 +412,9 @@ internal class MpvDesktopPlayerBackend private constructor(
                     appliedOptions += entry
                 } else {
                     skippedOptions += entry
+                }
+                synchronized(decoderSettingsLock) {
+                    appliedRuntimeOptions[option.name] = option.value
                 }
             }.onFailure {
                 DesktopRuntimeLog.warn(
@@ -379,12 +425,23 @@ internal class MpvDesktopPlayerBackend private constructor(
         }
 
         DesktopRuntimeLog.info(
-            "MPV video tuning: preset=${tuning.settings.outputPreset} legacyHdr=${tuning.legacyHdrMode.storageValue} " +
-                "applied=${appliedOptions.size}/${options.size} skipped=${skippedOptions.size} " +
+            "MPV video tuning: reason=$reason phase=$phase preset=${tuning.settings.outputPreset} " +
+                "legacyHdr=${tuning.legacyHdrMode.storageValue} applied=${appliedOptions.size}/${optionsToApply.size} " +
+                "skipped=${skippedOptions.size} deferred=${deferredOptions.size} " +
                 "options=${appliedOptions.joinToString(",")}" +
                 if (skippedOptions.isNotEmpty()) " skippedOptions=${skippedOptions.joinToString(",")}" else "",
         )
     }
+
+    private fun applyPendingPlaybackHeavyTuning(phase: DesktopPlayerPhase) {
+        if (phase == DesktopPlayerPhase.Playing || !playbackHeavyTuningPending || nativeClosed) return
+        applyDecoderSettings(reason = "phase-$phase", allowPlaybackHeavy = true)
+    }
+
+    private fun List<MpvRuntimeOption>.dedupeRuntimeOptions(): List<MpvRuntimeOption> =
+        asReversed()
+            .distinctBy { it.name }
+            .asReversed()
 
     private fun applyCursorSettings() {
         if (nativeClosed) return

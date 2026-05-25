@@ -92,4 +92,30 @@ class DesktopMpvPlaybackSettingsTest {
         assertEquals("15", options["saturation"])
         assertEquals("-3", options["gamma"])
     }
+
+    @Test
+    fun runtimeOptionsClassifyOnlyPictureEqAsPlaybackSafe() {
+        val timings = mpvRuntimeOptions(
+            DesktopMpvVideoTuning(
+                settings = PlayerVideoTuningSettings(
+                    brightness = 5,
+                    contrast = 6,
+                    saturation = 7,
+                    gamma = 8,
+                ),
+                legacyHdrMode = DesktopHdrMode.Auto,
+            ),
+        ).associate { it.name to it.applyTiming }
+
+        assertEquals(MpvRuntimeOptionApplyTiming.PlaybackSafe, timings["brightness"])
+        assertEquals(MpvRuntimeOptionApplyTiming.PlaybackSafe, timings["contrast"])
+        assertEquals(MpvRuntimeOptionApplyTiming.PlaybackSafe, timings["saturation"])
+        assertEquals(MpvRuntimeOptionApplyTiming.PlaybackSafe, timings["gamma"])
+        assertEquals(MpvRuntimeOptionApplyTiming.PlaybackHeavy, timings["tone-mapping"])
+        assertEquals(MpvRuntimeOptionApplyTiming.PlaybackHeavy, timings["hdr-compute-peak"])
+        assertEquals(MpvRuntimeOptionApplyTiming.PlaybackHeavy, timings["deband"])
+        assertEquals(MpvRuntimeOptionApplyTiming.PlaybackHeavy, timings["interpolation"])
+        assertEquals(MpvRuntimeOptionApplyTiming.LoadOnly, timings["hwdec"])
+        assertEquals(MpvRuntimeOptionApplyTiming.LoadOnly, timings["demuxer-max-bytes"])
+    }
 }
