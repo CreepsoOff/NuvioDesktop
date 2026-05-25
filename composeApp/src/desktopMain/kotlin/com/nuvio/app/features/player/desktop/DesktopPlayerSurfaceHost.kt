@@ -38,8 +38,10 @@ internal fun DesktopPlayerSurfaceHost(
     val latestOnControllerReady by rememberUpdatedState(onControllerReady)
     val latestOnSnapshot by rememberUpdatedState(onSnapshot)
     val latestOnError by rememberUpdatedState(onError)
+    val latestPlayWhenReady by rememberUpdatedState(playWhenReady)
 
     var activeSessionKey by remember { mutableStateOf<String?>(null) }
+    var autoplayRetrySessionKey by remember { mutableStateOf<String?>(null) }
     var lastPositionMs by remember { mutableStateOf(0L) }
     val backend = remember {
         DesktopPlayerBackendFactory.createWindowsBackend()
@@ -65,6 +67,7 @@ internal fun DesktopPlayerSurfaceHost(
 
     LaunchedEffect(sessionKey, backend) {
         activeSessionKey = sessionKey
+        autoplayRetrySessionKey = null
         DesktopRuntimeLog.info("DesktopPlayerSurfaceHost load session=$sessionKey backend=${backend.backendName}")
         latestOnControllerReady(backend.controller)
         val request = DesktopPlayerRequest(
@@ -89,6 +92,18 @@ internal fun DesktopPlayerSurfaceHost(
             latestOnSnapshot(state.toSnapshot())
             lastPositionMs = state.positionMs
             latestOnError(state.error?.uiMessage)
+            if (
+                latestPlayWhenReady &&
+                autoplayRetrySessionKey != sessionKey &&
+                state.phase == DesktopPlayerPhase.Paused &&
+                state.positionMs <= 0L &&
+                state.durationMs > 0L &&
+                state.error == null
+            ) {
+                autoplayRetrySessionKey = sessionKey
+                DesktopRuntimeLog.info("DesktopPlayerSurfaceHost autoplay retry session=$sessionKey phase=${state.phase}")
+                backend.controller.play()
+            }
         }
     }
 
