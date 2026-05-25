@@ -16,6 +16,11 @@ import java.time.Instant
 import javax.imageio.ImageIO
 import kotlin.math.max
 
+private const val DevStreamHeadersEnv = "NUVIO_DEV_STREAM_HEADERS"
+private const val DevStreamHeadersProperty = "nuvio.dev.stream.headers"
+private const val DevStreamHeaderEnvPrefix = "NUVIO_DEV_STREAM_HEADER_"
+private val DevStreamHeaderNamePattern = Regex("""^[!#$%&'*+.^_`|~0-9A-Za-z-]+$""")
+
 internal data class DesktopDevStreamMode(
     val launch: PlayerLaunch,
     val screenshotDirectory: Path?,
@@ -37,6 +42,12 @@ internal data class DesktopDevStreamMode(
             val launch = when {
                 deepLink != null -> deepLink.toPlayerLaunch()
                 explicitUrl != null -> {
+                    val devStreamHeaders = buildMap {
+                        putAll(parseDevStreamHeaderSpec(System.getenv(DevStreamHeadersEnv)))
+                        putAll(parseDevStreamHeaderSpec(System.getProperty(DevStreamHeadersProperty)))
+                        putAll(parseDevStreamHeaderEnvironment(System.getenv()))
+                        putAll(values.headers())
+                    }
                     val title = values["title"]
                         ?: System.getProperty("nuvio.dev.stream.title")
                         ?: System.getenv("NUVIO_DEV_STREAM_TITLE")
@@ -47,7 +58,7 @@ internal data class DesktopDevStreamMode(
                         sourceAudioUrl = values["audio-url"]
                             ?: System.getProperty("nuvio.dev.stream.audioUrl")
                             ?: System.getenv("NUVIO_DEV_STREAM_AUDIO_URL"),
-                        sourceHeaders = sanitizePlaybackHeaders(values.headers()),
+                        sourceHeaders = sanitizePlaybackHeaders(devStreamHeaders),
                         poster = values["poster"] ?: System.getenv("NUVIO_DEV_STREAM_POSTER"),
                         background = values["background"] ?: System.getenv("NUVIO_DEV_STREAM_BACKGROUND"),
                         streamTitle = values["stream-title"] ?: title,
@@ -229,6 +240,55 @@ private fun Map<String, String>.headers(): Map<String, String> =
             if (name.isBlank() || value.isBlank()) null else name to value
         }
         .toMap()
+
+internal fun parseDevStreamHeaderSpec(raw: String?): Map<String, String> {
+    val input = raw?.trim()?.takeIf { it.isNotBlank() } ?: return emptyMap()
+    return input
+        .split(Regex("[\\r\\n;]+"))
+        .asSequence()
+        .mapNotNull(::parseDevStreamHeaderLine)
+        .toMap()
+}
+
+internal fun parseDevStreamHeaderEnvironment(env: Map<String, String>): Map<String, String> =
+    env.entries
+        .asSequence()
+        .filter { it.key.startsWith(DevStreamHeaderEnvPrefix, ignoreCase = true) }
+        .mapNotNull { entry ->
+            val suffix = entry.key.substringAfter(DevStreamHeaderEnvPrefix, missingDelimiterValue = "")
+            val name = suffix
+                .split('_')
+                .filter(String::isNotBlank)
+                .joinToString("-")
+            normalizeDevStreamHeader(name, entry.value)
+        }
+        .toMap()
+
+private fun parseDevStreamHeaderLine(line: String): Pair<String, String>? {
+    val trimmed = line.trim()
+    if (trimmed.isBlank()) return null
+    val colonIndex = trimmed.indexOf(':')
+    val equalsIndex = trimmed.indexOf('=')
+    val separatorIndex = when {
+        colonIndex > 0 && equalsIndex > 0 -> minOf(colonIndex, equalsIndex)
+        colonIndex > 0 -> colonIndex
+        equalsIndex > 0 -> equalsIndex
+        else -> -1
+    }
+    if (separatorIndex <= 0) return null
+    return normalizeDevStreamHeader(
+        name = trimmed.substring(0, separatorIndex),
+        value = trimmed.substring(separatorIndex + 1),
+    )
+}
+
+private fun normalizeDevStreamHeader(name: String, value: String): Pair<String, String>? {
+    val normalizedName = name.trim()
+    val normalizedValue = value.trim()
+    if (normalizedName.isBlank() || normalizedValue.isBlank()) return null
+    if (!DevStreamHeaderNamePattern.matches(normalizedName)) return null
+    return normalizedName to normalizedValue
+}
 
 private fun Long.toMegabytes(): Long = this / (1024L * 1024L)
 

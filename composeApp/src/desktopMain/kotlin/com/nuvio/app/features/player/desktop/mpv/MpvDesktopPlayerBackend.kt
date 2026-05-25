@@ -71,6 +71,8 @@ private const val ExternalSubtitleCodepage = "+utf-8"
 private const val EmbeddedSubtitleCodepage = "auto"
 private const val ExternalSubtitleAssOverride = "strip"
 private const val EmbeddedSubtitleAssOverride = "no"
+private const val DefaultMpvUserAgent =
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
 
 @OptIn(InternalMediampApi::class)
 internal class MpvDesktopPlayerBackend private constructor(
@@ -138,6 +140,7 @@ internal class MpvDesktopPlayerBackend private constructor(
             )
             resetExternalSubtitleState("load")
                         player.setMediaData(UriMediaData(request.sourceUrl, headers))
+            applyMpvNetworkHeaders(headers)
             // Defer seek to after vo-configured (duration > 0)
             if (request.seekTargetMs > 0L) {
                 pendingSeekMs = request.seekTargetMs
@@ -391,6 +394,28 @@ internal class MpvDesktopPlayerBackend private constructor(
             DesktopRuntimeLog.info("MPV cursor autohide configured")
         }.onFailure {
             DesktopRuntimeLog.warn("MPV cursor autohide configuration failed message=${it.message}")
+        }
+    }
+
+    private fun applyMpvNetworkHeaders(headers: Map<String, String>) {
+        if (nativeClosed) return
+        val userAgent = headers.entries
+            .firstOrNull { it.key.equals("User-Agent", ignoreCase = true) }
+            ?.value
+            ?.trim()
+            ?.takeIf { it.isNotBlank() }
+            ?: DefaultMpvUserAgent
+        val headerFields = mpvHttpHeaderFields(headers)
+        runCatching {
+            mpvHandle.setMpvRuntimeOption("user-agent", userAgent)
+            mpvHandle.setMpvRuntimeOption("http-header-fields-clr", "")
+            headerFields?.let { mpvHandle.setMpvRuntimeOption("http-header-fields", it) }
+            DesktopRuntimeLog.info(
+                "MPV network headers configured names=${headers.keys.sorted()} " +
+                    "fieldCount=${headerFields?.countMpvHeaderFields() ?: 0} userAgent=${if (headers.keys.any { it.equals("User-Agent", ignoreCase = true) }) "custom" else "default"}",
+            )
+        }.onFailure {
+            DesktopRuntimeLog.warn("MPV network headers configuration failed message=${it.message}")
         }
     }
 
@@ -838,6 +863,24 @@ private fun parseHeadersJson(headersJson: String?): Map<String, String> {
         }.toMap()
     }.getOrDefault(emptyMap())
 }
+
+internal fun mpvHttpHeaderFields(headers: Map<String, String>): String? {
+    val fields = headers.entries
+        .asSequence()
+        .filterNot { it.key.equals("User-Agent", ignoreCase = true) }
+        .filterNot { it.key.equals("Range", ignoreCase = true) }
+        .mapNotNull { (key, value) ->
+            val name = key.trim()
+            val content = value.trim()
+            if (name.isBlank() || content.isBlank()) null else "$name: $content"
+        }
+        .toList()
+    return fields.takeIf { it.isNotEmpty() }?.joinToString(separator = ",")
+}
+
+private fun String.countMpvHeaderFields(): Int =
+    split(',')
+        .count { it.contains(':') }
 
 private fun Color.toMpvColorString(): String {
     val r = (red * 255).toInt().coerceIn(0, 255)
