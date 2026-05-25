@@ -13,7 +13,10 @@ import com.sun.jna.ptr.PointerByReference
 import com.sun.jna.win32.StdCallLibrary
 import java.io.File
 import java.nio.charset.StandardCharsets
-import java.util.*
+import java.time.LocalDate
+import java.time.OffsetDateTime
+import java.time.ZoneId
+import java.util.Locale
 
 object WindowsToastHelper {
     private const val appUserModelId = "Nuvio.Desktop"
@@ -58,7 +61,7 @@ object WindowsToastHelper {
 
     fun isToastNotifierAvailable(): Boolean {
         if (!isWindows) return false
-        return runPowerShellProbe()
+        return WindowsToastWinRt.isToastNotifierAvailable(appUserModelId)
     }
 
     fun showToast(title: String, body: String, deepLinkUrl: String? = null, requestId: String? = null): Boolean {
@@ -68,21 +71,21 @@ object WindowsToastHelper {
             return false
         }
         ensureShortcut()
-        return showPowerShellToast(title, body, deepLinkUrl, requestId, scheduled = false)
+        return WindowsToastWinRt.showToast(appUserModelId, title, body, deepLinkUrl, requestId)
     }
 
     fun scheduleToast(title: String, body: String, deepLinkUrl: String?, requestId: String?, releaseDateIso: String): Boolean {
         if (!isWindows) return false
         if (isPortableBuild) return false
         ensureShortcut()
-        return showPowerShellToast(title, body, deepLinkUrl, requestId, scheduled = true, releaseDateIso)
+        return WindowsToastWinRt.scheduleToast(appUserModelId, title, body, deepLinkUrl, requestId, releaseDateIso)
     }
 
     fun clearScheduledToasts(): Boolean {
         if (!isWindows) return false
         if (isPortableBuild) return false
         ensureShortcut()
-        return runPowerShell(clearScheduledScript, mapOf("NUVIO_TOAST_AUMID" to appUserModelId)).isSuccess
+        return WindowsToastWinRt.clearScheduledToasts(appUserModelId)
     }
 
     // ---- internals ----
@@ -119,87 +122,6 @@ object WindowsToastHelper {
         }
     }.onFailure { DesktopRuntimeLog.error("Toast: shortcut creation failed", it) }
         .getOrDefault(false)
-
-    private fun runPowerShellProbe(): Boolean {
-        val env = mapOf("NUVIO_TOAST_AUMID" to appUserModelId)
-        return runPowerShell("""
-            Add-Type -AssemblyName System.Runtime.WindowsRuntime | Out-Null
-            ${'$'}notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier(${'$'}env:NUVIO_TOAST_AUMID)
-            if (${'$'}null -eq ${'$'}notifier) { throw 'CreateToastNotifier returned null' }
-            Write-Output 'ok'
-        """.trimIndent(), env).isSuccess
-    }
-
-    private fun showPowerShellToast(title: String, body: String, deepLinkUrl: String?, requestId: String?, scheduled: Boolean, releaseDateIso: String? = null): Boolean {
-        val env = mutableMapOf(
-            "NUVIO_TOAST_AUMID" to appUserModelId,
-            "NUVIO_TOAST_TITLE" to title,
-            "NUVIO_TOAST_BODY" to body,
-        )
-        if (!deepLinkUrl.isNullOrBlank()) env["NUVIO_TOAST_DEEP_LINK"] = deepLinkUrl
-        if (!requestId.isNullOrBlank()) env["NUVIO_TOAST_REQUEST_ID"] = requestId
-        if (scheduled && releaseDateIso != null) env["NUVIO_TOAST_RELEASE_DATE"] = releaseDateIso
-
-        val script = if (scheduled && releaseDateIso != null) scheduleToastScript() else showToastScript()
-        return runPowerShell(script, env).isSuccess
-    }
-
-    private fun scheduleToastScript() = """
-        Add-Type -AssemblyName System.Runtime.WindowsRuntime | Out-Null
-        function Escape-Xml([string]${'$'}v) { if ([string]::IsNullOrEmpty(${'$'}v)) { return '' }; return [System.Security.SecurityElement]::Escape(${'$'}v) }
-        ${'$'}rd = ${'$'}env:NUVIO_TOAST_RELEASE_DATE
-        ${'$'}pd = [datetime]::ParseExact(${'$'}rd, 'yyyy-MM-dd', [System.Globalization.CultureInfo]::InvariantCulture)
-        ${'$'}off = [TimeZoneInfo]::Local.GetUtcOffset(${'$'}pd)
-        ${'$'}sat = [datetimeoffset]::new(${'$'}pd.Year, ${'$'}pd.Month, ${'$'}pd.Day, 9, 0, 0, ${'$'}off)
-        if (${'$'}sat -le [datetimeoffset]::Now) { exit 0 }
-        ${'$'}t = Escape-Xml ${'$'}env:NUVIO_TOAST_TITLE
-        ${'$'}b = Escape-Xml ${'$'}env:NUVIO_TOAST_BODY
-        ${'$'}dl = Escape-Xml ${'$'}env:NUVIO_TOAST_DEEP_LINK
-        ${'$'}rid = Escape-Xml ${'$'}env:NUVIO_TOAST_REQUEST_ID
-        ${'$'}act = ''; if (-not [string]::IsNullOrWhiteSpace(${'$'}dl)) { ${'$'}act = \"<actions><action content='Open' arguments='${'$'}dl' activationType='protocol'/></actions>\" }
-        ${'$'}x = \"<toast launch='${'$'}rid'><visual><binding template='ToastGeneric'><text>${'$'}t</text><text>${'$'}b</text></binding></visual>${'$'}act</toast>\"
-        ${'$'}d = New-Object Windows.Data.Xml.Dom.XmlDocument; ${'$'}d.LoadXml(${'$'}x)
-        ${'$'}st = New-Object Windows.UI.Notifications.ScheduledToastNotification ${'$'}d, ${'$'}sat
-        [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier(${'$'}env:NUVIO_TOAST_AUMID).AddToSchedule(${'$'}st)
-        Write-Output 'scheduled'
-    """.trimIndent()
-
-    private fun showToastScript() = """
-        Add-Type -AssemblyName System.Runtime.WindowsRuntime | Out-Null
-        function Escape-Xml([string]${'$'}v) { if ([string]::IsNullOrEmpty(${'$'}v)) { return '' }; return [System.Security.SecurityElement]::Escape(${'$'}v) }
-        ${'$'}t = Escape-Xml ${'$'}env:NUVIO_TOAST_TITLE
-        ${'$'}b = Escape-Xml ${'$'}env:NUVIO_TOAST_BODY
-        ${'$'}dl = Escape-Xml ${'$'}env:NUVIO_TOAST_DEEP_LINK
-        ${'$'}act = ''; if (-not [string]::IsNullOrWhiteSpace(${'$'}dl)) { ${'$'}act = \"<actions><action content='Open' arguments='${'$'}dl' activationType='protocol'/></actions>\" }
-        ${'$'}x = \"<toast><visual><binding template='ToastGeneric'><text>${'$'}t</text><text>${'$'}b</text></binding></visual>${'$'}act</toast>\"
-        ${'$'}d = New-Object Windows.Data.Xml.Dom.XmlDocument; ${'$'}d.LoadXml(${'$'}x)
-        ${'$'}toast = New-Object Windows.UI.Notifications.ToastNotification ${'$'}d
-        [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier(${'$'}env:NUVIO_TOAST_AUMID).Show(${'$'}toast)
-        Write-Output 'shown'
-    """.trimIndent()
-
-    private val clearScheduledScript = """
-        Add-Type -AssemblyName System.Runtime.WindowsRuntime | Out-Null
-        ${'$'}n = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier(${'$'}env:NUVIO_TOAST_AUMID)
-        foreach (${'$'}s in ${'$'}n.GetScheduledToastNotifications()) { ${'$'}n.RemoveFromSchedule(${'$'}s) }
-        Write-Output 'cleared'
-    """.trimIndent()
-
-    private fun runPowerShell(script: String, env: Map<String, String> = emptyMap()): Result<String> = runCatching {
-        val encoded = Base64.getEncoder()
-            .encodeToString(script.replace("\n", "\r\n").toByteArray(StandardCharsets.UTF_16LE))
-        val process = ProcessBuilder(
-            "powershell.exe", "-NoProfile", "-NonInteractive",
-            "-ExecutionPolicy", "Bypass", "-EncodedCommand", encoded,
-        ).apply {
-            redirectErrorStream(true)
-            environment().putAll(env)
-        }.start()
-        val output = process.inputStream.bufferedReader().use { it.readText() }.trim()
-        val exitCode = process.waitFor()
-        if (exitCode != 0) error("powershell exit=$exitCode output=$output")
-        output
-    }
 
     // ---- JNA COM interop ----
 
@@ -348,5 +270,304 @@ object WindowsToastHelper {
             rclsid: GUID, pUnkOuter: Pointer?, dwClsContext: Int,
             riid: GUID, ppv: PointerByReference,
         ): HRESULT
+    }
+
+    private object WindowsToastWinRt {
+        private val IID_IActivationFactory = GUID.fromString("{00000035-0000-0000-C000-000000000046}")
+        private val IID_IXmlDocumentIO = GUID.fromString("{6CD0E74E-EE65-4489-9EBF-CA43E87BA637}")
+        private val IID_IToastNotificationFactory = GUID.fromString("{04124B20-82C6-4229-B109-FD9ED4662B53}")
+        private val IID_IScheduledToastNotificationFactory = GUID.fromString("{E7BED191-0BB9-4189-8394-31761B476FD7}")
+        private val IID_IToastNotificationManagerStatics = GUID.fromString("{50AC103F-D235-4598-BBEF-98FE4D1A3AD4}")
+        private const val RO_INIT_MULTITHREADED = 1
+        private const val RPC_E_CHANGED_MODE = -2147417850
+        private const val E_BOUNDS = -2147483637
+        private const val XMLDOCUMENT_LOAD_XML_INDEX = 6
+        private const val ACTIVATION_FACTORY_ACTIVATE_INSTANCE_INDEX = 6
+        private const val TOAST_NOTIFICATION_FACTORY_CREATE_INDEX = 6
+        private const val SCHEDULED_TOAST_FACTORY_CREATE_INDEX = 6
+        private const val TOAST_MANAGER_CREATE_NOTIFIER_WITH_ID_INDEX = 7
+        private const val TOAST_NOTIFIER_SHOW_INDEX = 6
+        private const val TOAST_NOTIFIER_ADD_TO_SCHEDULE_INDEX = 9
+        private const val TOAST_NOTIFIER_REMOVE_FROM_SCHEDULE_INDEX = 10
+        private const val TOAST_NOTIFIER_GET_SCHEDULED_INDEX = 11
+        private const val VECTOR_VIEW_GET_AT_INDEX = 6
+        private const val VECTOR_VIEW_SIZE_INDEX = 7
+        private const val WINDOWS_EPOCH_OFFSET_MILLIS = 11_644_473_600_000L
+        private const val TOAST_ACTION_CONTENT = "Open"
+
+        fun isToastNotifierAvailable(appId: String): Boolean =
+            runToastCall("probe") {
+                createNotifier(appId).release()
+                true
+            } == true
+
+        fun showToast(
+            appId: String,
+            title: String,
+            body: String,
+            deepLinkUrl: String?,
+            requestId: String?,
+        ): Boolean =
+            runToastCall("show") {
+                val notifier = createNotifier(appId)
+                val xmlDoc = createXmlDocument(toastXml(title, body, deepLinkUrl, requestId))
+                val toast = createToastNotification(xmlDoc)
+                try {
+                    invokeComChecked(notifier.pointer, TOAST_NOTIFIER_SHOW_INDEX, notifier.pointer, toast.pointer)
+                    DesktopRuntimeLog.info("Toast: native toast shown")
+                    true
+                } finally {
+                    toast.release()
+                    xmlDoc.release()
+                    notifier.release()
+                }
+            } == true
+
+        fun scheduleToast(
+            appId: String,
+            title: String,
+            body: String,
+            deepLinkUrl: String?,
+            requestId: String?,
+            releaseDateIso: String,
+        ): Boolean =
+            runToastCall("schedule") {
+                val scheduledAt = scheduledInstant(releaseDateIso) ?: return@runToastCall true
+                val notifier = createNotifier(appId)
+                val xmlDoc = createXmlDocument(toastXml(title, body, deepLinkUrl, requestId))
+                val scheduledToast = createScheduledToastNotification(xmlDoc, scheduledAt)
+                try {
+                    invokeComChecked(notifier.pointer, TOAST_NOTIFIER_ADD_TO_SCHEDULE_INDEX, notifier.pointer, scheduledToast.pointer)
+                    DesktopRuntimeLog.info("Toast: native toast scheduled id=${requestId ?: "none"}")
+                    true
+                } finally {
+                    scheduledToast.release()
+                    xmlDoc.release()
+                    notifier.release()
+                }
+            } == true
+
+        fun clearScheduledToasts(appId: String): Boolean =
+            runToastCall("clear") {
+                val notifier = createNotifier(appId)
+                val scheduled = PointerByReference()
+                try {
+                    invokeComChecked(notifier.pointer, TOAST_NOTIFIER_GET_SCHEDULED_INDEX, notifier.pointer, scheduled)
+                    val scheduledVector = ComObject(scheduled.value ?: return@runToastCall true)
+                    try {
+                        val countRef = com.sun.jna.ptr.IntByReference()
+                        invokeComChecked(scheduledVector.pointer, VECTOR_VIEW_SIZE_INDEX, scheduledVector.pointer, countRef)
+                        var removed = 0
+                        for (index in 0 until countRef.value) {
+                            val itemRef = PointerByReference()
+                            val hr = invokeComInt(scheduledVector.pointer, VECTOR_VIEW_GET_AT_INDEX, scheduledVector.pointer, index, itemRef)
+                            if (hr == E_BOUNDS) continue
+                            checkHr("IVectorView.GetAt", hr)
+                            val scheduledToast = ComObject(itemRef.value ?: continue)
+                            try {
+                                invokeComChecked(
+                                    notifier.pointer,
+                                    TOAST_NOTIFIER_REMOVE_FROM_SCHEDULE_INDEX,
+                                    notifier.pointer,
+                                    scheduledToast.pointer,
+                                )
+                                removed += 1
+                            } finally {
+                                scheduledToast.release()
+                            }
+                        }
+                        DesktopRuntimeLog.info("Toast: native scheduled toasts cleared count=$removed")
+                        true
+                    } finally {
+                        scheduledVector.release()
+                    }
+                } finally {
+                    notifier.release()
+                }
+            } == true
+
+        private fun <T> runToastCall(action: String, block: () -> T): T? {
+            val initHr = WinRt.INSTANCE.RoInitialize(RO_INIT_MULTITHREADED)
+            val shouldUninitialize = initHr == S_OK || initHr == S_FALSE
+            if (initHr != S_OK && initHr != S_FALSE && initHr != RPC_E_CHANGED_MODE) {
+                DesktopRuntimeLog.warn("Toast: WinRT init failed action=$action hr=${hrHex(initHr)}")
+                return null
+            }
+            return try {
+                block()
+            } catch (throwable: Throwable) {
+                DesktopRuntimeLog.error("Toast: native WinRT $action failed", throwable)
+                null
+            } finally {
+                if (shouldUninitialize) {
+                    WinRt.INSTANCE.RoUninitialize()
+                }
+            }
+        }
+
+        private fun createNotifier(appId: String): ComObject {
+            val factory = getFactory(
+                className = "Windows.UI.Notifications.ToastNotificationManager",
+                iid = IID_IToastNotificationManagerStatics,
+            )
+            try {
+                val notifier = PointerByReference()
+                withHString(appId) { hstring ->
+                    invokeComChecked(
+                        factory.pointer,
+                        TOAST_MANAGER_CREATE_NOTIFIER_WITH_ID_INDEX,
+                        factory.pointer,
+                        hstring,
+                        notifier,
+                    )
+                }
+                return ComObject(notifier.value ?: error("CreateToastNotifierWithId returned null"))
+            } finally {
+                factory.release()
+            }
+        }
+
+        private fun createXmlDocument(xml: String): ComObject {
+            val factory = getFactory("Windows.Data.Xml.Dom.XmlDocument", IID_IActivationFactory)
+            try {
+                val documentRef = PointerByReference()
+                invokeComChecked(factory.pointer, ACTIVATION_FACTORY_ACTIVATE_INSTANCE_INDEX, factory.pointer, documentRef)
+                val document = ComObject(documentRef.value ?: error("XmlDocument ActivateInstance returned null"))
+                val xmlIo = queryInterface(document.pointer, IID_IXmlDocumentIO)
+                    ?: error("XmlDocument QueryInterface IXmlDocumentIO returned null")
+                try {
+                    withHString(xml) { hstring ->
+                        invokeComChecked(xmlIo, XMLDOCUMENT_LOAD_XML_INDEX, xmlIo, hstring)
+                    }
+                    return document
+                } finally {
+                    releaseComObject(xmlIo)
+                }
+            } finally {
+                factory.release()
+            }
+        }
+
+        private fun createToastNotification(xmlDocument: ComObject): ComObject {
+            val factory = getFactory(
+                className = "Windows.UI.Notifications.ToastNotification",
+                iid = IID_IToastNotificationFactory,
+            )
+            try {
+                val toastRef = PointerByReference()
+                invokeComChecked(
+                    factory.pointer,
+                    TOAST_NOTIFICATION_FACTORY_CREATE_INDEX,
+                    factory.pointer,
+                    xmlDocument.pointer,
+                    toastRef,
+                )
+                val toast = toastRef.value ?: error("CreateToastNotification returned null")
+                return ComObject(toast)
+            } finally {
+                factory.release()
+            }
+        }
+
+        private fun createScheduledToastNotification(xmlDocument: ComObject, deliveryTime: OffsetDateTime): ComObject {
+            val factory = getFactory(
+                className = "Windows.UI.Notifications.ScheduledToastNotification",
+                iid = IID_IScheduledToastNotificationFactory,
+            )
+            try {
+                val toastRef = PointerByReference()
+                invokeComChecked(
+                    factory.pointer,
+                    SCHEDULED_TOAST_FACTORY_CREATE_INDEX,
+                    factory.pointer,
+                    xmlDocument.pointer,
+                    deliveryTime.toWinRtDateTime(),
+                    toastRef,
+                )
+                return ComObject(toastRef.value ?: error("CreateScheduledToastNotification returned null"))
+            } finally {
+                factory.release()
+            }
+        }
+
+        private fun getFactory(className: String, iid: GUID): ComObject {
+            val factory = PointerByReference()
+            withHString(className) { hstring ->
+                checkHr("RoGetActivationFactory($className)", WinRt.INSTANCE.RoGetActivationFactory(hstring, iid, factory))
+            }
+            return ComObject(factory.value ?: error("RoGetActivationFactory($className) returned null"))
+        }
+
+        private fun toastXml(title: String, body: String, deepLinkUrl: String?, requestId: String?): String {
+            val launch = requestId?.takeIf(String::isNotBlank)?.let { " launch='${it.escapeXml()}'" }.orEmpty()
+            val action = deepLinkUrl
+                ?.takeIf(String::isNotBlank)
+                ?.let { "<actions><action content='$TOAST_ACTION_CONTENT' arguments='${it.escapeXml()}' activationType='protocol'/></actions>" }
+                .orEmpty()
+            return "<toast$launch><visual><binding template='ToastGeneric'>" +
+                "<text>${title.escapeXml()}</text><text>${body.escapeXml()}</text>" +
+                "</binding></visual>$action</toast>"
+        }
+
+        private fun scheduledInstant(releaseDateIso: String): OffsetDateTime? =
+            runCatching {
+                LocalDate.parse(releaseDateIso)
+                    .atTime(EpisodeReleaseNotificationHour, EpisodeReleaseNotificationMinute)
+                    .atZone(ZoneId.systemDefault())
+                    .toOffsetDateTime()
+            }.getOrNull()?.takeIf { it.toInstant().isAfter(java.time.Instant.now()) }
+
+        private fun OffsetDateTime.toWinRtDateTime(): Long =
+            (toInstant().toEpochMilli() + WINDOWS_EPOCH_OFFSET_MILLIS) * 10_000L
+
+        private fun String.escapeXml(): String =
+            buildString(length) {
+                this@escapeXml.forEach { char ->
+                    when (char) {
+                        '&' -> append("&amp;")
+                        '<' -> append("&lt;")
+                        '>' -> append("&gt;")
+                        '"' -> append("&quot;")
+                        '\'' -> append("&apos;")
+                        else -> append(char)
+                    }
+                }
+            }
+
+        private inline fun <T> withHString(value: String, block: (Pointer) -> T): T {
+            val hstring = PointerByReference()
+            checkHr("WindowsCreateString", WinRt.INSTANCE.WindowsCreateString(WString(value), value.length, hstring))
+            try {
+                return block(hstring.value)
+            } finally {
+                WinRt.INSTANCE.WindowsDeleteString(hstring.value)
+            }
+        }
+
+        private fun invokeComChecked(comObject: Pointer, methodIndex: Int, vararg args: Any?) {
+            checkHr("COM method $methodIndex", invokeComInt(comObject, methodIndex, *args))
+        }
+
+        private fun checkHr(operation: String, hr: Int) {
+            if (hr < 0) error("$operation failed hr=${hrHex(hr)}")
+        }
+
+        private fun hrHex(hr: Int): String = "0x${hr.toUInt().toString(16).padStart(8, '0')}"
+
+        private data class ComObject(val pointer: Pointer) {
+            fun release() = releaseComObject(pointer)
+        }
+
+        private interface WinRt : StdCallLibrary {
+            companion object {
+                val INSTANCE: WinRt = Native.load("combase", WinRt::class.java)
+            }
+
+            fun RoInitialize(initType: Int): Int
+            fun RoUninitialize()
+            fun RoGetActivationFactory(activatableClassId: Pointer, iid: GUID, factory: PointerByReference): Int
+            fun WindowsCreateString(sourceString: WString, length: Int, string: PointerByReference): Int
+            fun WindowsDeleteString(string: Pointer?): Int
+        }
     }
 }
