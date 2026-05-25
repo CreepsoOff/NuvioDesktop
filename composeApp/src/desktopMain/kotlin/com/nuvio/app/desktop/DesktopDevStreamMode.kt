@@ -4,6 +4,9 @@ import com.nuvio.app.core.deeplink.AppDeepLink
 import com.nuvio.app.core.deeplink.parseAppDeepLink
 import com.nuvio.app.features.player.PlayerLaunch
 import com.nuvio.app.features.player.sanitizePlaybackHeaders
+import com.sun.jna.Native
+import com.sun.jna.Pointer
+import com.sun.jna.platform.win32.User32
 import io.ktor.http.Url
 import io.ktor.http.encodeURLParameter
 import java.awt.EventQueue
@@ -20,6 +23,8 @@ private const val DevStreamHeadersEnv = "NUVIO_DEV_STREAM_HEADERS"
 private const val DevStreamHeadersProperty = "nuvio.dev.stream.headers"
 private const val DevStreamHeaderEnvPrefix = "NUVIO_DEV_STREAM_HEADER_"
 private val DevStreamHeaderNamePattern = Regex("""^[!#$%&'*+.^_`|~0-9A-Za-z-]+$""")
+private const val ScreenshotFocusRetries = 5
+private const val ScreenshotFocusSettleMs = 300L
 
 internal data class DesktopDevStreamMode(
     val launch: PlayerLaunch,
@@ -172,20 +177,16 @@ internal data class DesktopDevStreamMode(
         Thread(
             {
                 Thread.sleep(screenshotDelayMs)
-                EventQueue.invokeLater {
-                    runCatching {
-                        val window = windowProvider() ?: error("window unavailable")
-                        val bounds = Rectangle(window.locationOnScreen, window.size)
-                        val capture = Robot().createScreenCapture(bounds)
-                        Files.createDirectories(directory)
-                        val output = directory.resolve(
-                            "nuvio-dev-stream-${Instant.now().toString().replace(':', '-')}.png",
-                        )
-                        ImageIO.write(capture, "png", output.toFile())
-                        DesktopRuntimeLog.info("devStream screenshot written path=${DesktopRuntimeLog.safePath(output)}")
-                    }.onFailure {
-                        DesktopRuntimeLog.warn("devStream screenshot failed message=${it.message}")
-                    }
+                runCatching {
+                    val capture = captureForegroundWindow(windowProvider)
+                    Files.createDirectories(directory)
+                    val output = directory.resolve(
+                        "nuvio-dev-stream-${Instant.now().toString().replace(':', '-')}.png",
+                    )
+                    ImageIO.write(capture, "png", output.toFile())
+                    DesktopRuntimeLog.info("devStream screenshot written path=${DesktopRuntimeLog.safePath(output)}")
+                }.onFailure {
+                    DesktopRuntimeLog.warn("devStream screenshot failed message=${it.message}")
                 }
             },
             "nuvio-dev-stream-screenshot",
@@ -194,7 +195,46 @@ internal data class DesktopDevStreamMode(
             start()
         }
     }
+
+    private fun captureForegroundWindow(windowProvider: () -> Window?): java.awt.image.BufferedImage {
+        var lastError: String? = null
+        repeat(ScreenshotFocusRetries) { attempt ->
+            val window = windowProvider() ?: error("window unavailable")
+            val bounds = window.focusAndBounds()
+            Thread.sleep(ScreenshotFocusSettleMs)
+            if (window.isForegroundWindow()) {
+                DesktopRuntimeLog.info("devStream screenshot foreground confirmed attempt=${attempt + 1}")
+                return Robot().createScreenCapture(bounds)
+            }
+            lastError = "window not foreground attempt=${attempt + 1}"
+            DesktopRuntimeLog.warn("devStream screenshot waiting for foreground attempt=${attempt + 1}")
+        }
+        error(lastError ?: "window foreground unavailable")
+    }
 }
+
+private fun Window.focusAndBounds(): Rectangle {
+    var bounds: Rectangle? = null
+    EventQueue.invokeAndWait {
+        if (!isVisible) isVisible = true
+        toFront()
+        requestFocus()
+        bounds = Rectangle(locationOnScreen, size)
+    }
+    return bounds ?: error("window bounds unavailable")
+}
+
+private fun Window.isForegroundWindow(): Boolean {
+    val osName = System.getProperty("os.name")?.lowercase().orEmpty()
+    if (!osName.contains("windows")) return true
+    return runCatching {
+        val expected = Native.getWindowPointer(this)?.nativeValue() ?: return@runCatching false
+        val foreground = User32.INSTANCE.GetForegroundWindow()?.pointer?.nativeValue() ?: return@runCatching false
+        expected != 0L && foreground != 0L && expected == foreground
+    }.getOrDefault(true)
+}
+
+private fun Pointer.nativeValue(): Long = Pointer.nativeValue(this)
 
 private fun AppDeepLink.DevStream.toPlayerLaunch(): PlayerLaunch =
     PlayerLaunch(
