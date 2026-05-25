@@ -11,7 +11,7 @@ import coil3.size.Precision
 import coil3.size.Size
 import kotlin.math.roundToInt
 
-internal expect val NuvioImageFilterQuality: FilterQuality
+internal val NuvioImageFilterQuality: FilterQuality = FilterQuality.High
 
 internal expect fun nuvioQualityDecodeDimensionPx(displayDimensionPx: Int): Int
 
