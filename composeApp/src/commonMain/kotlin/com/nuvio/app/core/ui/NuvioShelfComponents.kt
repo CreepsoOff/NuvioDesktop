@@ -439,7 +439,4 @@ internal fun Modifier.posterCardClickable(
     return withPrimaryGestures.desktopContextMenuPointer(onLongClick)
 }
 
-internal fun String.upgradeTmdbImageQuality(): String {
-    if (!contains("image.tmdb.org/t/p/", ignoreCase = true)) return this
-    return replace(Regex("/[wh]\\d+/"), "/original/")
-}
+internal expect fun String.upgradeTmdbImageQuality(): String

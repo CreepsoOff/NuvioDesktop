@@ -3,6 +3,12 @@ package com.nuvio.app.core.ui
 private const val DesktopQualityDecodeMultiplier = 2.0f
 private const val DesktopQualityDecodeBucketPx = 64
 private const val DesktopQualityDecodeMaxDimensionPx = 2560
+private const val WindowsTmdbImageSize = "w1280"
+private val TmdbImageSizeSegment = Regex("/(?:original|[wh]\\d+)/")
+
+private val isWindowsDesktop: Boolean =
+    System.getProperty("os.name")
+        ?.contains("windows", ignoreCase = true) == true
 
 /**
  * Desktop images are decoded above their exact layout size to keep posters sharp under
@@ -16,3 +22,9 @@ internal actual fun nuvioQualityDecodeDimensionPx(displayDimensionPx: Int): Int 
             maxPx = DesktopQualityDecodeMaxDimensionPx,
         )
         .roundUpToQualityBucket(DesktopQualityDecodeBucketPx)
+
+internal actual fun String.upgradeTmdbImageQuality(): String {
+    if (!contains("image.tmdb.org/t/p/", ignoreCase = true)) return this
+    val replacement = if (isWindowsDesktop) "/$WindowsTmdbImageSize/" else "/original/"
+    return replace(TmdbImageSizeSegment, replacement)
+}
