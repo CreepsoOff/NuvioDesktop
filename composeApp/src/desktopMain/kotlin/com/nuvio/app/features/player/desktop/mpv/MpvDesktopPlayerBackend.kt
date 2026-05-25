@@ -120,6 +120,7 @@ internal class MpvDesktopPlayerBackend private constructor(
         observePlaybackSettings()
         applyDecoderSettings(reason = "init", forceAll = true, allowPlaybackHeavy = true)
         applyCursorSettings()
+        logRuntimeMetadata()
         DesktopRuntimeLog.info("MPV backend created id=$id runtime=${runtime.directory?.safePath() ?: "none"}")
     }
 
@@ -310,6 +311,19 @@ internal class MpvDesktopPlayerBackend private constructor(
         }.onFailure {
             DesktopRuntimeLog.warn("MPV framePacing sample failed message=${it.message}")
         }.getOrNull()
+
+    private fun logRuntimeMetadata() {
+        runCatching {
+            val mpvVersion = mpvHandle.getMpvStringPropertyOrNull("mpv-version").safeMetadataValue()
+            val ffmpegVersion = mpvHandle.getMpvStringPropertyOrNull("ffmpeg-version").safeMetadataValue()
+            val libassVersion = mpvHandle.getMpvStringPropertyOrNull("libass-version").safeMetadataValue()
+            DesktopRuntimeLog.info(
+                "MPV runtime metadata mpv=$mpvVersion ffmpeg=$ffmpegVersion libass=$libassVersion",
+            )
+        }.onFailure {
+            DesktopRuntimeLog.warn("MPV runtime metadata unavailable message=${it.message}")
+        }
+    }
 
     private fun emitFramePacingSummary(reason: String) {
         if (!DesktopRuntimeLog.debugEnabled) return
@@ -938,6 +952,15 @@ internal fun mpvHttpHeaderFields(headers: Map<String, String>): String? {
 private fun String.countMpvHeaderFields(): Int =
     split(',')
         .count { it.contains(':') }
+
+private fun String?.safeMetadataValue(): String =
+    this
+        ?.replace('\r', ' ')
+        ?.replace('\n', ' ')
+        ?.trim()
+        ?.takeIf { it.isNotBlank() }
+        ?.take(160)
+        ?: "n/a"
 
 private fun Color.toMpvColorString(): String {
     val r = (red * 255).toInt().coerceIn(0, 255)
