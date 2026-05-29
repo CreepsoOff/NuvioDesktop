@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.runBlocking
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
 import kotlinx.coroutines.launch
@@ -279,15 +280,26 @@ object StreamsRepository {
                 }
             }
 
-            fun launchDebridAvailability(group: AddonStreamGroup) {
-                if (group.addonId !in installedAddonIds || group.streams.isEmpty()) return
+            fun publishAddonGroupAfterCacheCheck(group: AddonStreamGroup) {
+                if (group.addonId !in installedAddonIds || group.streams.isEmpty()) {
+                    publishAddonGroup(presentDebridGroup(group))
+                    return
+                }
 
                 val eligibleGroupIds = setOf(group.addonId)
+                val shouldWaitForCacheCheck = LocalDebridAvailabilityService.hasPendingCacheCheck(
+                    groups = listOf(group),
+                    eligibleGroupIds = eligibleGroupIds,
+                )
+                if (!shouldWaitForCacheCheck) {
+                    publishAddonGroup(presentDebridGroup(group))
+                    return
+                }
+
                 val checkingGroup = LocalDebridAvailabilityService.markChecking(
                     groups = listOf(group),
                     eligibleGroupIds = eligibleGroupIds,
                 ).firstOrNull() ?: group
-                publishAddonGroup(checkingGroup)
 
                 val availabilityJob = launch {
                     val availabilityGroup = LocalDebridAvailabilityService.annotateCachedAvailability(
@@ -482,8 +494,7 @@ object StreamsRepository {
                 when (val completion = completions.receive()) {
                     is StreamLoadCompletion.Addon -> {
                         val result = completion.group
-                        publishAddonGroup(result)
-                        launchDebridAvailability(result)
+                        publishAddonGroupAfterCacheCheck(result)
                     }
 
                     is StreamLoadCompletion.PluginScraper -> {
@@ -838,6 +849,8 @@ private fun String.fallbackRepositoryLabel(): String {
     val withoutManifest = withoutQuery.removeSuffix("/manifest.json")
     val host = withoutManifest.substringAfter("://", withoutManifest).substringBefore('/')
     return host.ifBlank {
-        withoutManifest.substringAfterLast('/').ifBlank { "Plugin repository" }
+        withoutManifest.substringAfterLast('/').ifBlank {
+            runBlocking { getString(Res.string.streams_plugin_repository_fallback) }
+        }
     }
 }

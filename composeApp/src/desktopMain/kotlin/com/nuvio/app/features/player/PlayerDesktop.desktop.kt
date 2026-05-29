@@ -521,6 +521,13 @@ internal actual object PlayerSettingsStorage {
     private const val subtitleOutlineEnabledKey = "subtitle_outline_enabled"
     private const val subtitleFontSizeSpKey = "subtitle_font_size_sp"
     private const val subtitleBottomOffsetKey = "subtitle_bottom_offset"
+    private const val subtitleBackgroundColorKey = "subtitle_background_color"
+    private const val subtitleOutlineColorKey = "subtitle_outline_color"
+    private const val subtitleOutlineWidthKey = "subtitle_outline_width"
+    private const val subtitleBoldKey = "subtitle_bold"
+    private const val subtitleUseForcedSubtitlesKey = "subtitle_use_forced_subtitles"
+    private const val subtitleShowOnlyPreferredLanguagesKey = "subtitle_show_only_preferred_languages"
+    private const val addonSubtitleStartupModeKey = "addon_subtitle_startup_mode"
     private const val streamReuseLastLinkEnabledKey = "stream_reuse_last_link_enabled"
     private const val streamReuseLastLinkCacheHoursKey = "stream_reuse_last_link_cache_hours"
     private const val decoderPriorityKey = "decoder_priority"
@@ -574,6 +581,13 @@ internal actual object PlayerSettingsStorage {
         subtitleOutlineEnabledKey,
         subtitleFontSizeSpKey,
         subtitleBottomOffsetKey,
+        subtitleBackgroundColorKey,
+        subtitleOutlineColorKey,
+        subtitleOutlineWidthKey,
+        subtitleBoldKey,
+        subtitleUseForcedSubtitlesKey,
+        subtitleShowOnlyPreferredLanguagesKey,
+        addonSubtitleStartupModeKey,
         streamReuseLastLinkEnabledKey,
         streamReuseLastLinkCacheHoursKey,
         decoderPriorityKey,
@@ -696,6 +710,48 @@ internal actual object PlayerSettingsStorage {
 
     actual fun saveSubtitleBottomOffset(bottomOffset: Int) {
         saveInt(subtitleBottomOffsetKey, bottomOffset)
+    }
+
+    actual fun loadSubtitleBackgroundColor(): String? = loadString(subtitleBackgroundColorKey)
+
+    actual fun saveSubtitleBackgroundColor(colorHex: String) {
+        saveString(subtitleBackgroundColorKey, colorHex)
+    }
+
+    actual fun loadSubtitleOutlineColor(): String? = loadString(subtitleOutlineColorKey)
+
+    actual fun saveSubtitleOutlineColor(colorHex: String) {
+        saveString(subtitleOutlineColorKey, colorHex)
+    }
+
+    actual fun loadSubtitleOutlineWidth(): Int? = loadInt(subtitleOutlineWidthKey)
+
+    actual fun saveSubtitleOutlineWidth(width: Int) {
+        saveInt(subtitleOutlineWidthKey, width)
+    }
+
+    actual fun loadSubtitleBold(): Boolean? = loadBoolean(subtitleBoldKey)
+
+    actual fun saveSubtitleBold(enabled: Boolean) {
+        saveBoolean(subtitleBoldKey, enabled)
+    }
+
+    actual fun loadSubtitleUseForcedSubtitles(): Boolean? = loadBoolean(subtitleUseForcedSubtitlesKey)
+
+    actual fun saveSubtitleUseForcedSubtitles(enabled: Boolean) {
+        saveBoolean(subtitleUseForcedSubtitlesKey, enabled)
+    }
+
+    actual fun loadSubtitleShowOnlyPreferredLanguages(): Boolean? = loadBoolean(subtitleShowOnlyPreferredLanguagesKey)
+
+    actual fun saveSubtitleShowOnlyPreferredLanguages(enabled: Boolean) {
+        saveBoolean(subtitleShowOnlyPreferredLanguagesKey, enabled)
+    }
+
+    actual fun loadAddonSubtitleStartupMode(): String? = loadString(addonSubtitleStartupModeKey)
+
+    actual fun saveAddonSubtitleStartupMode(mode: String) {
+        saveString(addonSubtitleStartupModeKey, mode)
     }
 
     actual fun loadStreamReuseLastLinkEnabled(): Boolean? = loadBoolean(streamReuseLastLinkEnabledKey)
@@ -941,6 +997,13 @@ internal actual object PlayerSettingsStorage {
         loadSubtitleOutlineEnabled()?.let { put(subtitleOutlineEnabledKey, encodeSyncBoolean(it)) }
         loadSubtitleFontSizeSp()?.let { put(subtitleFontSizeSpKey, encodeSyncInt(it)) }
         loadSubtitleBottomOffset()?.let { put(subtitleBottomOffsetKey, encodeSyncInt(it)) }
+        loadSubtitleBackgroundColor()?.let { put(subtitleBackgroundColorKey, encodeSyncString(it)) }
+        loadSubtitleOutlineColor()?.let { put(subtitleOutlineColorKey, encodeSyncString(it)) }
+        loadSubtitleOutlineWidth()?.let { put(subtitleOutlineWidthKey, encodeSyncInt(it)) }
+        loadSubtitleBold()?.let { put(subtitleBoldKey, encodeSyncBoolean(it)) }
+        loadSubtitleUseForcedSubtitles()?.let { put(subtitleUseForcedSubtitlesKey, encodeSyncBoolean(it)) }
+        loadSubtitleShowOnlyPreferredLanguages()?.let { put(subtitleShowOnlyPreferredLanguagesKey, encodeSyncBoolean(it)) }
+        loadAddonSubtitleStartupMode()?.let { put(addonSubtitleStartupModeKey, encodeSyncString(it)) }
         loadStreamReuseLastLinkEnabled()?.let { put(streamReuseLastLinkEnabledKey, encodeSyncBoolean(it)) }
         loadStreamReuseLastLinkCacheHours()?.let { put(streamReuseLastLinkCacheHoursKey, encodeSyncInt(it)) }
         loadDecoderPriority()?.let { put(decoderPriorityKey, encodeSyncInt(it)) }
@@ -998,6 +1061,13 @@ internal actual object PlayerSettingsStorage {
         payload.decodeSyncBoolean(subtitleOutlineEnabledKey)?.let(::saveSubtitleOutlineEnabled)
         payload.decodeSyncInt(subtitleFontSizeSpKey)?.let(::saveSubtitleFontSizeSp)
         payload.decodeSyncInt(subtitleBottomOffsetKey)?.let(::saveSubtitleBottomOffset)
+        payload.decodeSyncString(subtitleBackgroundColorKey)?.let(::saveSubtitleBackgroundColor)
+        payload.decodeSyncString(subtitleOutlineColorKey)?.let(::saveSubtitleOutlineColor)
+        payload.decodeSyncInt(subtitleOutlineWidthKey)?.let(::saveSubtitleOutlineWidth)
+        payload.decodeSyncBoolean(subtitleBoldKey)?.let(::saveSubtitleBold)
+        payload.decodeSyncBoolean(subtitleUseForcedSubtitlesKey)?.let(::saveSubtitleUseForcedSubtitles)
+        payload.decodeSyncBoolean(subtitleShowOnlyPreferredLanguagesKey)?.let(::saveSubtitleShowOnlyPreferredLanguages)
+        payload.decodeSyncString(addonSubtitleStartupModeKey)?.let(::saveAddonSubtitleStartupMode)
         payload.decodeSyncBoolean(streamReuseLastLinkEnabledKey)?.let(::saveStreamReuseLastLinkEnabled)
         payload.decodeSyncInt(streamReuseLastLinkCacheHoursKey)?.let(::saveStreamReuseLastLinkCacheHours)
         payload.decodeSyncInt(decoderPriorityKey)?.let(::saveDecoderPriority)

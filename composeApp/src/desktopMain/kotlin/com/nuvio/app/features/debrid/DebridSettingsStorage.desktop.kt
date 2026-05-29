@@ -29,6 +29,7 @@ actual object DebridSettingsStorage {
     private const val streamPreferencesKey = "debrid_stream_preferences"
     private const val streamNameTemplateKey = "debrid_stream_name_template"
     private const val streamDescriptionTemplateKey = "debrid_stream_description_template"
+    private const val streamBadgeRulesKey = "debrid_stream_badge_rules"
     private fun syncKeys(): List<String> =
         listOf(
             enabledKey,
@@ -44,6 +45,7 @@ actual object DebridSettingsStorage {
             streamPreferencesKey,
             streamNameTemplateKey,
             streamDescriptionTemplateKey,
+            streamBadgeRulesKey,
         ) + DebridProviders.all().map { providerApiKeyKey(it.id) }
 
     actual fun loadEnabled(): Boolean? = loadBoolean(enabledKey)
@@ -143,6 +145,12 @@ actual object DebridSettingsStorage {
         saveString(streamDescriptionTemplateKey, template)
     }
 
+    actual fun loadStreamBadgeRules(): String? = loadString(streamBadgeRulesKey)
+
+    actual fun saveStreamBadgeRules(rules: String) {
+        saveString(streamBadgeRulesKey, rules)
+    }
+
     private fun loadBoolean(key: String): Boolean? =
         DesktopPreferences.getBoolean(preferencesName, ProfileScopedKey.of(key))
 
@@ -183,6 +191,7 @@ actual object DebridSettingsStorage {
         loadStreamPreferences()?.let { put(streamPreferencesKey, encodeSyncString(it)) }
         loadStreamNameTemplate()?.let { put(streamNameTemplateKey, encodeSyncString(it)) }
         loadStreamDescriptionTemplate()?.let { put(streamDescriptionTemplateKey, encodeSyncString(it)) }
+        loadStreamBadgeRules()?.let { put(streamBadgeRulesKey, encodeSyncString(it)) }
     }
 
     actual fun replaceFromSyncPayload(payload: JsonObject) {
@@ -208,6 +217,7 @@ actual object DebridSettingsStorage {
         payload.decodeSyncString(streamPreferencesKey)?.let(::saveStreamPreferences)
         payload.decodeSyncString(streamNameTemplateKey)?.let(::saveStreamNameTemplate)
         payload.decodeSyncString(streamDescriptionTemplateKey)?.let(::saveStreamDescriptionTemplate)
+        payload.decodeSyncString(streamBadgeRulesKey)?.let(::saveStreamBadgeRules)
     }
 
     private fun providerApiKeyKey(providerId: String): String {

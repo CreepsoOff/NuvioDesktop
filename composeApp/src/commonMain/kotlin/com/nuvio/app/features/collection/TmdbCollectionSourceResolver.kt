@@ -13,6 +13,20 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import nuvio.composeapp.generated.resources.Res
+import nuvio.composeapp.generated.resources.collections_editor_tmdb_discover
+import nuvio.composeapp.generated.resources.collections_tmdb_api_key_required
+import nuvio.composeapp.generated.resources.collections_tmdb_collection_not_found
+import nuvio.composeapp.generated.resources.collections_tmdb_company_not_found
+import nuvio.composeapp.generated.resources.collections_tmdb_discover_no_data
+import nuvio.composeapp.generated.resources.collections_tmdb_list_not_found
+import nuvio.composeapp.generated.resources.collections_tmdb_missing_collection_id
+import nuvio.composeapp.generated.resources.collections_tmdb_missing_list_id
+import nuvio.composeapp.generated.resources.collections_tmdb_missing_person_id
+import nuvio.composeapp.generated.resources.collections_tmdb_network_not_found
+import nuvio.composeapp.generated.resources.collections_tmdb_person_credits_not_found
+import nuvio.composeapp.generated.resources.collections_tmdb_person_not_found
+import org.jetbrains.compose.resources.getString
 import kotlin.math.roundToInt
 
 object TmdbCollectionSourceResolver {
@@ -24,7 +38,7 @@ object TmdbCollectionSourceResolver {
     suspend fun resolve(source: CollectionSource, page: Int = 1): CatalogPage = withContext(Dispatchers.Default) {
         val settings = TmdbSettingsRepository.snapshot()
         val apiKey = settings.apiKey.trim().takeIf { it.isNotBlank() }
-            ?: error("Add a TMDB API key in Settings to use TMDB sources.")
+            ?: error(getString(Res.string.collections_tmdb_api_key_required))
         val language = normalizeTmdbLanguage(settings.language)
         val sourceType = source.tmdbType()
 
@@ -43,7 +57,7 @@ object TmdbCollectionSourceResolver {
         withContext(Dispatchers.Default) {
             val settings = TmdbSettingsRepository.snapshot()
             val apiKey = settings.apiKey.trim().takeIf { it.isNotBlank() }
-                ?: error("Add a TMDB API key in Settings to use TMDB sources.")
+                ?: error(getString(Res.string.collections_tmdb_api_key_required))
             val language = normalizeTmdbLanguage(settings.language)
             when (sourceType) {
                 TmdbCollectionSourceType.LIST -> {
@@ -51,7 +65,7 @@ object TmdbCollectionSourceResolver {
                         endpoint = "list/$id",
                         apiKey = apiKey,
                         query = mapOf("language" to language, "page" to "1"),
-                    ) ?: error("TMDB list not found")
+                    ) ?: error(getString(Res.string.collections_tmdb_list_not_found))
                     TmdbSourceImportMetadata(title = body.name?.takeIf { it.isNotBlank() })
                 }
 
@@ -60,7 +74,7 @@ object TmdbCollectionSourceResolver {
                         endpoint = "collection/$id",
                         apiKey = apiKey,
                         query = mapOf("language" to language),
-                    ) ?: error("TMDB collection not found")
+                    ) ?: error(getString(Res.string.collections_tmdb_collection_not_found))
                     TmdbSourceImportMetadata(
                         title = body.name?.takeIf { it.isNotBlank() },
                         coverImageUrl = imageUrl(body.posterPath, "w500") ?: imageUrl(body.backdropPath, "w1280"),
@@ -71,7 +85,7 @@ object TmdbCollectionSourceResolver {
                     val body = fetch<TmdbCompanyResponse>(
                         endpoint = "company/$id",
                         apiKey = apiKey,
-                    ) ?: error("TMDB company not found")
+                    ) ?: error(getString(Res.string.collections_tmdb_company_not_found))
                     TmdbSourceImportMetadata(
                         title = body.name?.takeIf { it.isNotBlank() },
                         coverImageUrl = imageUrl(body.logoPath, "w500"),
@@ -82,7 +96,7 @@ object TmdbCollectionSourceResolver {
                     val body = fetch<TmdbNetworkResponse>(
                         endpoint = "network/$id",
                         apiKey = apiKey,
-                    ) ?: error("TMDB network not found")
+                    ) ?: error(getString(Res.string.collections_tmdb_network_not_found))
                     TmdbSourceImportMetadata(
                         title = body.name?.takeIf { it.isNotBlank() },
                         coverImageUrl = imageUrl(body.logoPath, "w500"),
@@ -95,14 +109,14 @@ object TmdbCollectionSourceResolver {
                         endpoint = "person/$id",
                         apiKey = apiKey,
                         query = mapOf("language" to language),
-                    ) ?: error("TMDB person not found")
+                    ) ?: error(getString(Res.string.collections_tmdb_person_not_found))
                     TmdbSourceImportMetadata(
                         title = body.name?.takeIf { it.isNotBlank() },
                         coverImageUrl = imageUrl(body.profilePath, "w500"),
                     )
                 }
 
-                TmdbCollectionSourceType.DISCOVER -> TmdbSourceImportMetadata(title = "TMDB Discover")
+                TmdbCollectionSourceType.DISCOVER -> TmdbSourceImportMetadata(title = getString(Res.string.collections_editor_tmdb_discover))
             }
         }
 
@@ -111,7 +125,7 @@ object TmdbCollectionSourceResolver {
         if (trimmed.isBlank()) return@withContext emptyList()
         val settings = TmdbSettingsRepository.snapshot()
         val apiKey = settings.apiKey.trim().takeIf { it.isNotBlank() }
-            ?: error("Add a TMDB API key in Settings to use TMDB sources.")
+            ?: error(getString(Res.string.collections_tmdb_api_key_required))
         fetch<TmdbCompanySearchResponse>(
             endpoint = "search/company",
             apiKey = apiKey,
@@ -124,7 +138,7 @@ object TmdbCollectionSourceResolver {
         if (trimmed.isBlank()) return@withContext emptyList()
         val settings = TmdbSettingsRepository.snapshot()
         val apiKey = settings.apiKey.trim().takeIf { it.isNotBlank() }
-            ?: error("Add a TMDB API key in Settings to use TMDB sources.")
+            ?: error(getString(Res.string.collections_tmdb_api_key_required))
         val language = normalizeTmdbLanguage(settings.language)
         fetch<TmdbCollectionSearchResponse>(
             endpoint = "search/collection",
@@ -138,7 +152,7 @@ object TmdbCollectionSourceResolver {
         if (trimmed.isBlank()) return@withContext emptyMap()
         val settings = TmdbSettingsRepository.snapshot()
         val apiKey = settings.apiKey.trim().takeIf { it.isNotBlank() }
-            ?: error("Add a TMDB API key in Settings to use TMDB sources.")
+            ?: error(getString(Res.string.collections_tmdb_api_key_required))
         fetch<TmdbKeywordSearchResponse>(
             endpoint = "search/keyword",
             apiKey = apiKey,
@@ -154,7 +168,7 @@ object TmdbCollectionSourceResolver {
     suspend fun genres(mediaType: TmdbCollectionMediaType): Map<Int, String> = withContext(Dispatchers.Default) {
         val settings = TmdbSettingsRepository.snapshot()
         val apiKey = settings.apiKey.trim().takeIf { it.isNotBlank() }
-            ?: error("Add a TMDB API key in Settings to use TMDB sources.")
+            ?: error(getString(Res.string.collections_tmdb_api_key_required))
         val language = normalizeTmdbLanguage(settings.language)
         val endpoint = when (mediaType) {
             TmdbCollectionMediaType.MOVIE -> "genre/movie/list"
@@ -204,12 +218,12 @@ object TmdbCollectionSourceResolver {
         language: String,
         page: Int,
     ): CatalogPage {
-        val id = source.tmdbId ?: error("Missing TMDB list ID")
+        val id = source.tmdbId ?: error(getString(Res.string.collections_tmdb_missing_list_id))
         val body = fetch<TmdbListResponse>(
             endpoint = "list/$id",
             apiKey = apiKey,
             query = mapOf("language" to language, "page" to page.toString()),
-        ) ?: error("TMDB list not found")
+        ) ?: error(getString(Res.string.collections_tmdb_list_not_found))
         val items = body.items.orEmpty()
             .mapNotNull { it.toPreview() }
             .sortedFor(source.sortBy)
@@ -226,12 +240,12 @@ object TmdbCollectionSourceResolver {
         apiKey: String,
         language: String,
     ): CatalogPage {
-        val id = source.tmdbId ?: error("Missing TMDB collection ID")
+        val id = source.tmdbId ?: error(getString(Res.string.collections_tmdb_missing_collection_id))
         val body = fetch<TmdbCollectionResponse>(
             endpoint = "collection/$id",
             apiKey = apiKey,
             query = mapOf("language" to language),
-        ) ?: error("TMDB collection not found")
+        ) ?: error(getString(Res.string.collections_tmdb_collection_not_found))
         val items = body.parts.orEmpty()
             .mapNotNull { it.toPreview(TmdbCollectionMediaType.MOVIE) }
             .sortedFor(source.sortBy)
@@ -244,13 +258,13 @@ object TmdbCollectionSourceResolver {
         apiKey: String,
         language: String,
     ): CatalogPage {
-        val id = source.tmdbId ?: error("Missing TMDB person ID")
+        val id = source.tmdbId ?: error(getString(Res.string.collections_tmdb_missing_person_id))
         val mediaType = source.tmdbMediaType()
         val body = fetch<TmdbPersonCreditsResponse>(
             endpoint = "person/$id/combined_credits",
             apiKey = apiKey,
             query = mapOf("language" to language),
-        ) ?: error("TMDB person credits not found")
+        ) ?: error(getString(Res.string.collections_tmdb_person_credits_not_found))
         val items = when (source.tmdbType()) {
             TmdbCollectionSourceType.DIRECTOR -> body.crew.orEmpty()
                 .filter { it.job.equals("Director", ignoreCase = true) }
@@ -291,7 +305,7 @@ object TmdbCollectionSourceResolver {
             endpoint = endpoint,
             apiKey = apiKey,
             query = query,
-        ) ?: error("TMDB discover returned no data")
+        ) ?: error(getString(Res.string.collections_tmdb_discover_no_data))
         val items = body.results.orEmpty()
             .mapNotNull { it.toPreview(mediaType) }
             .distinctBy { it.id }

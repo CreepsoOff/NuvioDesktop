@@ -88,6 +88,7 @@ interface PlayerEngineController {
      * native/controller chrome.
      */
     fun switchSource(url: String, audioUrl: String?, headersJson: String?) {}
+    fun setSubtitleDelayMs(delayMs: Int) {}
     fun configureIosVideoOutput(settings: PlayerSettingsUiState) {}
 }
 
