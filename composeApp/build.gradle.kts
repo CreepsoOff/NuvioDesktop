@@ -161,26 +161,44 @@ abstract class PackageWindowsNativeRuntimeTask : DefaultTask() {
         if (!cfgFile.isFile) return
 
         val libraryPathOption = "java-options=-Djava.library.path=\$APPDIR/native"
+        // Hi-DPI on Windows OpenJDK builds is not auto-enabled even with a
+        // Per-Monitor V2 manifest; without these two flags AWT reports
+        // scaleX=1.0 on a 125%/150%/200% display, Compose renders at 1x,
+        // and the Windows compositor upscales the bitmap with a cheap
+        // bilinear (visible as jagged posters/avatars on the home shelves).
+        // See WindowsNativeBootstrap.primeJava2dUiScale for the runtime
+        // counterpart and the rationale.
+        val uiScaleOption = "java-options=-Dsun.java2d.uiScale.enabled=true"
+        val dpiAwareOption = "java-options=-Dsun.java2d.dpiaware=true"
         val lines = cfgFile.readLines()
-        var replaced = false
+        var libraryPathReplaced = false
         val patchedLines = lines.map { line ->
             if (line.startsWith("java-options=-Djava.library.path=")) {
-                replaced = true
+                libraryPathReplaced = true
                 libraryPathOption
             } else {
                 line
             }
         }.toMutableList()
-        if (!replaced) {
+
+        fun ensureJavaOption(option: String, prefix: String) {
+            if (patchedLines.any { it.startsWith(prefix) }) return
             val javaOptionsIndex = patchedLines.indexOf("[JavaOptions]")
             if (javaOptionsIndex >= 0) {
-                patchedLines.add(javaOptionsIndex + 1, libraryPathOption)
+                patchedLines.add(javaOptionsIndex + 1, option)
             } else {
                 patchedLines.add("")
                 patchedLines.add("[JavaOptions]")
-                patchedLines.add(libraryPathOption)
+                patchedLines.add(option)
             }
         }
+
+        if (!libraryPathReplaced) {
+            ensureJavaOption(libraryPathOption, "java-options=-Djava.library.path=")
+        }
+        ensureJavaOption(uiScaleOption, "java-options=-Dsun.java2d.uiScale.enabled=")
+        ensureJavaOption(dpiAwareOption, "java-options=-Dsun.java2d.dpiaware=")
+
         cfgFile.writeText(patchedLines.joinToString(System.lineSeparator()) + System.lineSeparator())
     }
 
@@ -201,6 +219,7 @@ abstract class PackageWindowsNativeRuntimeTask : DefaultTask() {
         val requiredDlls = listOf(
             "mediampv.dll",
             "libmpv-2.dll",
+            "NuvioImageBridge.dll",
             "avcodec-61.dll",
             "avformat-61.dll",
             "avutil-59.dll",
@@ -715,6 +734,20 @@ compose.desktop {
 
         jvmArgs(
             "-Dskiko.renderApi=OPENGL",
+            // Hi-DPI on Windows OpenJDK builds is not auto-enabled even with
+            // a Per-Monitor V2 manifest; AWT silently reports scaleX=1.0 and
+            // Compose ends up rendering at 1x while the Windows compositor
+            // upscales the bitmap with a cheap bilinear (visible as jagged
+            // posters/avatars on home shelves at 125%/150% scale). Setting
+            // `sun.java2d.uiScale.enabled=true` makes AWT honor the system
+            // scale; the historical `sun.java2d.dpiaware` flag is included
+            // for older code paths. WindowsNativeBootstrap pins the
+            // resolved scale via JNA at startup as a second line of defense
+            // for `gradle run`, but having the flags here is what makes
+            // `compileKotlinDesktop` runs DPI-aware from the very first AWT
+            // class init.
+            "-Dsun.java2d.uiScale.enabled=true",
+            "-Dsun.java2d.dpiaware=true",
             "-Djava.library.path=" + listOf(
                 mediampNativeBuildDir.safePath(),
                 mediampNativeBuildDir.resolve("Debug").safePath(),

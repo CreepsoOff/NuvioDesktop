@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.ImageLoader
+import com.nuvio.app.core.imaging.WicCoilImageDecoder
 import com.nuvio.app.core.storage.ProfileScopedKey
 import com.nuvio.app.desktop.DesktopPreferences
 import kotlin.system.exitProcess
@@ -44,7 +45,23 @@ actual fun appIconPainter(icon: AppIconResource): Painter =
         }
     )
 
-internal actual fun ImageLoader.Builder.configurePlatformImageLoader(): ImageLoader.Builder = this
+internal actual fun ImageLoader.Builder.configurePlatformImageLoader(): ImageLoader.Builder {
+    if (!isWindowsDesktop) return this
+    // On Windows we route still-image decoding through the WIC bridge
+    // (`NuvioImageBridge.dll`). WIC produces clean downscales at any
+    // ratio thanks to its high-quality cubic resampler, which is what
+    // makes posters / circular avatars look the way users expect from
+    // the iOS / macOS reference. Animated formats fall through to the
+    // dedicated GIF decoder. See
+    // `core/imaging/WicCoilImageDecoder.kt` for the rationale.
+    return components {
+        add(WicCoilImageDecoder.Factory())
+    }
+}
+
+private val isWindowsDesktop: Boolean =
+    System.getProperty("os.name")
+        ?.contains("windows", ignoreCase = true) == true
 
 actual fun platformExitApp() {
     exitProcess(0)

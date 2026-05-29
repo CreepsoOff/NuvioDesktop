@@ -11,7 +11,26 @@ import coil3.size.Precision
 import coil3.size.Size
 import kotlin.math.roundToInt
 
-internal val NuvioImageFilterQuality: FilterQuality = FilterQuality.High
+/**
+ * Per-platform sampler used by every Coil/AsyncImage call site.
+ *
+ * - Android, iOS, macOS/Linux Desktop: [FilterQuality.High] (Skia Mitchell bicubic).
+ *   Matches the look the rest of the app was authored against.
+ * - Windows Desktop: [FilterQuality.Medium] (Skia linear + nearest mipmap).
+ *
+ * Why a Windows-only override: Compose Multiplatform on Windows is forced onto
+ * Skiko's OpenGL backend (libmpv shares its GL context with Skiko, see
+ * `composeApp/build.gradle.kts` `-Dskiko.renderApi=OPENGL`). Mitchell-Netravali
+ * resampling on the GL backend is visibly ringy/"crispy" on the heavy
+ * downscales we do for posters and collection covers (TMDB sources are
+ * 780–3840 px, our shelf cards are 130–260 px wide). Metal on macOS and the
+ * iOS native renderer hide that under their own sampling, so they look clean.
+ *
+ * Linear + mipmap is what native macOS/iOS image views use by default and is
+ * what makes those builds look the way they do. Switching Windows to it is
+ * the smallest correct change that brings the rendered output in line.
+ */
+internal expect val NuvioImageFilterQuality: FilterQuality
 
 internal expect fun nuvioQualityDecodeDimensionPx(displayDimensionPx: Int): Int
 

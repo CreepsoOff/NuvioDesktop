@@ -8,10 +8,12 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -171,25 +173,8 @@ fun NuvioPosterCard(
     val posterCardStyle = rememberPosterCardStyleUiState()
     val cardWidth = shape.cardWidth(basePosterWidthDp = posterCardStyle.widthDp)
     val cardShape = RoundedCornerShape(posterCardStyle.cornerRadiusDp.dp)
-    val platformContext = LocalPlatformContext.current
-    val density = LocalDensity.current
     val resolvedImageUrl = remember(imageUrl) { imageUrl?.upgradeTmdbImageQuality() }
     val resolvedBottomLeftLogoUrl = remember(bottomLeftLogoUrl) { bottomLeftLogoUrl?.upgradeTmdbImageQuality() }
-    val imageRequest = remember(platformContext, resolvedImageUrl, cardWidth, shape, density) {
-        resolvedImageUrl?.let {
-            val widthPx = with(density) { cardWidth.roundToPx() }.coerceAtLeast(1)
-            val heightPx = (widthPx / shape.aspectRatio).roundToInt().coerceAtLeast(1)
-            val decodeWidthPx = nuvioQualityDecodeDimensionPx(widthPx)
-            val decodeHeightPx = nuvioQualityDecodeDimensionPx(heightPx)
-            ImageRequest.Builder(platformContext)
-                .data(it)
-                .size(Size(decodeWidthPx, decodeHeightPx))
-                .precision(Precision.EXACT)
-                .memoryCacheKey("poster-card:$decodeWidthPx:$decodeHeightPx:${it.hashCode()}")
-                .diskCacheKey(it)
-                .build()
-        }
-    }
     val catalogLogoOverlaySize = catalogLogoOverlaySize(
         basePosterWidthDp = posterCardStyle.widthDp,
         shape = shape,
@@ -216,13 +201,24 @@ fun NuvioPosterCard(
             contentAlignment = Alignment.Center,
         ) {
             if (resolvedImageUrl != null) {
-                AsyncImage(
-                    model = imageRequest,
-                    contentDescription = title,
-                    modifier = Modifier.matchParentSize(),
-                    contentScale = ContentScale.Crop,
-                    filterQuality = NuvioImageFilterQuality,
-                )
+                // The actual draw size of the poster image isn't always
+                // `cardWidth`: in a `LazyVerticalGrid` (collection /
+                // folder grids) the cell imposes
+                // `Constraints.fixedWidth(cellSize)` which can be larger
+                // than `cardWidth`, see Compose
+                // `LazyGridMeasuredLineProvider.childConstraints`.
+                // `BoxWithConstraints` reports the resolved layout
+                // dimensions, so the Coil request sizes match the pixels
+                // Skia is going to blit. WIC then produces a bitmap at
+                // the exact cell size and Skia's draw-time blit is 1:1.
+                BoxWithConstraints(modifier = Modifier.matchParentSize()) {
+                    PosterCardImage(
+                        imageUrl = resolvedImageUrl,
+                        title = title,
+                        cellWidth = maxWidth,
+                        cellHeight = maxHeight,
+                    )
+                }
             } else {
                 Text(
                     text = title,
@@ -289,6 +285,37 @@ fun NuvioPosterCard(
             Box(modifier = Modifier.height(0.dp))
         }
     }
+}
+
+@Composable
+private fun PosterCardImage(
+    imageUrl: String,
+    title: String,
+    cellWidth: Dp,
+    cellHeight: Dp,
+) {
+    val platformContext = LocalPlatformContext.current
+    val density = LocalDensity.current
+    val imageRequest = remember(platformContext, imageUrl, cellWidth, cellHeight, density) {
+        val widthPx = with(density) { cellWidth.roundToPx() }.coerceAtLeast(1)
+        val heightPx = with(density) { cellHeight.roundToPx() }.coerceAtLeast(1)
+        val decodeWidthPx = nuvioQualityDecodeDimensionPx(widthPx)
+        val decodeHeightPx = nuvioQualityDecodeDimensionPx(heightPx)
+        ImageRequest.Builder(platformContext)
+            .data(imageUrl)
+            .size(Size(decodeWidthPx, decodeHeightPx))
+            .precision(Precision.EXACT)
+            .memoryCacheKey("poster-card:$decodeWidthPx:$decodeHeightPx:${imageUrl.hashCode()}")
+            .diskCacheKey(imageUrl)
+            .build()
+    }
+    AsyncImage(
+        model = imageRequest,
+        contentDescription = title,
+        modifier = Modifier.fillMaxSize(),
+        contentScale = ContentScale.Crop,
+        filterQuality = NuvioImageFilterQuality,
+    )
 }
 
 @Composable

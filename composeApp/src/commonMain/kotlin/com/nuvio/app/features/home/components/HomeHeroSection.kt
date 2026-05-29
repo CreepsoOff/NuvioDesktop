@@ -169,12 +169,27 @@ fun HomeHeroSection(
                 modifier = Modifier.fillMaxSize(),
             ) {
                 visiblePages.forEach { layer ->
-                    val backgroundUrl = remember(items[layer.page].banner, items[layer.page].poster) {
-                        (items[layer.page].banner ?: items[layer.page].poster)?.upgradeTmdbImageQuality()
+                    val item = items[layer.page]
+                    val backgroundUrl = remember(item.banner, item.poster) {
+                        (item.banner ?: item.poster)?.upgradeTmdbImageQuality()
+                    }
+                    // When the item lacks a dedicated landscape `banner`
+                    // and we fall back to its portrait `poster` (e.g.
+                    // addons that only ship one image like
+                    // BetterPosters), `ContentScale.Crop` would otherwise
+                    // pick a thin horizontal slice through the middle of
+                    // the poster — typically the actor's torso, which
+                    // looks worse than the top of the artwork. Pin the
+                    // crop to the top so the title / subject stays
+                    // visible. Tablet already does this for both cases.
+                    val heroAlignment = when {
+                        layout.isTablet -> Alignment.TopCenter
+                        item.banner.isNullOrBlank() -> Alignment.TopCenter
+                        else -> Alignment.Center
                     }
                     AsyncImage(
                         model = backgroundUrl,
-                        contentDescription = items[layer.page].name,
+                        contentDescription = item.name,
                         modifier = Modifier
                             .fillMaxSize()
                             .graphicsLayer {
@@ -184,7 +199,7 @@ fun HomeHeroSection(
                                 scaleX = HERO_BACKGROUND_SCALE * heroScrollScale
                                 scaleY = HERO_BACKGROUND_SCALE * heroScrollScale
                             },
-                        alignment = if (layout.isTablet) Alignment.TopCenter else Alignment.Center,
+                        alignment = heroAlignment,
                         contentScale = ContentScale.Crop,
                         filterQuality = NuvioImageFilterQuality,
                     )
