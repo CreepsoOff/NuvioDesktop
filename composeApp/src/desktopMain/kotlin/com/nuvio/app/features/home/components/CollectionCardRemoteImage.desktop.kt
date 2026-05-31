@@ -24,7 +24,7 @@ import coil3.size.Precision
 import coil3.size.Size
 import com.nuvio.app.core.ui.NuvioImageFilterQuality
 import com.nuvio.app.core.ui.nuvioQualityDecodeDimensionPx
-import com.nuvio.app.core.ui.tmdbBucketedUrl
+import com.nuvio.app.core.ui.upgradeTmdbImageQuality
 import com.nuvio.app.desktop.DesktopPreferences
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -160,12 +160,11 @@ internal actual fun CollectionCardRemoteImage(
             ?.let { with(density) { maxHeight.roundToPx() } }
             ?: FallbackDecodeDimensionPx
 
-        // Pick the closest TMDB CDN bucket to the actual layout size so we
-        // download ~520 px posters for shelf cards instead of 3840 px
-        // `/original/` JPEGs that then have to be downscaled ~15x at draw
-        // time. Non-TMDB URLs pass through unchanged.
-        val staticImageUrl = remember(imageUrl, targetWidthPx) {
-            imageUrl.tmdbBucketedUrl(targetWidthPx)
+        // Match the plain Desktop/macOS still-image path: keep TMDB stills
+        // on the highest-quality CDN source, then let the platform image
+        // pipeline decode to the requested display density.
+        val staticImageUrl = remember(imageUrl) {
+            imageUrl.upgradeTmdbImageQuality()
         }
 
         val staticDecodeWidthPx = nuvioQualityDecodeDimensionPx(targetWidthPx.coerceAtLeast(1))

@@ -36,6 +36,7 @@ internal data class WindowsExternalPlayerLaunchDiagnostics(
     val sourceKey: String,
     val sourceExtension: String?,
     val hasSeparateAudio: Boolean,
+    val subtitleCount: Int,
     val headerNames: List<String>,
     val initialPositionMs: Long,
     val commandPreview: List<String>,
@@ -171,6 +172,11 @@ private fun buildMpvCommand(
     request.sourceAudioUrl?.takeIf { it.isNotBlank() }?.let { audioUrl ->
         command += "--audio-file=$audioUrl"
     }
+    request.subtitles.orEmpty()
+        .mapNotNull { it.url.takeIf(String::isNotBlank) }
+        .forEach { subtitleUrl ->
+            command += "--sub-file=$subtitleUrl"
+        }
     if (request.sourceHeaders.isNotEmpty()) {
         val headerList = request.sourceHeaders.toMpvHeaderFields()
             ?: return WindowsExternalPlayerCommandResult(null, "selected stream has invalid HTTP headers")
@@ -247,6 +253,7 @@ internal fun windowsExternalPlayerLaunchDiagnostics(
         sourceKey = request.sourceUrl.stableExternalLogKey(),
         sourceExtension = request.sourceUrl.externalSourceExtension(),
         hasSeparateAudio = !request.sourceAudioUrl.isNullOrBlank(),
+        subtitleCount = request.subtitles.orEmpty().count { it.url.isNotBlank() },
         headerNames = request.sourceHeaders.keys.map { it.trim() }.filter { it.isNotBlank() }.sorted(),
         initialPositionMs = request.resumePositionMs.coerceAtLeast(0L),
         commandPreview = command.redactExternalPlayerCommand(),
@@ -267,6 +274,7 @@ private fun List<String>.redactExternalPlayerCommand(): List<String> =
         when {
             index == 0 -> part
             part.startsWith("--audio-file=") -> "--audio-file=<redacted>"
+            part.startsWith("--sub-file=") -> "--sub-file=<redacted>"
             part.startsWith("--http-header-fields=") -> "--http-header-fields=<redacted>"
             part.startsWith("http://", ignoreCase = true) ||
                 part.startsWith("https://", ignoreCase = true) ||

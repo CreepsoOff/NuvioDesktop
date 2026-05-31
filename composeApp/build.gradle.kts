@@ -219,7 +219,6 @@ abstract class PackageWindowsNativeRuntimeTask : DefaultTask() {
         val requiredDlls = listOf(
             "mediampv.dll",
             "libmpv-2.dll",
-            "NuvioImageBridge.dll",
             "avcodec-61.dll",
             "avformat-61.dll",
             "avutil-59.dll",

@@ -8,6 +8,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
@@ -226,7 +227,12 @@ fun main(args: Array<String>) {
             visible = !hiddenToTrayForExternalPlayback,
             onCloseRequest = {
                 if (DesktopBorderlessFullscreenController.isFullscreenActive) {
-                    DesktopRuntimeLog.info("windowClose skipped window-state save while borderless fullscreen is active")
+                    DesktopRuntimeLog.info("windowClose exiting borderless fullscreen before cleanup")
+                    (desktopMainWindow as? ComposeWindow)?.let(DesktopBorderlessFullscreenController::exit)
+                        ?: DesktopRuntimeLog.warn("windowClose could not resolve ComposeWindow for fullscreen exit")
+                }
+                if (DesktopBorderlessFullscreenController.isFullscreenActive) {
+                    DesktopRuntimeLog.info("windowClose skipped window-state save because fullscreen is still active")
                 } else {
                     DesktopWindowStateStore.save(startupWindowState.size, startupWindowState.placement)
                 }

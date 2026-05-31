@@ -33,6 +33,10 @@ internal object DesktopBorderlessFullscreenController {
     private const val SWP_NOOWNERZORDER = 0x0200
     private const val SWP_FRAMECHANGED = 0x0020
     private const val SWP_SHOWWINDOW = 0x0040
+    private const val MONITOR_DEFAULTTONEAREST = 0x00000002
+
+    private val HWND_TOPMOST: Pointer = Pointer.createConstant(-1)
+    private val HWND_NOTOPMOST: Pointer = Pointer.createConstant(-2)
 
     private val isWindows: Boolean
         get() = System.getProperty("os.name")?.contains("Windows", ignoreCase = true) == true
@@ -80,10 +84,12 @@ internal object DesktopBorderlessFullscreenController {
         val currentStyle = native.getWindowLongPtr(handle, GWL_STYLE)
         val currentExStyle = native.getWindowLongPtr(handle, GWL_EXSTYLE)
         val previousBounds = Rectangle(window.bounds)
-        val targetBounds = window.currentScreenBounds()
+        val previousNativeBounds = native.currentWindowBounds(handle)
+        val targetBounds = native.currentMonitorBounds(handle) ?: window.currentScreenBounds()
         DesktopRuntimeLog.info(
             "borderlessFullscreen: enter request hwnd=$handle placement=${window.placement} " +
                 "extendedState=${window.extendedState} bounds=${previousBounds.shortLog()} " +
+                "nativeBounds=${previousNativeBounds?.shortLog() ?: "none"} " +
                 "target=${targetBounds.shortLog()} style=${currentStyle.hexStyle()} exStyle=${currentExStyle.hexStyle()}",
         )
 
@@ -92,6 +98,7 @@ internal object DesktopBorderlessFullscreenController {
             placement = window.placement,
             extendedState = window.extendedState,
             bounds = previousBounds,
+            nativeBounds = previousNativeBounds,
             style = currentStyle,
             exStyle = currentExStyle,
             mode = FullscreenMode.WindowsBorderless,
@@ -106,8 +113,7 @@ internal object DesktopBorderlessFullscreenController {
                 GWL_EXSTYLE,
                 currentExStyle and (WS_EX_DLGMODALFRAME or WS_EX_WINDOWEDGE or WS_EX_CLIENTEDGE or WS_EX_STATICEDGE).inv(),
             )
-            native.applyFrameBounds(handle, targetBounds)
-            window.bounds = targetBounds
+            native.applyFrameBounds(handle, targetBounds, HWND_TOPMOST)
             window.toFront()
             window.requestFocus()
             window.repaint()
@@ -165,6 +171,7 @@ internal object DesktopBorderlessFullscreenController {
             placement = window.placement.takeIf { it != WindowPlacement.Fullscreen } ?: WindowPlacement.Floating,
             extendedState = window.extendedState,
             bounds = Rectangle(window.bounds),
+            nativeBounds = null,
             style = null,
             exStyle = null,
             mode = FullscreenMode.ComposeFallback,
@@ -186,13 +193,14 @@ internal object DesktopBorderlessFullscreenController {
             "borderlessFullscreen: restore snapshot mode=${active.mode} hwnd=$handle " +
                 "restoreBoundsFirst=$restoreBoundsFirst savedPlacement=${active.placement} " +
                 "savedExtendedState=${active.extendedState} savedBounds=${active.bounds.shortLog()} " +
+                "savedNativeBounds=${active.nativeBounds?.shortLog() ?: "none"} " +
                 "savedStyle=${active.style?.hexStyle() ?: "none"} savedExStyle=${active.exStyle?.hexStyle() ?: "none"}",
         )
 
         if (handle != null && native != null && active.style != null && active.exStyle != null) {
             native.setWindowLongPtr(handle, GWL_STYLE, active.style)
             native.setWindowLongPtr(handle, GWL_EXSTYLE, active.exStyle)
-            native.applyFrameBounds(handle, if (restoreBoundsFirst) active.bounds else window.bounds)
+            native.applyFrameBounds(handle, active.nativeBounds ?: active.bounds, HWND_NOTOPMOST)
         }
 
         val device = window.graphicsConfiguration?.device
@@ -233,6 +241,25 @@ internal object DesktopBorderlessFullscreenController {
         return Rectangle(0, 0, size.width, size.height)
     }
 
+    private fun User32.currentMonitorBounds(handle: Pointer): Rectangle? {
+        val monitor = MonitorFromWindow(handle, MONITOR_DEFAULTTONEAREST) ?: return null
+        val info = MonitorInfo().apply { cbSize = size() }
+        if (!GetMonitorInfoW(monitor, info)) return null
+        val width = info.rcMonitor.right - info.rcMonitor.left
+        val height = info.rcMonitor.bottom - info.rcMonitor.top
+        if (width <= 0 || height <= 0) return null
+        return Rectangle(info.rcMonitor.left, info.rcMonitor.top, width, height)
+    }
+
+    private fun User32.currentWindowBounds(handle: Pointer): Rectangle? {
+        val rect = NativeRect()
+        if (!GetWindowRect(handle, rect)) return null
+        val width = rect.right - rect.left
+        val height = rect.bottom - rect.top
+        if (width <= 0 || height <= 0) return null
+        return Rectangle(rect.left, rect.top, width, height)
+    }
+
     private fun User32.getWindowLongPtr(handle: Pointer, index: Int): Long =
         if (Native.POINTER_SIZE == 8) {
             GetWindowLongPtrW(handle, index)
@@ -248,10 +275,10 @@ internal object DesktopBorderlessFullscreenController {
         }
     }
 
-    private fun User32.applyFrameBounds(handle: Pointer, bounds: Rectangle) {
+    private fun User32.applyFrameBounds(handle: Pointer, bounds: Rectangle, insertAfter: Pointer?) {
         SetWindowPos(
             handle,
-            null,
+            insertAfter,
             bounds.x,
             bounds.y,
             bounds.width,
@@ -278,6 +305,7 @@ internal object DesktopBorderlessFullscreenController {
         val placement: WindowPlacement,
         val extendedState: Int,
         val bounds: Rectangle,
+        val nativeBounds: Rectangle?,
         val style: Long?,
         val exStyle: Long?,
         val mode: FullscreenMode,
@@ -288,6 +316,9 @@ internal object DesktopBorderlessFullscreenController {
         fun SetWindowLongW(hWnd: Pointer, nIndex: Int, dwNewLong: Int): Int
         fun GetWindowLongPtrW(hWnd: Pointer, nIndex: Int): Long
         fun SetWindowLongPtrW(hWnd: Pointer, nIndex: Int, dwNewLong: Long): Long
+        fun MonitorFromWindow(hWnd: Pointer, dwFlags: Int): Pointer?
+        fun GetMonitorInfoW(hMonitor: Pointer, lpmi: MonitorInfo): Boolean
+        fun GetWindowRect(hWnd: Pointer, lpRect: NativeRect): Boolean
         fun SetWindowPos(
             hWnd: Pointer,
             hWndInsertAfter: Pointer?,
@@ -297,5 +328,39 @@ internal object DesktopBorderlessFullscreenController {
             cy: Int,
             uFlags: Int,
         ): Boolean
+    }
+
+    @Suppress("MemberVisibilityCanBePrivate")
+    class MonitorInfo : com.sun.jna.Structure() {
+        @JvmField
+        var cbSize: Int = 0
+
+        @JvmField
+        var rcMonitor: NativeRect = NativeRect()
+
+        @JvmField
+        var rcWork: NativeRect = NativeRect()
+
+        @JvmField
+        var dwFlags: Int = 0
+
+        override fun getFieldOrder(): List<String> = listOf("cbSize", "rcMonitor", "rcWork", "dwFlags")
+    }
+
+    @Suppress("MemberVisibilityCanBePrivate")
+    class NativeRect : com.sun.jna.Structure() {
+        @JvmField
+        var left: Int = 0
+
+        @JvmField
+        var top: Int = 0
+
+        @JvmField
+        var right: Int = 0
+
+        @JvmField
+        var bottom: Int = 0
+
+        override fun getFieldOrder(): List<String> = listOf("left", "top", "right", "bottom")
     }
 }

@@ -10,7 +10,7 @@ class WindowsExternalPlayerSupportTest {
     fun mpcCommandIncludesResumePosition() {
         val command = buildWindowsExternalPlayerCommand(
             install = install("mpc-hc", "C:/Program Files/MPC-HC/mpc-hc64.exe"),
-            request = request(initialPositionMs = 3_723_000L),
+            request = request(resumePositionMs = 3_723_000L),
         ).command
 
         assertEquals(
@@ -46,7 +46,7 @@ class WindowsExternalPlayerSupportTest {
                     "Referer" to "https://example.test",
                     "User-Agent" to "Nuvio",
                 ),
-                initialPositionMs = 90_000L,
+                resumePositionMs = 90_000L,
             ),
         ).command.orEmpty()
 
@@ -63,10 +63,34 @@ class WindowsExternalPlayerSupportTest {
     }
 
     @Test
+    fun mpvCommandCarriesExternalSubtitles() {
+        val command = buildWindowsExternalPlayerCommand(
+            install = install("mpv", "C:/Tools/mpv/mpv.exe"),
+            request = request(
+                subtitles = listOf(
+                    SubtitleInput(
+                        url = "https://example.test/subs/en.vtt",
+                        name = "English",
+                        lang = "en",
+                    ),
+                    SubtitleInput(
+                        url = "",
+                        name = "Broken",
+                        lang = "und",
+                    ),
+                ),
+            ),
+        ).command.orEmpty()
+
+        assertTrue("--sub-file=https://example.test/subs/en.vtt" in command)
+        assertEquals("https://example.test/movie.mkv", command.last())
+    }
+
+    @Test
     fun vlcCommandUsesConservativeNetworkCaching() {
         val command = buildWindowsExternalPlayerCommand(
             install = install("vlc", "C:/Program Files/VideoLAN/VLC/vlc.exe"),
-            request = request(initialPositionMs = 5_000L),
+            request = request(resumePositionMs = 5_000L),
         ).command.orEmpty()
 
         assertTrue("--network-caching=5000" in command)
@@ -82,7 +106,7 @@ class WindowsExternalPlayerSupportTest {
         val request = request(
             sourceAudioUrl = "https://example.test/audio.m4a",
             sourceHeaders = mapOf("Authorization" to "Bearer secret"),
-            initialPositionMs = 1_000L,
+            resumePositionMs = 1_000L,
         )
         val command = buildWindowsExternalPlayerCommand(install, request).command.orEmpty()
         val diagnostics = windowsExternalPlayerLaunchDiagnostics(install, request, command)
@@ -91,6 +115,7 @@ class WindowsExternalPlayerSupportTest {
         assertEquals("https", diagnostics.sourceKind)
         assertEquals("mkv", diagnostics.sourceExtension)
         assertEquals(listOf("Authorization"), diagnostics.headerNames)
+        assertEquals(0, diagnostics.subtitleCount)
         assertTrue("<source-url-redacted>" in diagnostics.commandPreview)
         assertTrue("--http-header-fields=<redacted>" in diagnostics.commandPreview)
         assertTrue("--audio-file=<redacted>" in diagnostics.commandPreview)
@@ -119,7 +144,8 @@ class WindowsExternalPlayerSupportTest {
     private fun request(
         sourceAudioUrl: String? = null,
         sourceHeaders: Map<String, String> = emptyMap(),
-        initialPositionMs: Long = 0L,
+        resumePositionMs: Long = 0L,
+        subtitles: List<SubtitleInput>? = null,
     ): ExternalPlayerPlaybackRequest =
         ExternalPlayerPlaybackRequest(
             sourceUrl = "https://example.test/movie.mkv",
@@ -127,7 +153,8 @@ class WindowsExternalPlayerSupportTest {
             title = "Movie",
             streamTitle = "1080p",
             sourceHeaders = sourceHeaders,
-            initialPositionMs = initialPositionMs,
+            resumePositionMs = resumePositionMs,
+            subtitles = subtitles,
         )
 
     private fun install(id: String, path: String): WindowsExternalPlayerInstall {

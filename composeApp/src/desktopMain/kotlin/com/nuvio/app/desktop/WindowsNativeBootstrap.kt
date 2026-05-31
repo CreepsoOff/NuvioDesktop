@@ -231,21 +231,6 @@ internal object WindowsNativeBootstrap {
             DesktopRuntimeLog.error("nativeBootstrap System.load failed dll=${mediampDll.safePath()}", it)
         }
 
-        // Pre-resolve `NuvioImageBridge.dll` so the JNA-backed Coil
-        // decoder doesn't pay the search-path lookup cost on the first
-        // image load. Optional: a missing DLL just falls back to the
-        // default Coil decoder (with a warning logged) so the app still
-        // starts cleanly.
-        val imageBridgeDll = nativeDirectory.resolve("NuvioImageBridge.dll")
-        if (imageBridgeDll.isFile) {
-            runCatching { System.load(imageBridgeDll.absolutePath) }
-                .onSuccess {
-                    DesktopRuntimeLog.info("nativeBootstrap NuvioImageBridge.dll loaded")
-                }
-                .onFailure {
-                    DesktopRuntimeLog.warn("nativeBootstrap NuvioImageBridge.dll load failed: ${it.message}")
-                }
-        }
     }
 
     private data class NativeDir(
@@ -291,7 +276,6 @@ internal object WindowsNativeBootstrap {
         DesktopRuntimeLog.info("nativeBootstrap dllCount=${dlls.size}")
         DesktopRuntimeLog.info("nativeBootstrap has mediampv.dll=${nativeDir.resolve("mediampv.dll").isFile}")
         DesktopRuntimeLog.info("nativeBootstrap has libmpv-2.dll=${nativeDir.resolve("libmpv-2.dll").isFile}")
-        DesktopRuntimeLog.info("nativeBootstrap has NuvioImageBridge.dll=${nativeDir.resolve("NuvioImageBridge.dll").isFile}")
         DesktopRuntimeLog.info("nativeBootstrap has MSVCP140.dll=${nativeDir.hasDll("MSVCP140.dll")}")
         DesktopRuntimeLog.info("nativeBootstrap has VCRUNTIME140.dll=${nativeDir.hasDll("VCRUNTIME140.dll")}")
         DesktopRuntimeLog.info("nativeBootstrap has VCRUNTIME140_1.dll=${nativeDir.hasDll("VCRUNTIME140_1.dll")}")
