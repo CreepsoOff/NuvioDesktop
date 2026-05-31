@@ -51,10 +51,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import coil3.compose.LocalPlatformContext
+import coil3.request.ImageRequest
+import coil3.size.Precision
+import coil3.size.Size
 import com.nuvio.app.core.ui.NuvioImageFilterQuality
 import com.nuvio.app.core.ui.NuvioPosterCard
 import com.nuvio.app.core.ui.NuvioPosterShape
 import com.nuvio.app.core.ui.NuvioScreenHeader
+import com.nuvio.app.core.ui.nuvioQualityDecodeDimensionPx
 import com.nuvio.app.core.ui.nuvioSafeBottomPadding
 import com.nuvio.app.core.ui.withDuplicateSafeLazyKeys
 import com.nuvio.app.features.home.HomeCatalogSection
@@ -197,16 +202,46 @@ private fun FolderCoverImage(
     title: String,
     modifier: Modifier = Modifier,
 ) {
+    val platformContext = LocalPlatformContext.current
+    val density = LocalDensity.current
     val resolvedImageUrl = remember(imageUrl) { imageUrl.upgradeTmdbImageQuality() }
-    AsyncImage(
-        model = resolvedImageUrl,
-        contentDescription = title,
+    // Mirror the home-shelf measured-cell fix: size the Coil request from the
+    // real resolved layout box (via BoxWithConstraints) so the decoded bitmap
+    // matches the pixels Skia blits. Without this the cover is decoded at a
+    // mismatched size and the Skiko OpenGL backend resamples it at draw time
+    // (the "crispy"/ringy artifact on Windows Desktop).
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
             .height(FolderCoverHeight),
-        contentScale = ContentScale.Crop,
-        filterQuality = NuvioImageFilterQuality,
-    )
+    ) {
+        // Decode at the stable full cover size: the width is fixed (fillMaxWidth)
+        // and the cover only collapses vertically as a Crop, revealing a slice of
+        // the same bitmap. Sizing from the constant FolderCoverHeight (not the
+        // animated maxHeight) keeps the request key stable so the hero-collapse
+        // scroll does not thrash the cache with a re-decode every frame.
+        val coverWidth = maxWidth
+        val imageRequest = remember(platformContext, resolvedImageUrl, coverWidth, density) {
+            val widthPx = with(density) { coverWidth.roundToPx() }.coerceAtLeast(1)
+            val heightPx = with(density) { FolderCoverHeight.roundToPx() }.coerceAtLeast(1)
+            val decodeWidthPx = nuvioQualityDecodeDimensionPx(widthPx)
+            val decodeHeightPx = nuvioQualityDecodeDimensionPx(heightPx)
+            ImageRequest.Builder(platformContext)
+                .data(resolvedImageUrl)
+                .size(Size(decodeWidthPx, decodeHeightPx))
+                .precision(Precision.EXACT)
+                .memoryCacheKey("folder-cover:$decodeWidthPx:$decodeHeightPx:${resolvedImageUrl.hashCode()}")
+                .diskCacheKey(resolvedImageUrl)
+                .build()
+        }
+        AsyncImage(
+            model = imageRequest,
+            contentDescription = title,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop,
+            filterQuality = NuvioImageFilterQuality,
+        )
+    }
 }
 
 @Composable
