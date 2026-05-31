@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.ImageLoader
+import com.nuvio.app.core.imaging.WicCoilImageDecoder
 import com.nuvio.app.core.storage.ProfileScopedKey
 import com.nuvio.app.desktop.DesktopPreferences
 import kotlin.system.exitProcess
@@ -44,8 +45,22 @@ actual fun appIconPainter(icon: AppIconResource): Painter =
         }
     )
 
+private val isWindowsDesktop: Boolean by lazy {
+    System.getProperty("os.name")?.contains("Windows", ignoreCase = true) == true
+}
+
 internal actual fun ImageLoader.Builder.configurePlatformImageLoader(): ImageLoader.Builder {
-    return this
+    if (!isWindowsDesktop) return this
+    // Honor the user's image-rendering choice (default: native WIC). When the user
+    // opts into legacy Skia rendering, skip the WIC decoder so Coil uses the built-in
+    // Skia decoder path. Read once at startup; toggling requires an app restart.
+    if (!WindowsImageRenderingPreference.nativeWicEnabled) return this
+    return components {
+        // Added last so Coil tries the WIC decoder first; it routes WIC-handled
+        // still formats through the native pipeline and returns null otherwise,
+        // letting the built-in Skia decoder handle the rest.
+        add(WicCoilImageDecoder.Factory())
+    }
 }
 
 actual fun platformExitApp() {

@@ -231,6 +231,46 @@ internal object WindowsNativeBootstrap {
             DesktopRuntimeLog.error("nativeBootstrap System.load failed dll=${mediampDll.safePath()}", it)
         }
 
+        // Pre-load the WIC still-image bridge AFTER mediampv.dll so the MPV / MediaMP
+        // load order and the shared Skiko OpenGL GL context are left completely untouched.
+        preloadImageBridge(nativeDirectory)
+    }
+
+    /**
+     * Best-effort preload of `NuvioImageBridge.dll` — the native Windows Imaging Component
+     * (WIC) still-image decoder that lets Skia receive a bitmap already at the draw size.
+     *
+     * The DLL is staged alongside `mediampv.dll`, and the native directory is already on the
+     * DLL search path (`SetDefaultDllDirectories` / `AddDllDirectory` above), so it is loaded
+     * by absolute path exactly like `mediampv.dll` for consistency and to be least likely to
+     * fail at runtime.
+     *
+     * This preload is purely to (a) surface the load result early in the runtime log and
+     * (b) prime the search path; the lazy JNA binding in
+     * [com.nuvio.app.core.imaging.NuvioImageBridge] will load it on first use regardless. The
+     * load is best-effort: if the DLL is missing or fails to load, a warning is logged and the
+     * app still starts — [com.nuvio.app.core.imaging.NuvioImageBridge.isAvailable] is then
+     * `false` and callers fall back to the default Coil decoder.
+     */
+    private fun preloadImageBridge(nativeDirectory: File) {
+        val bridgeDll = nativeDirectory.resolve("NuvioImageBridge.dll")
+        if (!bridgeDll.isFile) {
+            DesktopRuntimeLog.warn(
+                "nativeBootstrap NuvioImageBridge.dll missing at ${bridgeDll.safePath()}; " +
+                    "WIC decoder will fall back to the default Coil decoder",
+            )
+            return
+        }
+        runCatching {
+            System.load(bridgeDll.absolutePath)
+        }.onSuccess {
+            DesktopRuntimeLog.info("nativeBootstrap NuvioImageBridge.dll loaded dll=${bridgeDll.safePath()}")
+        }.onFailure {
+            DesktopRuntimeLog.warn(
+                "nativeBootstrap NuvioImageBridge.dll load failed dll=${bridgeDll.safePath()} " +
+                    "(${it::class.simpleName}:${it.message}); WIC decoder will fall back to the default Coil decoder",
+            )
+        }
     }
 
     private data class NativeDir(

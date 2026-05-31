@@ -14,21 +14,23 @@ import kotlin.math.roundToInt
 /**
  * Per-platform sampler used by every Coil/AsyncImage call site.
  *
- * - Android, iOS, macOS/Linux Desktop: [FilterQuality.High] (Skia Mitchell bicubic).
- *   Matches the look the rest of the app was authored against.
- * - Windows Desktop: [FilterQuality.Medium] (Skia linear + nearest mipmap).
+ * [FilterQuality.High] (Skia Mitchell bicubic) on **all** targets — Android, iOS,
+ * macOS/Linux Desktop, and Windows Desktop. There is no per-platform override.
  *
- * Why a Windows-only override: Compose Multiplatform on Windows is forced onto
- * Skiko's OpenGL backend (libmpv shares its GL context with Skiko, see
- * `composeApp/build.gradle.kts` `-Dskiko.renderApi=OPENGL`). Mitchell-Netravali
- * resampling on the GL backend is visibly ringy/"crispy" on the heavy
- * downscales we do for posters and collection covers (TMDB sources are
- * 780–3840 px, our shelf cards are 130–260 px wide). Metal on macOS and the
- * iOS native renderer hide that under their own sampling, so they look clean.
+ * Why the sampler is the same everywhere: the sampler only matters when Skia has to
+ * resample at draw time. The Windows "crispy"/ringy artifact was never a sampler
+ * problem — on Windows, Compose Multiplatform is pinned to Skiko's OpenGL backend
+ * (libmpv shares its GL context with Skiko, see `composeApp/build.gradle.kts`
+ * `-Dskiko.renderApi=OPENGL`), and the real cause was handing Skia a bitmap larger
+ * than the pixel draw size, which forced a draw-time downscale. The fix removes the
+ * resample at its source: the Windows decode dimension is matched to the measured
+ * draw size and a native WIC decoder owns the downscale (HighQualityCubic), so Skia
+ * receives a bitmap already at the draw size and only blits ~1:1.
  *
- * Linear + mipmap is what native macOS/iOS image views use by default and is
- * what makes those builds look the way they do. Switching Windows to it is
- * the smallest correct change that brings the rendered output in line.
+ * Once Skia blits 1:1 (decode dimension == draw size), the sampler is irrelevant —
+ * there is no resample for it to influence. Earlier investigation considered a
+ * Windows-only [FilterQuality.Medium] override (linear + nearest mipmap); it was
+ * ruled out and never shipped. [FilterQuality.High] is kept on every target.
  */
 internal expect val NuvioImageFilterQuality: FilterQuality
 
