@@ -1801,4 +1801,12 @@
     <!-- Pass 4 — platform stubs and dynamic title fallbacks -->
     <string name="collections_editor_trakt_list_title_format">Liste Trakt %1$s</string>
     <string name="external_player_android_system">Lecteur système Android</string>
+    <string name="settings_image_rendering_section">Rendu des images</string>
+    <string name="settings_image_rendering_high_quality_title">Rendu d\'image haute qualité</string>
+    <string name="settings_image_rendering_high_quality_description">Décode les affiches et les couvertures à leur taille d\'affichage exacte via le pipeline d\'imagerie natif de Windows, pour un rendu net et précis. Désactivez cette option pour revenir à l\'ancien moteur de rendu si les images sont moins belles sur votre PC. Modifier ce réglage redémarre Nuvio.</string>
+    <string name="settings_image_rendering_restart_title">Redémarrer Nuvio ?</string>
+    <string name="settings_image_rendering_restart_enable_message">Le rendu d\'image haute qualité sera activé. Nuvio doit redémarrer pour l\'appliquer.</string>
+    <string name="settings_image_rendering_restart_disable_message">Le rendu d\'image haute qualité sera désactivé. Nuvio doit redémarrer pour l\'appliquer.</string>
+    <string name="settings_image_rendering_restart_confirm">Redémarrer maintenant</string>
+    <string name="settings_image_rendering_restart_cancel">Annuler</string>
 </resources>

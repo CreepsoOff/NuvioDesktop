@@ -1899,4 +1899,12 @@
     <string name="player_torrent_starting_engine">Starting P2P engine…</string>
     <string name="player_error_failed_start_torrent">Failed to start torrent: %1$s</string>
     <string name="player_error_torrent">Torrent error: %1$s</string>
+    <string name="settings_image_rendering_section">Image rendering</string>
+    <string name="settings_image_rendering_high_quality_title">High-quality image rendering</string>
+    <string name="settings_image_rendering_high_quality_description">Decodes posters and covers at their exact display size using the native Windows imaging pipeline for clean, sharp artwork. Turn this off to fall back to the legacy renderer if images look worse on your PC. Changing this restarts Nuvio.</string>
+    <string name="settings_image_rendering_restart_title">Restart Nuvio?</string>
+    <string name="settings_image_rendering_restart_enable_message">High-quality image rendering will be enabled. Nuvio needs to restart to apply it.</string>
+    <string name="settings_image_rendering_restart_disable_message">High-quality image rendering will be disabled. Nuvio needs to restart to apply it.</string>
+    <string name="settings_image_rendering_restart_confirm">Restart now</string>
+    <string name="settings_image_rendering_restart_cancel">Cancel</string>
 </resources>

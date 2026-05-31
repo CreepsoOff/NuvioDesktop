@@ -228,6 +228,7 @@ internal fun LazyListScope.settingsRootContent(
                 }
             }
             DebugLogsSettingsSection(isTablet = isTablet)
+            ImageRenderingSettingsSection(isTablet = isTablet)
         }
     }
     item {
