@@ -382,6 +382,21 @@ object AddonRepository {
                 if (isUsingPrimaryAddonsFromSecondaryProfile()) {
                     return@runCatching
                 }
+                // Pull-before-push guard: `sync_push_addons` is a replace-all, so pushing
+                // before a successful server pull would overwrite the account's addons with
+                // whatever the local/in-memory state happens to be. This guards two data-loss
+                // paths: (1) after sign-out wipes local state, a stray push before the next
+                // pull completes would empty the server; (2) anonymous/unauthenticated users
+                // never pull (SyncManager skips them), so they must never push onto the
+                // shared profile and clobber a real account's addons. Local mutations are
+                // still persisted on disk via persist(); they sync up after the next pull.
+                if (!pulledFromServer) {
+                    log.w {
+                        "pushToServer() — skipped: no successful server pull yet " +
+                            "(profileId=$currentProfileId); local changes persisted, not pushed"
+                    }
+                    return@runCatching
+                }
                 val profileId = currentProfileId
                 val addons = _uiState.value.addons
                     .distinctBy { it.manifestUrl }
