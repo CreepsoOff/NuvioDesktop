@@ -123,7 +123,7 @@ private fun buildMpcCommand(
         return WindowsExternalPlayerCommandResult(null, "selected player does not support separate audio URLs")
     }
     val command = mutableListOf(executablePath, request.sourceUrl, "/play")
-    request.initialPositionMs.toMpcStartPosition()?.let { startPosition ->
+    request.resumePositionMs.toMpcStartPosition()?.let { startPosition ->
         command += "/startpos"
         command += startPosition
     }
@@ -146,7 +146,7 @@ private fun buildVlcCommand(
         "--file-caching=2000",
         "--live-caching=5000",
     )
-    request.initialPositionMs.toStartSeconds()?.let { startSeconds ->
+    request.resumePositionMs.toStartSeconds()?.let { startSeconds ->
         command += "--start-time=$startSeconds"
     }
     command += request.sourceUrl
@@ -165,7 +165,7 @@ private fun buildMpvCommand(
         "--demuxer-max-back-bytes=128MiB",
         "--demuxer-readahead-secs=60",
     )
-    request.initialPositionMs.toStartSeconds()?.let { startSeconds ->
+    request.resumePositionMs.toStartSeconds()?.let { startSeconds ->
         command += "--start=$startSeconds"
     }
     request.sourceAudioUrl?.takeIf { it.isNotBlank() }?.let { audioUrl ->
@@ -248,7 +248,7 @@ internal fun windowsExternalPlayerLaunchDiagnostics(
         sourceExtension = request.sourceUrl.externalSourceExtension(),
         hasSeparateAudio = !request.sourceAudioUrl.isNullOrBlank(),
         headerNames = request.sourceHeaders.keys.map { it.trim() }.filter { it.isNotBlank() }.sorted(),
-        initialPositionMs = request.initialPositionMs.coerceAtLeast(0L),
+        initialPositionMs = request.resumePositionMs.coerceAtLeast(0L),
         commandPreview = command.redactExternalPlayerCommand(),
         seekSupportNote = install.definition.seekSupportNote(),
     )

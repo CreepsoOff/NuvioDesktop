@@ -71,6 +71,8 @@ actual fun traktBrandPainter(asset: TraktBrandAsset): Painter =
 internal actual object TraktPlatformClock {
     actual fun nowEpochMs(): Long = System.currentTimeMillis()
 
+    actual fun availableProcessors(): Int = Runtime.getRuntime().availableProcessors()
+
     actual fun parseIsoDateTimeToEpochMs(value: String): Long? = runCatching {
         Instant.parse(value).toEpochMilli()
     }.getOrNull()

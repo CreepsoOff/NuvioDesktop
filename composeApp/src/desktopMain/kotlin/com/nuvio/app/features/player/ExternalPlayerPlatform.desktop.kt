@@ -33,7 +33,7 @@ internal actual object ExternalPlayerPlatform {
             "externalPlayer open requested configuredId=${playerId ?: "none"} " +
                 "sourceKind=${request.sourceUrl.safeSourceKind()} sourceKey=${request.sourceUrl.safeSourceKey()} " +
                 "headers=${request.sourceHeaders.keys.sorted()} audio=${!request.sourceAudioUrl.isNullOrBlank()} " +
-                "initialPositionMs=${request.initialPositionMs.coerceAtLeast(0L)}",
+                "initialPositionMs=${request.resumePositionMs.coerceAtLeast(0L)}",
         )
         if (playerId.isNullOrBlank()) {
             DesktopRuntimeLog.warn("externalPlayer open rejected: no configured player")
@@ -85,6 +85,12 @@ internal actual object ExternalPlayerPlatform {
         }
     }
 
+    actual fun buildIntent(
+        request: ExternalPlayerPlaybackRequest,
+        playerId: String?,
+    ): ExternalPlayerIntentResult =
+        ExternalPlayerIntentResult.Success(DesktopExternalPlayerLaunch(request, playerId))
+
     private fun monitorExternalPlayerProcess(process: Process, playerId: String, startedAtMs: Long) {
         CompletableFuture.runAsync {
             val pid = runCatching { process.pid() }.getOrNull()
@@ -105,6 +111,11 @@ internal actual object ExternalPlayerPlatform {
         }
     }
 }
+
+internal data class DesktopExternalPlayerLaunch(
+    val request: ExternalPlayerPlaybackRequest,
+    val playerId: String?,
+)
 
 private fun String.safeSourceKind(): String = when {
     startsWith("file:", ignoreCase = true) -> "file-uri"

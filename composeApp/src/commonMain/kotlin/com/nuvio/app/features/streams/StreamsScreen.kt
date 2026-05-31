@@ -91,9 +91,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
 import coil3.compose.AsyncImage
 import com.nuvio.app.core.ui.nuvioSafeBottomPadding
-import com.nuvio.app.features.debrid.BadgeChipDefaults
-import com.nuvio.app.features.debrid.ImportedBadgeChip
-import com.nuvio.app.features.debrid.ImportedBadgeChipSize
 import com.nuvio.app.features.debrid.DebridProviders
 import com.nuvio.app.features.debrid.DebridSettingsRepository
 import com.nuvio.app.features.player.PlayerSettingsRepository
@@ -337,7 +334,8 @@ fun StreamsScreen(
                         strokeWidth = 2.5.dp,
                     )
                     Text(
-                        text = stringResource(Res.string.streams_finding_source),
+                        text = uiState.overlayMessage
+                            ?: stringResource(Res.string.streams_finding_source),
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.White.copy(alpha = 0.8f),
                     )
@@ -1046,7 +1044,7 @@ private fun StreamCard(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     badgeImages.forEach { badge ->
-                        StreamImportedBadge(badge = badge)
+                        StreamBadgeImage(badge = badge)
                     }
                     StreamFileSizeBadge(stream = stream)
                 }
@@ -1218,14 +1216,14 @@ private fun StreamItem.instantServiceLabel(): String? {
 }
 
 @Composable
-private fun StreamImportedBadge(badge: StreamBadge) {
-    ImportedBadgeChip(
+private fun StreamBadgeImage(badge: StreamBadge) {
+    StreamBadgeChip(
         imageURL = badge.imageURL,
         name = badge.name,
         tagColor = badge.tagColor,
         tagStyle = badge.tagStyle,
         borderColor = badge.borderColor,
-        size = ImportedBadgeChipSize.STREAM,
+        size = StreamBadgeChipSize.STREAM,
     )
 }
 
@@ -1241,23 +1239,23 @@ private fun StreamFileSizeBadge(stream: StreamItem) {
         "${round(mib).toInt()} ${localizedByteUnit("MB")}"
     }
 
-    val badgeShape = BadgeChipDefaults.shape
+    val badgeShape = StreamBadgeChipDefaults.shape
     Box(
         modifier = Modifier
-            .height(ImportedBadgeChipSize.STREAM.containerHeight)
+            .height(StreamBadgeChipSize.STREAM.containerHeight)
             .clip(badgeShape)
             .background(Color(0xFF0A0C0C))
             .border(1.dp, Color(0xFF0A0C0C), badgeShape)
-            .padding(horizontal = BadgeChipDefaults.fileSizeHorizontalPadding),
+            .padding(horizontal = StreamBadgeChipDefaults.fileSizeHorizontalPadding),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = stringResource(Res.string.streams_size, sizeLabel),
             style = MaterialTheme.typography.labelSmall.copy(
-                fontSize = BadgeChipDefaults.fileSizeFontSize,
-                lineHeight = BadgeChipDefaults.fileSizeLineHeight,
+                fontSize = StreamBadgeChipDefaults.fileSizeFontSize,
+                lineHeight = StreamBadgeChipDefaults.fileSizeLineHeight,
                 fontWeight = FontWeight.SemiBold,
-                letterSpacing = BadgeChipDefaults.fileSizeLetterSpacing,
+                letterSpacing = StreamBadgeChipDefaults.fileSizeLetterSpacing,
             ),
             color = Color.White,
         )
