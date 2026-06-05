@@ -25,6 +25,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.nuvio.app.desktop.DesktopFullscreenMode
+import com.nuvio.app.desktop.DesktopFullscreenModePreference
 import com.nuvio.app.features.player.PlayerHardwareDecoderMode
 import com.nuvio.app.features.player.PlayerTargetPrimaries
 import com.nuvio.app.features.player.PlayerTargetTransfer
@@ -51,6 +53,8 @@ import nuvio.composeapp.generated.resources.settings_playback_desktop_gamma
 import nuvio.composeapp.generated.resources.settings_playback_desktop_hdr_compute_peak
 import nuvio.composeapp.generated.resources.settings_playback_desktop_hwdec
 import nuvio.composeapp.generated.resources.settings_playback_desktop_interpolation
+import nuvio.composeapp.generated.resources.settings_playback_desktop_fullscreen_mode
+import nuvio.composeapp.generated.resources.settings_playback_desktop_fullscreen_section
 import nuvio.composeapp.generated.resources.settings_playback_desktop_option_auto
 import nuvio.composeapp.generated.resources.settings_playback_desktop_option_bt1886
 import nuvio.composeapp.generated.resources.settings_playback_desktop_option_bt2020
@@ -70,6 +74,9 @@ import nuvio.composeapp.generated.resources.settings_playback_desktop_option_hab
 import nuvio.composeapp.generated.resources.settings_playback_desktop_option_hlg
 import nuvio.composeapp.generated.resources.settings_playback_desktop_option_mobius
 import nuvio.composeapp.generated.resources.settings_playback_desktop_option_native
+import nuvio.composeapp.generated.resources.settings_playback_desktop_option_fullscreen_compose
+import nuvio.composeapp.generated.resources.settings_playback_desktop_option_fullscreen_exclusive
+import nuvio.composeapp.generated.resources.settings_playback_desktop_option_fullscreen_native
 import nuvio.composeapp.generated.resources.settings_playback_desktop_option_no
 import nuvio.composeapp.generated.resources.settings_playback_desktop_option_nvdec
 import nuvio.composeapp.generated.resources.settings_playback_desktop_option_nvdec_copy
@@ -78,6 +85,8 @@ import nuvio.composeapp.generated.resources.settings_playback_desktop_option_rei
 import nuvio.composeapp.generated.resources.settings_playback_desktop_option_sdr_tone_mapped
 import nuvio.composeapp.generated.resources.settings_playback_desktop_option_srgb
 import nuvio.composeapp.generated.resources.settings_playback_desktop_section_video
+import nuvio.composeapp.generated.resources.settings_playback_desktop_section_video_processing
+import nuvio.composeapp.generated.resources.settings_playback_desktop_section_video_tuning
 import nuvio.composeapp.generated.resources.settings_playback_desktop_target_primaries
 import nuvio.composeapp.generated.resources.settings_playback_desktop_target_transfer
 import nuvio.composeapp.generated.resources.settings_playback_desktop_tone_mapping
@@ -88,6 +97,10 @@ import nuvio.composeapp.generated.resources.settings_playback_desktop_video_satu
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
+private val isWindowsDesktop: Boolean by lazy {
+    System.getProperty("os.name")?.contains("Windows", ignoreCase = true) == true
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal actual fun DesktopDecoderSettingsSection(isTablet: Boolean) {
@@ -97,9 +110,27 @@ internal actual fun DesktopDecoderSettingsSection(isTablet: Boolean) {
     var showToneMappingDialog by remember { mutableStateOf(false) }
     var showPrimariesDialog by remember { mutableStateOf(false) }
     var showTransferDialog by remember { mutableStateOf(false) }
+    var fullscreenMode by remember { mutableStateOf(DesktopFullscreenModePreference.load()) }
+    var showFullscreenModeDialog by remember { mutableStateOf(false) }
 
     fun refresh() {
         tuning = loadDesktopMpvVideoTuning().settings
+    }
+
+    if (isWindowsDesktop) {
+        SettingsSection(
+            title = stringResource(Res.string.settings_playback_desktop_fullscreen_section),
+            isTablet = isTablet,
+        ) {
+            SettingsGroup(isTablet = isTablet) {
+                SettingsNavigationRow(
+                    title = stringResource(Res.string.settings_playback_desktop_fullscreen_mode),
+                    description = stringResource(fullscreenMode.labelRes()),
+                    isTablet = isTablet,
+                    onClick = { showFullscreenModeDialog = true },
+                )
+            }
+        }
     }
 
     SettingsSection(
@@ -142,7 +173,12 @@ internal actual fun DesktopDecoderSettingsSection(isTablet: Boolean) {
                 onClick = { showTransferDialog = true },
             )
         }
+    }
 
+    SettingsSection(
+        title = stringResource(Res.string.settings_playback_desktop_section_video_processing),
+        isTablet = isTablet,
+    ) {
         SettingsGroup(isTablet = isTablet) {
             SettingsSwitchRow(
                 title = stringResource(Res.string.settings_playback_desktop_hdr_compute_peak),
@@ -177,7 +213,12 @@ internal actual fun DesktopDecoderSettingsSection(isTablet: Boolean) {
                 },
             )
         }
+    }
 
+    SettingsSection(
+        title = stringResource(Res.string.settings_playback_desktop_section_video_tuning),
+        isTablet = isTablet,
+    ) {
         SettingsGroup(isTablet = isTablet) {
             VideoEqSlider(
                 title = stringResource(Res.string.settings_playback_desktop_video_brightness),
@@ -233,6 +274,20 @@ internal actual fun DesktopDecoderSettingsSection(isTablet: Boolean) {
                 showPresetDialog = false
             },
             onDismiss = { showPresetDialog = false },
+        )
+    }
+    if (showFullscreenModeDialog) {
+        OptionDialog(
+            title = stringResource(Res.string.settings_playback_desktop_fullscreen_mode),
+            options = DesktopFullscreenMode.entries,
+            selected = fullscreenMode,
+            label = { stringResource(it.labelRes()) },
+            onSelect = {
+                DesktopFullscreenModePreference.save(it)
+                fullscreenMode = it
+                showFullscreenModeDialog = false
+            },
+            onDismiss = { showFullscreenModeDialog = false },
         )
     }
     if (showHwdecDialog) {
@@ -401,6 +456,13 @@ private fun PlayerVideoOutputPreset.labelRes(): StringResource =
         PlayerVideoOutputPreset.ToneMappedSdr -> Res.string.settings_playback_desktop_option_sdr_tone_mapped
         PlayerVideoOutputPreset.Compatibility -> Res.string.settings_playback_desktop_option_compatibility
         PlayerVideoOutputPreset.Custom -> Res.string.settings_playback_desktop_option_custom
+    }
+
+private fun DesktopFullscreenMode.labelRes(): StringResource =
+    when (this) {
+        DesktopFullscreenMode.NativeBorderless -> Res.string.settings_playback_desktop_option_fullscreen_native
+        DesktopFullscreenMode.AwtExclusive -> Res.string.settings_playback_desktop_option_fullscreen_exclusive
+        DesktopFullscreenMode.ComposeFullscreen -> Res.string.settings_playback_desktop_option_fullscreen_compose
     }
 
 private fun PlayerHardwareDecoderMode.labelRes(): StringResource =

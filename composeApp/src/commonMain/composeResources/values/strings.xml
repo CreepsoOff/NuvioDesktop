@@ -665,9 +665,24 @@
     <string name="settings_debrid_formatter_reset_title">Reset formatting</string>
     <string name="settings_debrid_formatter_reset_subtitle">Restore default result formatting.</string>
     <string name="settings_stream_badges_section">Stream Badges</string>
+    <string name="settings_stream_size_badges_title">Size badges</string>
+    <string name="settings_stream_size_badges_description">Show stream file-size badges when a source reports its video size.</string>
     <string name="settings_stream_badge_urls_title">Badge URLs</string>
     <string name="settings_stream_badge_urls_description">Import up to %1$d stream badge JSON URLs. Each URL can be updated or deleted separately.</string>
     <string name="settings_stream_badge_urls_search_description">Manage imported stream badge JSON URLs.</string>
+    <string name="settings_stream_badges_summary">%1$d/%2$d URLs, %3$d active badges</string>
+    <string name="settings_stream_badges_empty">No badge URLs imported.</string>
+    <string name="settings_stream_badge_url_label">Badge JSON URL</string>
+    <string name="settings_stream_badge_urls_imported">%1$d/%2$d URLs imported</string>
+    <string name="settings_stream_badge_url_active">Active</string>
+    <string name="settings_stream_badge_url_inactive">Inactive</string>
+    <string name="settings_stream_badge_url_status_summary">%1$s, %2$d enabled badges, %3$d groups</string>
+    <string name="settings_stream_badge_preview_action">Preview</string>
+    <string name="settings_stream_badge_preview_title">Badge preview</string>
+    <string name="settings_stream_badge_preview_count">%1$d badges from this URL</string>
+    <string name="settings_stream_badge_preview_empty">No badge images in this URL.</string>
+    <string name="settings_stream_badge_group_title">Group %1$d</string>
+    <string name="settings_stream_badge_other_group_title">Other badges</string>
     <string name="settings_debrid_key_valid">API key validated.</string>
     <string name="settings_debrid_key_invalid">Could not validate this API key.</string>
     <string name="settings_mdb_add_api_key_first">Add your MDBList API key below before turning ratings on.</string>
@@ -810,6 +825,8 @@
     <string name="settings_playback_desktop_option_sdr_tone_mapped">SDR Tone Mapped</string>
     <string name="settings_playback_desktop_option_srgb">sRGB</string>
     <string name="settings_playback_desktop_section_video">DESKTOP VIDEO</string>
+    <string name="settings_playback_desktop_section_video_processing">DESKTOP VIDEO PROCESSING</string>
+    <string name="settings_playback_desktop_section_video_tuning">DESKTOP VIDEO TUNING</string>
     <string name="settings_playback_desktop_target_primaries">Target Primaries</string>
     <string name="settings_playback_desktop_target_transfer">Target Transfer</string>
     <string name="settings_playback_desktop_tone_mapping">Tone Mapping</string>
@@ -1907,4 +1924,9 @@
     <string name="settings_image_rendering_restart_disable_message">High-quality image rendering will be disabled. Nuvio needs to restart to apply it.</string>
     <string name="settings_image_rendering_restart_confirm">Restart now</string>
     <string name="settings_image_rendering_restart_cancel">Cancel</string>
+    <string name="settings_playback_desktop_fullscreen_section">Fullscreen (Desktop)</string>
+    <string name="settings_playback_desktop_fullscreen_mode">Fullscreen method</string>
+    <string name="settings_playback_desktop_option_fullscreen_native">Native borderless</string>
+    <string name="settings_playback_desktop_option_fullscreen_exclusive">AWT exclusive</string>
+    <string name="settings_playback_desktop_option_fullscreen_compose">Compose fullscreen</string>
 </resources>
