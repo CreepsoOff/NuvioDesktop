@@ -30,6 +30,7 @@ import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Style
 import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -432,6 +433,15 @@ internal fun settingsSearchEntries(
     val playbackSubtitleRendering = stringResource(Res.string.settings_playback_section_subtitle_rendering)
     val playbackSkipSegments = stringResource(Res.string.settings_playback_section_skip_segments)
     val playbackNextEpisode = stringResource(Res.string.settings_playback_section_next_episode)
+    addRow(
+        page = SettingsPage.Streams,
+        key = "stream-size-badges",
+        title = stringResource(Res.string.settings_stream_size_badges_title),
+        description = stringResource(Res.string.settings_stream_size_badges_description),
+        pageLabel = streamsPage,
+        section = stringResource(Res.string.settings_stream_badges_section),
+        icon = Icons.Rounded.Visibility,
+    )
     addRow(
         page = SettingsPage.Streams,
         key = "stream-badge-urls",

@@ -3,7 +3,9 @@ package com.nuvio.app.features.streams
 import android.content.Context
 import android.content.SharedPreferences
 import com.nuvio.app.core.storage.ProfileScopedKey
+import com.nuvio.app.core.sync.decodeSyncBoolean
 import com.nuvio.app.core.sync.decodeSyncString
+import com.nuvio.app.core.sync.encodeSyncBoolean
 import com.nuvio.app.core.sync.encodeSyncString
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -13,9 +15,10 @@ actual object StreamBadgeSettingsStorage {
     private const val preferencesName = "nuvio_stream_badge_settings"
     private const val legacyDebridPreferencesName = "nuvio_debrid_settings"
     private const val streamBadgeRulesKey = "stream_badge_rules"
+    private const val showFileSizeBadgesKey = "show_file_size_badges"
     private const val legacyDebridStreamBadgeRulesKey = "debrid_stream_badge_rules"
 
-    private val syncKeys = listOf(streamBadgeRulesKey)
+    private val syncKeys = listOf(streamBadgeRulesKey, showFileSizeBadgesKey)
 
     private var preferences: SharedPreferences? = null
     private var legacyDebridPreferences: SharedPreferences? = null
@@ -29,6 +32,18 @@ actual object StreamBadgeSettingsStorage {
 
     actual fun saveStreamBadgeRules(rules: String) {
         saveString(streamBadgeRulesKey, rules)
+    }
+
+    actual fun loadShowFileSizeBadges(): Boolean? {
+        val key = ProfileScopedKey.of(showFileSizeBadgesKey)
+        return preferences?.takeIf { it.contains(key) }?.getBoolean(key, true)
+    }
+
+    actual fun saveShowFileSizeBadges(enabled: Boolean) {
+        preferences
+            ?.edit()
+            ?.putBoolean(ProfileScopedKey.of(showFileSizeBadgesKey), enabled)
+            ?.apply()
     }
 
     actual fun loadLegacyDebridStreamBadgeRules(): String? =
@@ -53,6 +68,7 @@ actual object StreamBadgeSettingsStorage {
 
     actual fun exportToSyncPayload(): JsonObject = buildJsonObject {
         loadStreamBadgeRules()?.let { put(streamBadgeRulesKey, encodeSyncString(it)) }
+        loadShowFileSizeBadges()?.let { put(showFileSizeBadgesKey, encodeSyncBoolean(it)) }
     }
 
     actual fun replaceFromSyncPayload(payload: JsonObject) {
@@ -61,5 +77,6 @@ actual object StreamBadgeSettingsStorage {
         }?.apply()
 
         payload.decodeSyncString(streamBadgeRulesKey)?.let(::saveStreamBadgeRules)
+        payload.decodeSyncBoolean(showFileSizeBadgesKey)?.let(::saveShowFileSizeBadges)
     }
 }
