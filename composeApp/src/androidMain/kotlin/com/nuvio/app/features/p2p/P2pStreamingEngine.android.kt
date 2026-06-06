@@ -46,6 +46,16 @@ actual object P2pStreamingEngine {
         binary.initialize(context.applicationContext)
     }
 
+    actual fun warmup() {
+        scope.launch {
+            try {
+                binary.start()
+            } catch (error: Exception) {
+                Log.w(TAG, "P2P warmup failed", error)
+            }
+        }
+    }
+
     actual suspend fun startStream(request: P2pStreamRequest): String = withContext(Dispatchers.IO) {
         stopStreamNow(stopBinary = false)
         val generation = nextStreamGeneration()
@@ -55,7 +65,9 @@ actual object P2pStreamingEngine {
             binary.start()
             ensureCurrentGeneration(generation)
 
-            val magnetLink = buildMagnetUri(request.infoHash, request.trackers)
+            val magnetLink = request.magnetUri
+                ?.takeIf { it.isNotBlank() }
+                ?: buildMagnetUri(request.infoHash, request.trackers)
             Log.d(TAG, "Starting stream: $magnetLink")
 
             val hash = api.addTorrent(magnetLink)
