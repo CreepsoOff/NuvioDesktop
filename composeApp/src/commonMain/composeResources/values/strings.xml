@@ -18,6 +18,7 @@
     <string name="action_resume">Resume</string>
     <string name="action_retry">Retry</string>
     <string name="action_save">Save</string>
+    <string name="detail_actions_menu">More actions</string>
     <string name="action_saving">Saving…</string>
     <string name="action_validate">Validate</string>
     <string name="addon_installing">Installing</string>
