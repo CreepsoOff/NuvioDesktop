@@ -182,6 +182,12 @@ internal fun LazyListScope.settingsRootContent(
         item {
             KeybindsSettingsContent(isTablet = isTablet)
         }
+        item {
+            DebugLogsSettingsSection(isTablet = isTablet)
+        }
+        item {
+            ImageRenderingSettingsSection(isTablet = isTablet)
+        }
     }
     if (showAboutSection) {
         item {
@@ -227,8 +233,6 @@ internal fun LazyListScope.settingsRootContent(
                     }
                 }
             }
-            DebugLogsSettingsSection(isTablet = isTablet)
-            ImageRenderingSettingsSection(isTablet = isTablet)
         }
     }
     item {
