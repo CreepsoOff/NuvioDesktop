@@ -390,6 +390,7 @@
     <string name="compose_settings_category_general">Général</string>
     <string name="compose_settings_page_account">Compte</string>
     <string name="compose_settings_page_addons">Addons</string>
+    <string name="compose_settings_page_advanced">Avancé</string>
     <string name="compose_settings_page_appearance">Apparence</string>
     <string name="compose_settings_page_content_discovery">Contenu et découverte</string>
     <string name="compose_settings_page_continue_watching">Continuer à regarder</string>
@@ -410,6 +411,8 @@
     <string name="compose_settings_root_about_section">À PROPOS</string>
     <string name="compose_settings_root_account_description">Gère ton compte, déconnecte-toi ou supprime-le.</string>
     <string name="compose_settings_root_account_section">COMPTE</string>
+    <string name="compose_settings_root_advanced_description">Démarrage et comportement des profils.</string>
+    <string name="compose_settings_root_advanced_section">AVANCÉ</string>
     <string name="compose_settings_root_appearance_description">Ajuste la présentation de l’accueil et les préférences visuelles.</string>
     <string name="compose_settings_root_check_updates_description">Rechercher de nouvelles versions de l’application.</string>
     <string name="compose_settings_root_check_updates_title">Vérifier les mises à jour</string>
@@ -455,6 +458,9 @@
     <string name="settings_search_empty">Aucun paramètre trouvé.</string>
     <string name="settings_search_placeholder">Rechercher dans les paramètres…</string>
     <string name="settings_search_results_section">RÉSULTATS</string>
+    <string name="settings_advanced_section_startup">DÉMARRAGE</string>
+    <string name="settings_advanced_remember_last_profile">Mémoriser le dernier profil</string>
+    <string name="settings_advanced_remember_last_profile_description">Ouvrir le dernier profil sélectionné au démarrage</string>
     <string name="settings_licenses_attributions_section_app">LICENCE DE L’APP</string>
     <string name="settings_licenses_attributions_section_data">DONNÉES ET SERVICES</string>
     <string name="settings_licenses_attributions_section_playback">LICENCE DE LECTURE</string>

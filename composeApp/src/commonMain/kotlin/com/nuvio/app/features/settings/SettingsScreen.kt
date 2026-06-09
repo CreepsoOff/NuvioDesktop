@@ -70,6 +70,7 @@ import com.nuvio.app.features.notifications.EpisodeReleaseNotificationsRepositor
 import com.nuvio.app.features.notifications.EpisodeReleaseNotificationsUiState
 import com.nuvio.app.features.player.PlayerSettingsRepository
 import com.nuvio.app.features.player.PlayerSettingsUiState
+import com.nuvio.app.features.profiles.ProfileRepository
 import com.nuvio.app.features.trakt.TraktAuthUiState
 import com.nuvio.app.features.trakt.TraktAuthRepository
 import com.nuvio.app.features.trakt.TraktCommentsSettings
@@ -197,6 +198,7 @@ fun SettingsScreen(
             EpisodeReleaseNotificationsRepository.ensureLoaded()
             EpisodeReleaseNotificationsRepository.uiState
         }.collectAsStateWithLifecycle()
+        val profileState by ProfileRepository.state.collectAsStateWithLifecycle()
 
         LaunchedEffect(homescreenCatalogRefreshKey) {
             if (homescreenCatalogRefreshKey.isEmpty()) return@LaunchedEffect
@@ -271,6 +273,7 @@ fun SettingsScreen(
                 metaScreenSettingsUiState = metaScreenSettingsUiState,
                 continueWatchingPreferencesUiState = continueWatchingPreferencesUiState,
                 posterCardStyleUiState = posterCardStyleUiState,
+                rememberLastProfileEnabled = profileState.rememberLastProfileEnabled,
                 onSwitchProfile = onSwitchProfile,
                 onDownloadsClick = onDownloadsClick,
                 onSupportersContributorsClick = onSupportersContributorsClick,
@@ -309,6 +312,7 @@ fun SettingsScreen(
                 metaScreenSettingsUiState = metaScreenSettingsUiState,
                 continueWatchingPreferencesUiState = continueWatchingPreferencesUiState,
                 posterCardStyleUiState = posterCardStyleUiState,
+                rememberLastProfileEnabled = profileState.rememberLastProfileEnabled,
                 onSwitchProfile = onSwitchProfile,
                 onHomescreenClick = onHomescreenClick,
                 onMetaScreenClick = onMetaScreenClick,
@@ -357,6 +361,7 @@ private fun MobileSettingsScreen(
     metaScreenSettingsUiState: MetaScreenSettingsUiState,
     continueWatchingPreferencesUiState: ContinueWatchingPreferencesUiState,
     posterCardStyleUiState: PosterCardStyleUiState,
+    rememberLastProfileEnabled: Boolean,
     onSwitchProfile: (() -> Unit)? = null,
     onHomescreenClick: () -> Unit = {},
     onMetaScreenClick: () -> Unit = {},
@@ -466,6 +471,7 @@ private fun MobileSettingsScreen(
                             onPlaybackClick = { onPageChange(SettingsPage.Playback) },
                             onStreamsClick = { onPageChange(SettingsPage.Streams) },
                             onAppearanceClick = { onPageChange(SettingsPage.Appearance) },
+                            onAdvancedClick = { onPageChange(SettingsPage.Advanced) },
                             onNotificationsClick = { onPageChange(SettingsPage.Notifications) },
                             onContentDiscoveryClick = { onPageChange(SettingsPage.ContentDiscovery) },
                             onIntegrationsClick = { onPageChange(SettingsPage.Integrations) },
@@ -514,6 +520,10 @@ private fun MobileSettingsScreen(
                 SettingsPage.Notifications -> notificationsSettingsContent(
                     isTablet = false,
                     uiState = episodeReleaseNotificationsUiState,
+                )
+                SettingsPage.Advanced -> advancedSettingsContent(
+                    isTablet = false,
+                    rememberLastProfileEnabled = rememberLastProfileEnabled,
                 )
                 SettingsPage.ContinueWatching -> continueWatchingSettingsContent(
                     isTablet = false,
@@ -653,6 +663,7 @@ private fun TabletSettingsScreen(
     metaScreenSettingsUiState: MetaScreenSettingsUiState,
     continueWatchingPreferencesUiState: ContinueWatchingPreferencesUiState,
     posterCardStyleUiState: PosterCardStyleUiState,
+    rememberLastProfileEnabled: Boolean,
     onSwitchProfile: (() -> Unit)? = null,
     onDownloadsClick: () -> Unit = {},
     onSupportersContributorsClick: () -> Unit = {},
@@ -817,6 +828,7 @@ private fun TabletSettingsScreen(
                                 onPlaybackClick = { openInlinePage(SettingsPage.Playback) },
                                 onStreamsClick = { openInlinePage(SettingsPage.Streams) },
                                 onAppearanceClick = { openInlinePage(SettingsPage.Appearance) },
+                                onAdvancedClick = { openInlinePage(SettingsPage.Advanced) },
                                 onNotificationsClick = { openInlinePage(SettingsPage.Notifications) },
                                 onContentDiscoveryClick = { openInlinePage(SettingsPage.ContentDiscovery) },
                                 onIntegrationsClick = { openInlinePage(SettingsPage.Integrations) },
@@ -832,6 +844,7 @@ private fun TabletSettingsScreen(
                                 showAccountSection = activeCategory == SettingsCategory.Account,
                                 showGeneralSection = activeCategory == SettingsCategory.General,
                                 showAboutSection = activeCategory == SettingsCategory.About,
+                                showAdvancedSection = activeCategory == SettingsCategory.Advanced,
                             )
                         }
                     }
@@ -868,6 +881,10 @@ private fun TabletSettingsScreen(
                     SettingsPage.Notifications -> notificationsSettingsContent(
                         isTablet = true,
                         uiState = episodeReleaseNotificationsUiState,
+                    )
+                    SettingsPage.Advanced -> advancedSettingsContent(
+                        isTablet = true,
+                        rememberLastProfileEnabled = rememberLastProfileEnabled,
                     )
                     SettingsPage.ContinueWatching -> continueWatchingSettingsContent(
                         isTablet = true,

@@ -361,6 +361,7 @@
     <string name="compose_settings_category_general">Allgemein</string>
     <string name="compose_settings_page_account">Konto</string>
     <string name="compose_settings_page_addons">Addons</string>
+    <string name="compose_settings_page_advanced">Erweitert</string>
     <string name="compose_settings_page_appearance">Erscheinungsbild</string>
     <string name="compose_settings_page_content_discovery">Inhalte &amp; Entdeckung</string>
     <string name="compose_settings_page_continue_watching">Weiterschauen</string>
@@ -379,6 +380,8 @@
     <string name="compose_settings_root_about_section">ÜBER</string>
     <string name="compose_settings_root_account_description">Verwalte dein Konto, melde dich ab oder lösche es.</string>
     <string name="compose_settings_root_account_section">KONTO</string>
+    <string name="compose_settings_root_advanced_description">Start- und Profilverhalten.</string>
+    <string name="compose_settings_root_advanced_section">ERWEITERT</string>
     <string name="compose_settings_root_appearance_description">Passe Startseiten-Darstellung und visuelle Einstellungen an.</string>
     <string name="compose_settings_root_check_updates_description">Suche nach neuen Versionen der App.</string>
     <string name="compose_settings_root_check_updates_title">Nach Updates suchen</string>
@@ -1212,4 +1215,7 @@
     </plurals>
     <string name="cw_new_episode">Neue Folge</string>
     <string name="cw_new_season">Neue Staffel</string>
+    <string name="settings_advanced_section_startup">START</string>
+    <string name="settings_advanced_remember_last_profile">Letztes Profil merken</string>
+    <string name="settings_advanced_remember_last_profile_description">Beim Start das zuletzt ausgewählte Profil öffnen</string>
 </resources>

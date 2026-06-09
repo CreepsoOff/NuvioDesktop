@@ -212,6 +212,7 @@
     <string name="compose_settings_category_general">Γενικά</string>
     <string name="compose_settings_page_account">Λογαριασμός</string>
     <string name="compose_settings_page_addons">Πρόσθετα</string>
+    <string name="compose_settings_page_advanced">Σύνθετα</string>
     <string name="compose_settings_page_appearance">Εμφάνιση</string>
     <string name="compose_settings_page_content_discovery">Περιεχόμενο &amp; Ανακάλυψη</string>
     <string name="compose_settings_page_continue_watching">Συνέχεια παρακολούθησης</string>
@@ -230,6 +231,8 @@
     <string name="compose_settings_root_about_section">ΣΧΕΤΙΚΑ</string>
     <string name="compose_settings_root_account_description">Διαχειριστείτε τον λογαριασμό σας, αποσυνδεθείτε ή διαγράψτε τον.</string>
     <string name="compose_settings_root_account_section">ΛΟΓΑΡΙΑΣΜΟΣ</string>
+    <string name="compose_settings_root_advanced_description">Συμπεριφορά εκκίνησης και προφίλ.</string>
+    <string name="compose_settings_root_advanced_section">ΣΥΝΘΕΤΑ</string>
     <string name="compose_settings_root_appearance_description">Προσαρμόστε την παρουσίαση της αρχικής και τις οπτικές προτιμήσεις.</string>
     <string name="compose_settings_root_check_updates_description">Ελέγξτε για νέες εκδόσεις της εφαρμογής.</string>
     <string name="compose_settings_root_check_updates_title">Έλεγχος για ενημερώσεις</string>
@@ -1058,4 +1061,7 @@
     </plurals>
     <string name="cw_new_episode">Νέο επεισόδιο</string>
     <string name="cw_new_season">Νέα σεζόν</string>
+    <string name="settings_advanced_section_startup">ΕΚΚΙΝΗΣΗ</string>
+    <string name="settings_advanced_remember_last_profile">Απομνημόνευση τελευταίου προφίλ</string>
+    <string name="settings_advanced_remember_last_profile_description">Άνοιγμα του τελευταίου επιλεγμένου προφίλ κατά την εκκίνηση</string>
 </resources>

@@ -376,6 +376,7 @@
     <string name="compose_settings_category_general">Generelt</string>
     <string name="compose_settings_page_account">Konto</string>
     <string name="compose_settings_page_addons">Tillegg</string>
+    <string name="compose_settings_page_advanced">Avansert</string>
     <string name="compose_settings_page_appearance">Utseende</string>
     <string name="compose_settings_page_content_discovery">Innhold &amp; oppdagelse</string>
     <string name="compose_settings_page_continue_watching">Fortsett å se</string>
@@ -396,6 +397,8 @@
     <string name="compose_settings_root_about_section">OM</string>
     <string name="compose_settings_root_account_description">Konto- og synkroniseringsstatus</string>
     <string name="compose_settings_root_account_section">KONTO</string>
+    <string name="compose_settings_root_advanced_description">Oppstart og profilatferd.</string>
+    <string name="compose_settings_root_advanced_section">AVANSERT</string>
     <string name="compose_settings_root_appearance_description">Hjem-struktur og plakatstiler</string>
     <string name="compose_settings_root_check_updates_description">Last ned nyeste versjon</string>
     <string name="compose_settings_root_check_updates_title">Se etter oppdateringer</string>
@@ -411,6 +414,9 @@
     <string name="settings_search_empty">Ingen innstillinger funnet.</string>
     <string name="settings_search_placeholder">Søk i innstillinger…</string>
     <string name="settings_search_results_section">RESULTATER</string>
+    <string name="settings_advanced_section_startup">OPPSTART</string>
+    <string name="settings_advanced_remember_last_profile">Husk siste profil</string>
+    <string name="settings_advanced_remember_last_profile_description">Åpne sist valgte profil ved oppstart</string>
     <string name="settings_licenses_attributions_section_app">APP-LISENS</string>
     <string name="settings_licenses_attributions_section_data">DATA &amp; TJENESTER</string>
     <string name="settings_licenses_attributions_section_playback">AVSPILLINGS-LISENS</string>

@@ -212,6 +212,7 @@
   <string name="compose_settings_category_general">Generali</string>
   <string name="compose_settings_page_account">Account</string>
   <string name="compose_settings_page_addons">Addon</string>
+    <string name="compose_settings_page_advanced">Avanzate</string>
   <string name="compose_settings_page_appearance">Aspetto</string>
   <string name="compose_settings_page_content_discovery">Contenuti e Scoperta</string>
   <string name="compose_settings_page_continue_watching">Continua a guardare</string>
@@ -230,6 +231,8 @@
   <string name="compose_settings_root_about_section">INFORMAZIONI</string>
   <string name="compose_settings_root_account_description">Gestisci il tuo account, disconnettiti o eliminalo.</string>
   <string name="compose_settings_root_account_section">ACCOUNT</string>
+    <string name="compose_settings_root_advanced_description">Comportamento di avvio e profilo.</string>
+    <string name="compose_settings_root_advanced_section">AVANZATE</string>
   <string name="compose_settings_root_appearance_description">Regola la presentazione della home e le preferenze visive.</string>
   <string name="compose_settings_root_check_updates_description">Controlla se ci sono nuove versioni dell'app.</string>
   <string name="compose_settings_root_check_updates_title">Verifica aggiornamenti</string>
@@ -1215,6 +1218,9 @@
   <string name="settings_search_empty">Nessuna impostazione trovata.</string>
   <string name="settings_search_placeholder">Cerca impostazioni...</string>
   <string name="settings_search_results_section">RISULTATI</string>
+    <string name="settings_advanced_section_startup">AVVIO</string>
+    <string name="settings_advanced_remember_last_profile">Ricorda ultimo profilo</string>
+    <string name="settings_advanced_remember_last_profile_description">Apri ultimo profilo selezionato all avvio</string>
   <string name="settings_licenses_attributions_section_app">LICENZA APP</string>
   <string name="settings_licenses_attributions_section_data">DATI E SERVIZI</string>
   <string name="settings_licenses_attributions_section_playback">LICENZA RIPRODUZIONE</string>

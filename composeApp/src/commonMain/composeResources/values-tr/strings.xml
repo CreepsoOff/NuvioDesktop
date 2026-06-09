@@ -380,6 +380,7 @@
     <string name="compose_settings_category_general">Genel</string>
     <string name="compose_settings_page_account">Hesap</string>
     <string name="compose_settings_page_addons">Eklentiler</string>
+    <string name="compose_settings_page_advanced">Gelişmiş</string>
     <string name="compose_settings_page_appearance">Görünüm</string>
     <string name="compose_settings_page_content_discovery">İçerik &amp; Keşif</string>
     <string name="compose_settings_page_continue_watching">İzlemeye devam</string>
@@ -400,6 +401,8 @@
     <string name="compose_settings_root_about_section">HAKKINDA</string>
     <string name="compose_settings_root_account_description">Hesabını yönet, çıkış yap veya hesabı sil.</string>
     <string name="compose_settings_root_account_section">HESAP</string>
+    <string name="compose_settings_root_advanced_description">Başlangıç ve profil davranışı.</string>
+    <string name="compose_settings_root_advanced_section">GELİŞMİŞ</string>
     <string name="compose_settings_root_appearance_description">Ana sayfa görünümünü ve görsel tercihleri ayarla.</string>
     <string name="compose_settings_root_check_updates_description">Uygulamanın yeni sürümü var mı kontrol et.</string>
     <string name="compose_settings_root_check_updates_title">Güncellemeleri kontrol et</string>
@@ -415,6 +418,9 @@
     <string name="settings_search_empty">Ayar bulunamadı.</string>
     <string name="settings_search_placeholder">Ayarlarda ara...</string>
     <string name="settings_search_results_section">SONUÇLAR</string>
+    <string name="settings_advanced_section_startup">BAŞLANGIÇ</string>
+    <string name="settings_advanced_remember_last_profile">Son profili hatırla</string>
+    <string name="settings_advanced_remember_last_profile_description">Başlangıçta son seçilen profili aç</string>
     <string name="settings_licenses_attributions_section_app">UYGULAMA LİSANSI</string>
     <string name="settings_licenses_attributions_section_data">VERİ &amp; SERVİSLER</string>
     <string name="settings_licenses_attributions_section_playback">OYNATMA LİSANSI</string>

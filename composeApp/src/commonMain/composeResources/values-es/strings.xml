@@ -330,6 +330,7 @@
     <string name="compose_settings_category_general">General</string>
     <string name="compose_settings_page_account">Cuenta</string>
     <string name="compose_settings_page_addons">Complementos</string>
+    <string name="compose_settings_page_advanced">Avanzado</string>
     <string name="compose_settings_page_appearance">Apariencia</string>
     <string name="compose_settings_page_content_discovery">Contenido y descubrimiento</string>
     <string name="compose_settings_page_continue_watching">Seguir viendo</string>
@@ -348,6 +349,8 @@
     <string name="compose_settings_root_about_section">ACERCA DE</string>
     <string name="compose_settings_root_account_description">Administra tu cuenta, cierra sesión o elimínala.</string>
     <string name="compose_settings_root_account_section">CUENTA</string>
+    <string name="compose_settings_root_advanced_description">Comportamiento de inicio y perfiles.</string>
+    <string name="compose_settings_root_advanced_section">AVANZADO</string>
     <string name="compose_settings_root_appearance_description">Ajusta la presentación de inicio y las preferencias visuales.</string>
     <string name="compose_settings_root_check_updates_description">Buscar nuevas versiones de la app.</string>
     <string name="compose_settings_root_check_updates_title">Buscar actualizaciones</string>
@@ -1178,4 +1181,7 @@
     </plurals>
     <string name="cw_new_episode">Nuevo episodio</string>
     <string name="cw_new_season">Nueva temporada</string>
+    <string name="settings_advanced_section_startup">INICIO</string>
+    <string name="settings_advanced_remember_last_profile">Recordar último perfil</string>
+    <string name="settings_advanced_remember_last_profile_description">Abrir el último perfil seleccionado al iniciar</string>
 </resources>

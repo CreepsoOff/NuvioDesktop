@@ -380,6 +380,7 @@
     <string name="compose_settings_category_general">Geral</string>
     <string name="compose_settings_page_account">Conta</string>
     <string name="compose_settings_page_addons">Addons</string>
+    <string name="compose_settings_page_advanced">Avançado</string>
     <string name="compose_settings_page_appearance">Esquema</string>
     <string name="compose_settings_page_content_discovery">Conteúdo e Descoberta</string>
     <string name="compose_settings_page_continue_watching">Continuar a Ver</string>
@@ -400,6 +401,8 @@
     <string name="compose_settings_root_about_section">SOBRE</string>
     <string name="compose_settings_root_account_description">Conta e estado de sincronização</string>
     <string name="compose_settings_root_account_section">CONTA</string>
+    <string name="compose_settings_root_advanced_description">Comportamento de arranque e perfil.</string>
+    <string name="compose_settings_root_advanced_section">AVANÇADO</string>
     <string name="compose_settings_root_appearance_description">Estrutura inicial e estilos de póster</string>
     <string name="compose_settings_root_check_updates_description">Transferir a versão mais recente</string>
     <string name="compose_settings_root_check_updates_title">Procurar atualizações</string>
@@ -415,6 +418,9 @@
     <string name="settings_search_empty">Nenhuma definição encontrada.</string>
     <string name="settings_search_placeholder">Pesquisar definições...</string>
     <string name="settings_search_results_section">RESULTADOS</string>
+    <string name="settings_advanced_section_startup">ARRANQUE</string>
+    <string name="settings_advanced_remember_last_profile">Lembrar último perfil</string>
+    <string name="settings_advanced_remember_last_profile_description">Abrir o último perfil selecionado ao iniciar</string>
     <string name="settings_licenses_attributions_section_app">LICENÇA DA APP</string>
     <string name="settings_licenses_attributions_section_data">DADOS E SERVIÇOS</string>
     <string name="settings_licenses_attributions_section_playback">LICENÇA DE REPRODUÇÃO</string>

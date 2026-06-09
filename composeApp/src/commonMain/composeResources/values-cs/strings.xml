@@ -361,6 +361,7 @@
     <string name="compose_settings_category_general">Obecné</string>
     <string name="compose_settings_page_account">Účet</string>
     <string name="compose_settings_page_addons">Doplňky</string>
+    <string name="compose_settings_page_advanced">Pokročilé</string>
     <string name="compose_settings_page_appearance">Rozvržení</string>
     <string name="compose_settings_page_content_discovery">Obsah a objevování</string>
     <string name="compose_settings_page_continue_watching">Pokračovat ve sledování</string>
@@ -379,6 +380,8 @@
     <string name="compose_settings_root_about_section">O APLIKACI</string>
     <string name="compose_settings_root_account_description">Účet a stav synchronizace</string>
     <string name="compose_settings_root_account_section">ÚČET</string>
+    <string name="compose_settings_root_advanced_description">Chování při spuštění a profilu.</string>
+    <string name="compose_settings_root_advanced_section">POKROČILÉ</string>
     <string name="compose_settings_root_appearance_description">Struktura domovské obrazovky a styly plakátů</string>
     <string name="compose_settings_root_check_updates_description">Stáhnout nejnovější verzi</string>
     <string name="compose_settings_root_check_updates_title">Zkontrolovat aktualizace</string>
@@ -394,6 +397,9 @@
     <string name="settings_search_empty">Nebylo nalezeno žádné nastavení.</string>
     <string name="settings_search_placeholder">Hledat v nastavení...</string>
     <string name="settings_search_results_section">VÝSLEDKY</string>
+    <string name="settings_advanced_section_startup">SPUŠTĚNÍ</string>
+    <string name="settings_advanced_remember_last_profile">Zapamatovat poslední profil</string>
+    <string name="settings_advanced_remember_last_profile_description">Při spuštění otevřít poslední vybraný profil</string>
     <string name="compose_trakt_list_picker_loading">Načítání vašich seznamů Trakt…</string>
     <string name="compose_trakt_list_picker_subtitle">Vyberte, kam na Trakt chcete tento titul uložit</string>
     <string name="action_donate">Přispět</string>

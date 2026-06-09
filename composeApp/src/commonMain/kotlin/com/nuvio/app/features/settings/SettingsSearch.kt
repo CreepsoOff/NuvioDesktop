@@ -86,9 +86,11 @@ internal fun settingsSearchEntries(
     val accountCategory = stringResource(SettingsCategory.Account.labelRes)
     val generalCategory = stringResource(SettingsCategory.General.labelRes)
     val aboutCategory = stringResource(SettingsCategory.About.labelRes)
+    val advancedCategory = stringResource(SettingsCategory.Advanced.labelRes)
 
     val accountPage = stringResource(Res.string.compose_settings_page_account)
     val traktPage = stringResource(Res.string.compose_settings_page_trakt)
+    val advancedPage = stringResource(Res.string.compose_settings_page_advanced)
     val layoutPage = stringResource(Res.string.compose_settings_page_appearance)
     val contentDiscoveryPage = stringResource(Res.string.compose_settings_page_content_discovery)
     val downloadsPage = stringResource(Res.string.compose_settings_root_downloads_title)
@@ -200,6 +202,14 @@ internal fun settingsSearchEntries(
         description = stringResource(Res.string.compose_settings_root_trakt_description),
         category = accountCategory,
         icon = Icons.Rounded.Link,
+    )
+    addPage(
+        page = SettingsPage.Advanced,
+        key = "advanced",
+        title = advancedPage,
+        description = stringResource(Res.string.compose_settings_root_advanced_description),
+        category = advancedCategory,
+        icon = Icons.Rounded.Tune,
     )
     addPage(
         page = SettingsPage.Appearance,
@@ -361,6 +371,16 @@ internal fun settingsSearchEntries(
             icon = Icons.Rounded.Palette,
         )
     }
+    addRow(
+        page = SettingsPage.Advanced,
+        key = "advanced-remember-last-profile",
+        title = stringResource(Res.string.settings_advanced_remember_last_profile),
+        description = stringResource(Res.string.settings_advanced_remember_last_profile_description),
+        pageLabel = advancedPage,
+        section = stringResource(Res.string.settings_advanced_section_startup),
+        category = advancedCategory,
+        icon = Icons.Rounded.Tune,
+    )
     addRow(
         page = SettingsPage.Appearance,
         key = "app-language",

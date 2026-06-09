@@ -390,6 +390,7 @@
     <string name="compose_settings_category_general">Ogólne</string>
     <string name="compose_settings_page_account">Konto</string>
     <string name="compose_settings_page_addons">Dodatki</string>
+    <string name="compose_settings_page_advanced">Zaawansowane</string>
     <string name="compose_settings_page_appearance">Wygląd</string>
     <string name="compose_settings_page_content_discovery">Treści i odkrywanie</string>
     <string name="compose_settings_page_continue_watching">Kontynuuj oglądanie</string>
@@ -410,6 +411,8 @@
     <string name="compose_settings_root_about_section">O APLIKACJI</string>
     <string name="compose_settings_root_account_description">Zarządzaj kontem, wyloguj się lub usuń.</string>
     <string name="compose_settings_root_account_section">KONTO</string>
+    <string name="compose_settings_root_advanced_description">Uruchamianie i zachowanie profilu.</string>
+    <string name="compose_settings_root_advanced_section">ZAAWANSOWANE</string>
     <string name="compose_settings_root_appearance_description">Dostosuj prezentację ekranu głównego i preferencje wizualne.</string>
     <string name="compose_settings_root_check_updates_description">Sprawdź dostępność nowych wersji aplikacji.</string>
     <string name="compose_settings_root_check_updates_title">Sprawdź aktualizacje</string>
@@ -425,6 +428,9 @@
     <string name="settings_search_empty">Nie znaleziono ustawień.</string>
     <string name="settings_search_placeholder">Szukaj ustawień...</string>
     <string name="settings_search_results_section">WYNIKI</string>
+    <string name="settings_advanced_section_startup">START</string>
+    <string name="settings_advanced_remember_last_profile">Zapamiętaj ostatni profil</string>
+    <string name="settings_advanced_remember_last_profile_description">Otwórz ostatnio wybrany profil przy starcie</string>
     <string name="settings_licenses_attributions_section_app">LICENCJA APLIKACJI</string>
     <string name="settings_licenses_attributions_section_data">DANE I USŁUGI</string>
     <string name="settings_licenses_attributions_section_playback">LICENCJA ODTWARZANIA</string>

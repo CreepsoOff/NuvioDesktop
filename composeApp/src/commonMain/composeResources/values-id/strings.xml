@@ -388,6 +388,7 @@
     <string name="compose_settings_category_general">Umum</string>
     <string name="compose_settings_page_account">Akun</string>
     <string name="compose_settings_page_addons">Addon</string>
+    <string name="compose_settings_page_advanced">Lanjutan</string>
     <string name="compose_settings_page_appearance">Tata Letak</string>
     <string name="compose_settings_page_content_discovery">Konten &amp; Penemuan</string>
     <string name="compose_settings_page_continue_watching">Lanjutkan Menonton</string>
@@ -408,6 +409,8 @@
     <string name="compose_settings_root_about_section">TENTANG</string>
     <string name="compose_settings_root_account_description">Status akun dan sinkronisasi</string>
     <string name="compose_settings_root_account_section">AKUN</string>
+    <string name="compose_settings_root_advanced_description">Perilaku mulai dan profil.</string>
+    <string name="compose_settings_root_advanced_section">LANJUTAN</string>
     <string name="compose_settings_root_appearance_description">Struktur beranda dan gaya poster</string>
     <string name="compose_settings_root_check_updates_description">Unduh versi terbaru</string>
     <string name="compose_settings_root_check_updates_title">Periksa pembaruan</string>
@@ -423,6 +426,9 @@
     <string name="settings_search_empty">Tidak ada pengaturan ditemukan.</string>
     <string name="settings_search_placeholder">Cari pengaturan...</string>
     <string name="settings_search_results_section">HASIL</string>
+    <string name="settings_advanced_section_startup">MULAI</string>
+    <string name="settings_advanced_remember_last_profile">Ingat profil terakhir</string>
+    <string name="settings_advanced_remember_last_profile_description">Buka profil terakhir yang dipilih saat mulai</string>
     <string name="settings_licenses_attributions_section_app">LISENSI APLIKASI</string>
     <string name="settings_licenses_attributions_section_data">DATA &amp; LAYANAN</string>
     <string name="settings_licenses_attributions_section_playback">LISENSI PEMUTARAN</string>
