@@ -429,6 +429,10 @@
     <string name="settings_search_placeholder">Szukaj ustawień...</string>
     <string name="settings_search_results_section">WYNIKI</string>
     <string name="settings_advanced_section_startup">START</string>
+    <string name="settings_advanced_section_cache">CACHE</string>
+    <string name="settings_advanced_clear_cw_cache">Wyczysc cache Kontynuuj ogladanie</string>
+    <string name="settings_advanced_clear_cw_cache_subtitle">Usun zapisane miniatury, tytuly i dane wzbogacania dla Kontynuuj ogladanie</string>
+    <string name="settings_advanced_clear_cw_cache_done">Cache wyczyszczony</string>
     <string name="settings_advanced_remember_last_profile">Zapamiętaj ostatni profil</string>
     <string name="settings_advanced_remember_last_profile_description">Otwórz ostatnio wybrany profil przy starcie</string>
     <string name="settings_licenses_attributions_section_app">LICENCJA APLIKACJI</string>

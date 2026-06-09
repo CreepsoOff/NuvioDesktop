@@ -427,6 +427,10 @@
     <string name="settings_search_placeholder">Cari pengaturan...</string>
     <string name="settings_search_results_section">HASIL</string>
     <string name="settings_advanced_section_startup">MULAI</string>
+    <string name="settings_advanced_section_cache">CACHE</string>
+    <string name="settings_advanced_clear_cw_cache">Hapus cache Lanjut Menonton</string>
+    <string name="settings_advanced_clear_cw_cache_subtitle">Hapus thumbnail, judul, dan data pengayaan yang tersimpan untuk Lanjut Menonton</string>
+    <string name="settings_advanced_clear_cw_cache_done">Cache dihapus</string>
     <string name="settings_advanced_remember_last_profile">Ingat profil terakhir</string>
     <string name="settings_advanced_remember_last_profile_description">Buka profil terakhir yang dipilih saat mulai</string>
     <string name="settings_licenses_attributions_section_app">LISENSI APLIKASI</string>

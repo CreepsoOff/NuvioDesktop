@@ -419,6 +419,10 @@
     <string name="settings_search_placeholder">Ayarlarda ara...</string>
     <string name="settings_search_results_section">SONUÇLAR</string>
     <string name="settings_advanced_section_startup">BAŞLANGIÇ</string>
+    <string name="settings_advanced_section_cache">ONBELLEK</string>
+    <string name="settings_advanced_clear_cw_cache">Izlemeye Devam Et onbellegini temizle</string>
+    <string name="settings_advanced_clear_cw_cache_subtitle">Izlemeye Devam Et icin onbellege alinan kucuk resimleri, basliklari ve zenginlestirme verilerini kaldir</string>
+    <string name="settings_advanced_clear_cw_cache_done">Onbellek temizlendi</string>
     <string name="settings_advanced_remember_last_profile">Son profili hatırla</string>
     <string name="settings_advanced_remember_last_profile_description">Başlangıçta son seçilen profili aç</string>
     <string name="settings_licenses_attributions_section_app">UYGULAMA LİSANSI</string>

@@ -1224,6 +1224,10 @@
     <string name="cw_new_episode">Neue Folge</string>
     <string name="cw_new_season">Neue Staffel</string>
     <string name="settings_advanced_section_startup">START</string>
+    <string name="settings_advanced_section_cache">CACHE</string>
+    <string name="settings_advanced_clear_cw_cache">Continue-Watching-Cache leeren</string>
+    <string name="settings_advanced_clear_cw_cache_subtitle">Zwischengespeicherte Vorschaubilder, Titel und Zusatzdaten fuer Continue Watching entfernen</string>
+    <string name="settings_advanced_clear_cw_cache_done">Cache geleert</string>
     <string name="settings_advanced_remember_last_profile">Letztes Profil merken</string>
     <string name="settings_advanced_remember_last_profile_description">Beim Start das zuletzt ausgewählte Profil öffnen</string>
 </resources>

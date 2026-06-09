@@ -1221,6 +1221,10 @@
   <string name="settings_search_placeholder">Cerca impostazioni...</string>
   <string name="settings_search_results_section">RISULTATI</string>
     <string name="settings_advanced_section_startup">AVVIO</string>
+    <string name="settings_advanced_section_cache">CACHE</string>
+    <string name="settings_advanced_clear_cw_cache">Cancella cache Continua a guardare</string>
+    <string name="settings_advanced_clear_cw_cache_subtitle">Rimuovi miniature, titoli e dati arricchiti salvati per Continua a guardare</string>
+    <string name="settings_advanced_clear_cw_cache_done">Cache cancellata</string>
     <string name="settings_advanced_remember_last_profile">Ricorda ultimo profilo</string>
     <string name="settings_advanced_remember_last_profile_description">Apri ultimo profilo selezionato all avvio</string>
   <string name="settings_licenses_attributions_section_app">LICENZA APP</string>

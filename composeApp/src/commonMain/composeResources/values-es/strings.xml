@@ -1190,6 +1190,10 @@
     <string name="cw_new_episode">Nuevo episodio</string>
     <string name="cw_new_season">Nueva temporada</string>
     <string name="settings_advanced_section_startup">INICIO</string>
+    <string name="settings_advanced_section_cache">CACHE</string>
+    <string name="settings_advanced_clear_cw_cache">Borrar cache de Continuar viendo</string>
+    <string name="settings_advanced_clear_cw_cache_subtitle">Eliminar miniaturas, titulos y datos enriquecidos guardados para Continuar viendo</string>
+    <string name="settings_advanced_clear_cw_cache_done">Cache borrada</string>
     <string name="settings_advanced_remember_last_profile">Recordar último perfil</string>
     <string name="settings_advanced_remember_last_profile_description">Abrir el último perfil seleccionado al iniciar</string>
 </resources>

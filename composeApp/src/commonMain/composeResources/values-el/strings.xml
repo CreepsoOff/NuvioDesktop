@@ -1070,6 +1070,10 @@
     <string name="cw_new_episode">Νέο επεισόδιο</string>
     <string name="cw_new_season">Νέα σεζόν</string>
     <string name="settings_advanced_section_startup">ΕΚΚΙΝΗΣΗ</string>
+    <string name="settings_advanced_section_cache">CACHE</string>
+    <string name="settings_advanced_clear_cw_cache">Clear Continue Watching Cache</string>
+    <string name="settings_advanced_clear_cw_cache_subtitle">Remove cached thumbnails, titles, and enrichment data for Continue Watching</string>
+    <string name="settings_advanced_clear_cw_cache_done">Cache cleared</string>
     <string name="settings_advanced_remember_last_profile">Απομνημόνευση τελευταίου προφίλ</string>
     <string name="settings_advanced_remember_last_profile_description">Άνοιγμα του τελευταίου επιλεγμένου προφίλ κατά την εκκίνηση</string>
 </resources>

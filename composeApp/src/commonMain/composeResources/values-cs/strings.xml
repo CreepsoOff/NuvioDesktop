@@ -398,6 +398,10 @@
     <string name="settings_search_placeholder">Hledat v nastavení...</string>
     <string name="settings_search_results_section">VÝSLEDKY</string>
     <string name="settings_advanced_section_startup">SPUŠTĚNÍ</string>
+    <string name="settings_advanced_section_cache">CACHE</string>
+    <string name="settings_advanced_clear_cw_cache">Vymazat cache Pokracovat ve sledovani</string>
+    <string name="settings_advanced_clear_cw_cache_subtitle">Odebrat ulozene nahledy, nazvy a rozsirena data pro Pokracovat ve sledovani</string>
+    <string name="settings_advanced_clear_cw_cache_done">Cache vymazana</string>
     <string name="settings_advanced_remember_last_profile">Zapamatovat poslední profil</string>
     <string name="settings_advanced_remember_last_profile_description">Při spuštění otevřít poslední vybraný profil</string>
     <string name="compose_trakt_list_picker_loading">Načítání vašich seznamů Trakt…</string>

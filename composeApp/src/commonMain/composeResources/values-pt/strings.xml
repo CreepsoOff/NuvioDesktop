@@ -419,6 +419,10 @@
     <string name="settings_search_placeholder">Pesquisar definições...</string>
     <string name="settings_search_results_section">RESULTADOS</string>
     <string name="settings_advanced_section_startup">ARRANQUE</string>
+    <string name="settings_advanced_section_cache">CACHE</string>
+    <string name="settings_advanced_clear_cw_cache">Limpar cache de Continuar assistindo</string>
+    <string name="settings_advanced_clear_cw_cache_subtitle">Remover miniaturas, titulos e dados enriquecidos em cache para Continuar assistindo</string>
+    <string name="settings_advanced_clear_cw_cache_done">Cache limpo</string>
     <string name="settings_advanced_remember_last_profile">Lembrar último perfil</string>
     <string name="settings_advanced_remember_last_profile_description">Abrir o último perfil selecionado ao iniciar</string>
     <string name="settings_licenses_attributions_section_app">LICENÇA DA APP</string>

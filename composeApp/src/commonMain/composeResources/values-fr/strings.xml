@@ -459,6 +459,10 @@
     <string name="settings_search_placeholder">Rechercher dans les paramètres…</string>
     <string name="settings_search_results_section">RÉSULTATS</string>
     <string name="settings_advanced_section_startup">DÉMARRAGE</string>
+    <string name="settings_advanced_section_cache">CACHE</string>
+    <string name="settings_advanced_clear_cw_cache">Vider le cache Continuer a regarder</string>
+    <string name="settings_advanced_clear_cw_cache_subtitle">Supprimer les miniatures, titres et donnees enrichies mis en cache pour Continuer a regarder</string>
+    <string name="settings_advanced_clear_cw_cache_done">Cache vide</string>
     <string name="settings_advanced_remember_last_profile">Mémoriser le dernier profil</string>
     <string name="settings_advanced_remember_last_profile_description">Ouvrir le dernier profil sélectionné au démarrage</string>
     <string name="settings_licenses_attributions_section_app">LICENCE DE L’APP</string>

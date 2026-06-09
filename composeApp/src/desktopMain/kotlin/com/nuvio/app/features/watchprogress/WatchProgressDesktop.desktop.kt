@@ -33,6 +33,10 @@ actual object ContinueWatchingEnrichmentStorage {
     actual fun savePayload(key: String, payload: String) {
         DesktopPreferences.putString(preferencesName, key, payload)
     }
+
+    actual fun removePayload(key: String) {
+        DesktopPreferences.remove(preferencesName, key)
+    }
 }
 
 actual object ResumePromptStorage {
