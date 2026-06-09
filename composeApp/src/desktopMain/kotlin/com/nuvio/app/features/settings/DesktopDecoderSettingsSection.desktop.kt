@@ -117,148 +117,152 @@ internal actual fun DesktopDecoderSettingsSection(isTablet: Boolean) {
         tuning = loadDesktopMpvVideoTuning().settings
     }
 
-    if (isWindowsDesktop) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(if (isTablet) 18.dp else 12.dp),
+    ) {
+        if (isWindowsDesktop) {
+            SettingsSection(
+                title = stringResource(Res.string.settings_playback_desktop_fullscreen_section),
+                isTablet = isTablet,
+            ) {
+                SettingsGroup(isTablet = isTablet) {
+                    SettingsNavigationRow(
+                        title = stringResource(Res.string.settings_playback_desktop_fullscreen_mode),
+                        description = stringResource(fullscreenMode.labelRes()),
+                        isTablet = isTablet,
+                        onClick = { showFullscreenModeDialog = true },
+                    )
+                }
+            }
+        }
+
         SettingsSection(
-            title = stringResource(Res.string.settings_playback_desktop_fullscreen_section),
+            title = stringResource(Res.string.settings_playback_desktop_section_video),
             isTablet = isTablet,
         ) {
             SettingsGroup(isTablet = isTablet) {
                 SettingsNavigationRow(
-                    title = stringResource(Res.string.settings_playback_desktop_fullscreen_mode),
-                    description = stringResource(fullscreenMode.labelRes()),
+                    title = stringResource(Res.string.settings_playback_desktop_video_output),
+                    description = stringResource(tuning.outputPreset.labelRes()),
                     isTablet = isTablet,
-                    onClick = { showFullscreenModeDialog = true },
+                    onClick = { showPresetDialog = true },
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsNavigationRow(
+                    title = stringResource(Res.string.settings_playback_desktop_hwdec),
+                    description = stringResource(tuning.hardwareDecoderMode.labelRes()),
+                    isTablet = isTablet,
+                    onClick = { showHwdecDialog = true },
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsNavigationRow(
+                    title = stringResource(Res.string.settings_playback_desktop_tone_mapping),
+                    description = stringResource(tuning.toneMappingMode.labelRes()),
+                    isTablet = isTablet,
+                    onClick = { showToneMappingDialog = true },
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsNavigationRow(
+                    title = stringResource(Res.string.settings_playback_desktop_target_primaries),
+                    description = stringResource(tuning.targetPrimaries.labelRes()),
+                    isTablet = isTablet,
+                    onClick = { showPrimariesDialog = true },
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsNavigationRow(
+                    title = stringResource(Res.string.settings_playback_desktop_target_transfer),
+                    description = stringResource(tuning.targetTransfer.labelRes()),
+                    isTablet = isTablet,
+                    onClick = { showTransferDialog = true },
                 )
             }
         }
-    }
 
-    SettingsSection(
-        title = stringResource(Res.string.settings_playback_desktop_section_video),
-        isTablet = isTablet,
-    ) {
-        SettingsGroup(isTablet = isTablet) {
-            SettingsNavigationRow(
-                title = stringResource(Res.string.settings_playback_desktop_video_output),
-                description = stringResource(tuning.outputPreset.labelRes()),
-                isTablet = isTablet,
-                onClick = { showPresetDialog = true },
-            )
-            SettingsGroupDivider(isTablet = isTablet)
-            SettingsNavigationRow(
-                title = stringResource(Res.string.settings_playback_desktop_hwdec),
-                description = stringResource(tuning.hardwareDecoderMode.labelRes()),
-                isTablet = isTablet,
-                onClick = { showHwdecDialog = true },
-            )
-            SettingsGroupDivider(isTablet = isTablet)
-            SettingsNavigationRow(
-                title = stringResource(Res.string.settings_playback_desktop_tone_mapping),
-                description = stringResource(tuning.toneMappingMode.labelRes()),
-                isTablet = isTablet,
-                onClick = { showToneMappingDialog = true },
-            )
-            SettingsGroupDivider(isTablet = isTablet)
-            SettingsNavigationRow(
-                title = stringResource(Res.string.settings_playback_desktop_target_primaries),
-                description = stringResource(tuning.targetPrimaries.labelRes()),
-                isTablet = isTablet,
-                onClick = { showPrimariesDialog = true },
-            )
-            SettingsGroupDivider(isTablet = isTablet)
-            SettingsNavigationRow(
-                title = stringResource(Res.string.settings_playback_desktop_target_transfer),
-                description = stringResource(tuning.targetTransfer.labelRes()),
-                isTablet = isTablet,
-                onClick = { showTransferDialog = true },
-            )
+        SettingsSection(
+            title = stringResource(Res.string.settings_playback_desktop_section_video_processing),
+            isTablet = isTablet,
+        ) {
+            SettingsGroup(isTablet = isTablet) {
+                SettingsSwitchRow(
+                    title = stringResource(Res.string.settings_playback_desktop_hdr_compute_peak),
+                    description = null,
+                    checked = tuning.hdrComputePeakEnabled,
+                    isTablet = isTablet,
+                    onCheckedChange = {
+                        storeDesktopBooleanTuning(DesktopHdrComputePeakKey, it)
+                        refresh()
+                    },
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsSwitchRow(
+                    title = stringResource(Res.string.settings_playback_desktop_deband),
+                    description = null,
+                    checked = tuning.debandEnabled,
+                    isTablet = isTablet,
+                    onCheckedChange = {
+                        storeDesktopBooleanTuning(DesktopDebandEnabledKey, it)
+                        refresh()
+                    },
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsSwitchRow(
+                    title = stringResource(Res.string.settings_playback_desktop_interpolation),
+                    description = null,
+                    checked = tuning.interpolationEnabled,
+                    isTablet = isTablet,
+                    onCheckedChange = {
+                        storeDesktopBooleanTuning(DesktopInterpolationEnabledKey, it)
+                        refresh()
+                    },
+                )
+            }
         }
-    }
 
-    SettingsSection(
-        title = stringResource(Res.string.settings_playback_desktop_section_video_processing),
-        isTablet = isTablet,
-    ) {
-        SettingsGroup(isTablet = isTablet) {
-            SettingsSwitchRow(
-                title = stringResource(Res.string.settings_playback_desktop_hdr_compute_peak),
-                description = null,
-                checked = tuning.hdrComputePeakEnabled,
-                isTablet = isTablet,
-                onCheckedChange = {
-                    storeDesktopBooleanTuning(DesktopHdrComputePeakKey, it)
-                    refresh()
-                },
-            )
-            SettingsGroupDivider(isTablet = isTablet)
-            SettingsSwitchRow(
-                title = stringResource(Res.string.settings_playback_desktop_deband),
-                description = null,
-                checked = tuning.debandEnabled,
-                isTablet = isTablet,
-                onCheckedChange = {
-                    storeDesktopBooleanTuning(DesktopDebandEnabledKey, it)
-                    refresh()
-                },
-            )
-            SettingsGroupDivider(isTablet = isTablet)
-            SettingsSwitchRow(
-                title = stringResource(Res.string.settings_playback_desktop_interpolation),
-                description = null,
-                checked = tuning.interpolationEnabled,
-                isTablet = isTablet,
-                onCheckedChange = {
-                    storeDesktopBooleanTuning(DesktopInterpolationEnabledKey, it)
-                    refresh()
-                },
-            )
-        }
-    }
-
-    SettingsSection(
-        title = stringResource(Res.string.settings_playback_desktop_section_video_tuning),
-        isTablet = isTablet,
-    ) {
-        SettingsGroup(isTablet = isTablet) {
-            VideoEqSlider(
-                title = stringResource(Res.string.settings_playback_desktop_video_brightness),
-                value = tuning.brightness,
-                isTablet = isTablet,
-                onValueCommitted = {
-                    storeDesktopIntTuning(DesktopBrightnessKey, it)
-                    refresh()
-                },
-            )
-            SettingsGroupDivider(isTablet = isTablet)
-            VideoEqSlider(
-                title = stringResource(Res.string.settings_playback_desktop_video_contrast),
-                value = tuning.contrast,
-                isTablet = isTablet,
-                onValueCommitted = {
-                    storeDesktopIntTuning(DesktopContrastKey, it)
-                    refresh()
-                },
-            )
-            SettingsGroupDivider(isTablet = isTablet)
-            VideoEqSlider(
-                title = stringResource(Res.string.settings_playback_desktop_video_saturation),
-                value = tuning.saturation,
-                isTablet = isTablet,
-                onValueCommitted = {
-                    storeDesktopIntTuning(DesktopSaturationKey, it)
-                    refresh()
-                },
-            )
-            SettingsGroupDivider(isTablet = isTablet)
-            VideoEqSlider(
-                title = stringResource(Res.string.settings_playback_desktop_gamma),
-                value = tuning.gamma,
-                isTablet = isTablet,
-                onValueCommitted = {
-                    storeDesktopIntTuning(DesktopGammaKey, it)
-                    refresh()
-                },
-            )
+        SettingsSection(
+            title = stringResource(Res.string.settings_playback_desktop_section_video_tuning),
+            isTablet = isTablet,
+        ) {
+            SettingsGroup(isTablet = isTablet) {
+                VideoEqSlider(
+                    title = stringResource(Res.string.settings_playback_desktop_video_brightness),
+                    value = tuning.brightness,
+                    isTablet = isTablet,
+                    onValueCommitted = {
+                        storeDesktopIntTuning(DesktopBrightnessKey, it)
+                        refresh()
+                    },
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                VideoEqSlider(
+                    title = stringResource(Res.string.settings_playback_desktop_video_contrast),
+                    value = tuning.contrast,
+                    isTablet = isTablet,
+                    onValueCommitted = {
+                        storeDesktopIntTuning(DesktopContrastKey, it)
+                        refresh()
+                    },
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                VideoEqSlider(
+                    title = stringResource(Res.string.settings_playback_desktop_video_saturation),
+                    value = tuning.saturation,
+                    isTablet = isTablet,
+                    onValueCommitted = {
+                        storeDesktopIntTuning(DesktopSaturationKey, it)
+                        refresh()
+                    },
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                VideoEqSlider(
+                    title = stringResource(Res.string.settings_playback_desktop_gamma),
+                    value = tuning.gamma,
+                    isTablet = isTablet,
+                    onValueCommitted = {
+                        storeDesktopIntTuning(DesktopGammaKey, it)
+                        refresh()
+                    },
+                )
+            }
         }
     }
 
