@@ -1,6 +1,13 @@
 package com.nuvio.app.features.player.desktop.mpv
 
+import com.nuvio.app.desktop.DesktopPreferences
 import com.nuvio.app.features.player.PlayerHardwareDecoderMode
+import com.nuvio.app.features.player.IosHardwareDecoderMode
+import com.nuvio.app.features.player.IosTargetPrimaries
+import com.nuvio.app.features.player.IosTargetTransfer
+import com.nuvio.app.features.player.IosToneMappingMode
+import com.nuvio.app.features.player.IosVideoOutputPreset
+import com.nuvio.app.features.player.PlayerSettingsUiState
 import com.nuvio.app.features.player.PlayerTargetPrimaries
 import com.nuvio.app.features.player.PlayerTargetTransfer
 import com.nuvio.app.features.player.PlayerToneMappingMode
@@ -10,6 +17,10 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class DesktopMpvPlaybackSettingsTest {
+    private fun resetDecoderPreferences() {
+        DesktopPreferences.clearNode(DesktopDecoderPreferencesName)
+    }
+
     @Test
     fun invalidHdrModeFallsBackToAuto() {
         assertEquals(DesktopHdrMode.Auto, DesktopHdrMode.fromStorage(null))
@@ -117,5 +128,81 @@ class DesktopMpvPlaybackSettingsTest {
         assertEquals(MpvRuntimeOptionApplyTiming.PlaybackHeavy, timings["interpolation"])
         assertEquals(MpvRuntimeOptionApplyTiming.LoadOnly, timings["hwdec"])
         assertEquals(MpvRuntimeOptionApplyTiming.LoadOnly, timings["demuxer-max-bytes"])
+    }
+
+    @Test
+    fun desktopSettingStoresNotifyTheLiveMpvSettingsSignal() {
+        resetDecoderPreferences()
+        val startVersion = DesktopMpvPlaybackSettingsSignal.version.value
+
+        storeDesktopHardwareDecoderMode(PlayerHardwareDecoderMode.D3d11va)
+        storeDesktopBooleanTuning(DesktopDebandEnabledKey, true)
+        storeDesktopIntTuning(DesktopBrightnessKey, 142)
+
+        assertEquals(startVersion + 3, DesktopMpvPlaybackSettingsSignal.version.value)
+
+        val tuning = loadDesktopMpvVideoTuning().settings
+        assertEquals(PlayerHardwareDecoderMode.D3d11va, tuning.hardwareDecoderMode)
+        assertEquals(true, tuning.debandEnabled)
+        assertEquals(100, tuning.brightness)
+    }
+
+    @Test
+    fun playerSettingsMirrorStoresIosVideoOptionsAsDesktopMpvTuning() {
+        resetDecoderPreferences()
+        val startVersion = DesktopMpvPlaybackSettingsSignal.version.value
+
+        storeDesktopVideoTuningFromPlayerSettings(
+            PlayerSettingsUiState(
+                iosVideoOutputPreset = IosVideoOutputPreset.SdrToneMapped,
+                iosHardwareDecoderMode = IosHardwareDecoderMode.Off,
+                iosToneMappingMode = IosToneMappingMode.Mobius,
+                iosTargetPrimaries = IosTargetPrimaries.Bt709,
+                iosTargetTransfer = IosTargetTransfer.Srgb,
+                iosHdrComputePeakEnabled = false,
+                iosDebandEnabled = true,
+                iosInterpolationEnabled = true,
+                iosBrightness = -12,
+                iosContrast = 7,
+                iosSaturation = 15,
+                iosGamma = -3,
+            ),
+        )
+
+        assertEquals(startVersion + 1, DesktopMpvPlaybackSettingsSignal.version.value)
+
+        val tuning = loadDesktopMpvVideoTuning()
+        assertEquals(DesktopHdrMode.ToneMapToSdr, tuning.legacyHdrMode)
+        assertEquals(PlayerVideoOutputPreset.ToneMappedSdr, tuning.settings.outputPreset)
+        assertEquals(PlayerHardwareDecoderMode.Off, tuning.settings.hardwareDecoderMode)
+        assertEquals(PlayerToneMappingMode.Mobius, tuning.settings.toneMappingMode)
+        assertEquals(PlayerTargetPrimaries.Bt709, tuning.settings.targetPrimaries)
+        assertEquals(PlayerTargetTransfer.Srgb, tuning.settings.targetTransfer)
+        assertEquals(false, tuning.settings.hdrComputePeakEnabled)
+        assertEquals(true, tuning.settings.debandEnabled)
+        assertEquals(true, tuning.settings.interpolationEnabled)
+        assertEquals(-12, tuning.settings.brightness)
+        assertEquals(7, tuning.settings.contrast)
+        assertEquals(15, tuning.settings.saturation)
+        assertEquals(-3, tuning.settings.gamma)
+    }
+
+    @Test
+    fun playerSettingsMirrorDoesNotNotifyWhenDesktopTuningIsAlreadyCurrent() {
+        resetDecoderPreferences()
+        val state = PlayerSettingsUiState(
+            iosVideoOutputPreset = IosVideoOutputPreset.Compatibility,
+            iosHardwareDecoderMode = IosHardwareDecoderMode.Auto,
+            iosToneMappingMode = IosToneMappingMode.Bt2390,
+            iosTargetPrimaries = IosTargetPrimaries.DisplayP3,
+            iosTargetTransfer = IosTargetTransfer.Gamma22,
+            iosBrightness = 9,
+        )
+
+        storeDesktopVideoTuningFromPlayerSettings(state)
+        val afterFirstStore = DesktopMpvPlaybackSettingsSignal.version.value
+        storeDesktopVideoTuningFromPlayerSettings(state)
+
+        assertEquals(afterFirstStore, DesktopMpvPlaybackSettingsSignal.version.value)
     }
 }
