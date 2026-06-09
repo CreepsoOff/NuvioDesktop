@@ -619,6 +619,12 @@
     <string name="settings_trakt_authentication">ΠΙΣΤΟΠΟΙΗΣΗ</string>
     <string name="settings_trakt_comments">Σχόλια</string>
     <string name="settings_trakt_comments_description">Εμφάνιση σχολίων Trakt στις λεπτομέρειες ταινίας και σειράς</string>
+    <string name="trakt_more_like_this_source_title">Source for More Like This</string>
+    <string name="trakt_more_like_this_source_subtitle">Choose where recommendations come from on detail pages</string>
+    <string name="trakt_more_like_this_source_dialog_title">Source for More Like This</string>
+    <string name="trakt_more_like_this_source_dialog_subtitle">Select the source for recommendations shown on detail pages.</string>
+    <string name="trakt_more_like_this_source_trakt">Trakt</string>
+    <string name="trakt_more_like_this_source_tmdb">TMDB</string>
     <string name="settings_trakt_connect">Σύνδεση Trakt</string>
     <string name="settings_trakt_connected_as">Συνδεδεμένος ως %1$s</string>
     <string name="settings_trakt_default_user">Χρήστης Trakt</string>
@@ -750,6 +756,8 @@
     <string name="details_director">Σκηνοθέτης</string>
     <string name="details_failed_to_load">Αποτυχία φόρτωσης</string>
     <string name="details_more_like_this">Περισσότερα σαν αυτό</string>
+    <string name="detail_more_like_this_powered_by_tmdb">Powered by TMDB</string>
+    <string name="detail_more_like_this_powered_by_trakt">Powered by Trakt</string>
     <string name="details_seasons">Σεζόν</string>
     <string name="details_series_missing_numbers">Αυτό το πρόσθετο επέστρεψε βίντεο για τη σειρά, αλλά κανένα δεν περιελάμβανε αριθμούς σεζόν ή επεισοδίου.</string>
     <string name="details_series_no_metadata">Αυτό το πρόσθετο δεν παρείχε μεταδεδομένα επεισοδίων για αυτή τη σειρά.</string>

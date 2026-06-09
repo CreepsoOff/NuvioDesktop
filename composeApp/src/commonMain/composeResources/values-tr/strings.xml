@@ -928,6 +928,12 @@
     <string name="trakt_watch_progress_source_nuvio">Nuvio Eşitleme</string>
     <string name="trakt_watch_progress_trakt_selected">İzleme ilerlemesi kaynağı Trakt olarak ayarlandı</string>
     <string name="trakt_watch_progress_nuvio_selected">İzleme ilerlemesi kaynağı Nuvio Eşitleme olarak ayarlandı</string>
+    <string name="trakt_more_like_this_source_title">Buna benzer kaynagi</string>
+    <string name="trakt_more_like_this_source_subtitle">Detay sayfalarindaki onerilerin nereden gelecegini sec</string>
+    <string name="trakt_more_like_this_source_dialog_title">Buna benzer kaynagi</string>
+    <string name="trakt_more_like_this_source_dialog_subtitle">Detay sayfalarinda gosterilen onerilerin kaynagini sec.</string>
+    <string name="trakt_more_like_this_source_trakt">Trakt</string>
+    <string name="trakt_more_like_this_source_tmdb">TMDB</string>
     <string name="trakt_continue_watching_window">İzlemeye Devam Et Süresi</string>
     <string name="trakt_continue_watching_subtitle">İzlemeye devam et için dikkate alınacak Trakt geçmişi</string>
     <string name="trakt_cw_window_title">İzlemeye Devam Et Süresi</string>
@@ -1053,6 +1059,8 @@
     <string name="details_director">Yönetmen</string>
     <string name="details_failed_to_load">Yüklenemedi</string>
     <string name="details_more_like_this">Buna benzerler</string>
+    <string name="detail_more_like_this_powered_by_tmdb">TMDB tarafindan saglanir</string>
+    <string name="detail_more_like_this_powered_by_trakt">Trakt tarafindan saglanir</string>
     <string name="details_seasons">Sezonlar</string>
     <string name="details_series_missing_numbers">Bu eklenti dizi için videolar döndürdü ama hiçbirinde sezon veya bölüm numarası yok.</string>
     <string name="details_series_no_metadata">Bu eklenti bu dizi için bölüm meta verisi sağlamadı.</string>

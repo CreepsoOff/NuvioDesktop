@@ -750,6 +750,8 @@
   <string name="details_director">Regista</string>
   <string name="details_failed_to_load">Caricamento fallito</string>
   <string name="details_more_like_this">Altri titoli simili</string>
+    <string name="detail_more_like_this_powered_by_tmdb">Fornito da TMDB</string>
+    <string name="detail_more_like_this_powered_by_trakt">Fornito da Trakt</string>
   <string name="details_seasons">Stagioni</string>
   <string name="details_series_missing_numbers">L'addon ha restituito i video per questa serie, ma nessuno include numeri di stagione o episodio.</string>
   <string name="details_series_no_metadata">L'addon non ha fornito metadati sugli episodi per questa serie.</string>
@@ -1342,6 +1344,12 @@
   <string name="trakt_watch_progress_source_nuvio">Nuvio Sync</string>
   <string name="trakt_watch_progress_trakt_selected">Sorgente dei progressi di visione impostata su Trakt</string>
   <string name="trakt_watch_progress_nuvio_selected">Sorgente dei progressi di visione impostata su Nuvio Sync</string>
+    <string name="trakt_more_like_this_source_title">Fonte Altri simili</string>
+    <string name="trakt_more_like_this_source_subtitle">Scegli da dove arrivano i consigli nelle pagine dettagli</string>
+    <string name="trakt_more_like_this_source_dialog_title">Fonte Altri simili</string>
+    <string name="trakt_more_like_this_source_dialog_subtitle">Seleziona la fonte dei consigli mostrati nelle pagine dettagli.</string>
+    <string name="trakt_more_like_this_source_trakt">Trakt</string>
+    <string name="trakt_more_like_this_source_tmdb">TMDB</string>
   <string name="trakt_continue_watching_window">Finestra Inizia a guardare</string>
   <string name="trakt_continue_watching_subtitle">Cronologia Trakt considerata per inizia a guardare</string>
   <string name="trakt_cw_window_title">Finestra Inizia a guardare</string>

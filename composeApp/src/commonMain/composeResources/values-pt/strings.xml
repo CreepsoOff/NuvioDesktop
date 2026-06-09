@@ -928,6 +928,12 @@
     <string name="trakt_watch_progress_source_nuvio">Nuvio Sync</string>
     <string name="trakt_watch_progress_trakt_selected">Fonte de progresso de visualização definida para Trakt</string>
     <string name="trakt_watch_progress_nuvio_selected">Fonte de progresso de visualização definida para Nuvio Sync</string>
+    <string name="trakt_more_like_this_source_title">Fonte de Mais como este</string>
+    <string name="trakt_more_like_this_source_subtitle">Escolhe de onde vem as recomendacoes nas paginas de detalhes</string>
+    <string name="trakt_more_like_this_source_dialog_title">Fonte de Mais como este</string>
+    <string name="trakt_more_like_this_source_dialog_subtitle">Seleciona a fonte das recomendacoes mostradas nas paginas de detalhes.</string>
+    <string name="trakt_more_like_this_source_trakt">Trakt</string>
+    <string name="trakt_more_like_this_source_tmdb">TMDB</string>
     <string name="trakt_continue_watching_window">Janela de Continuar a Ver</string>
     <string name="trakt_continue_watching_subtitle">Histórico do Trakt considerado para o continuar a ver</string>
     <string name="trakt_cw_window_title">Janela de Continuar a Ver</string>
@@ -1053,6 +1059,8 @@
     <string name="details_director">Realizador</string>
     <string name="details_failed_to_load">Falha ao carregar</string>
     <string name="details_more_like_this">Mais como este</string>
+    <string name="detail_more_like_this_powered_by_tmdb">Fornecido por TMDB</string>
+    <string name="detail_more_like_this_powered_by_trakt">Fornecido por Trakt</string>
     <string name="details_seasons">Temporadas</string>
     <string name="details_series_missing_numbers">Este addon devolveu vídeos para a série, mas nenhum incluía números de temporada ou episódio.</string>
     <string name="details_series_no_metadata">Este addon não forneceu metadados de episódios para esta série.</string>

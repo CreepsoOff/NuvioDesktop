@@ -957,6 +957,12 @@
     <string name="trakt_watch_progress_source_nuvio">Nuvio Sync</string>
     <string name="trakt_watch_progress_trakt_selected">Sumber progres menonton diatur ke Trakt</string>
     <string name="trakt_watch_progress_nuvio_selected">Sumber progres menonton diatur ke Nuvio Sync</string>
+    <string name="trakt_more_like_this_source_title">Sumber Mirip Ini</string>
+    <string name="trakt_more_like_this_source_subtitle">Pilih asal rekomendasi di halaman detail</string>
+    <string name="trakt_more_like_this_source_dialog_title">Sumber Mirip Ini</string>
+    <string name="trakt_more_like_this_source_dialog_subtitle">Pilih sumber rekomendasi yang ditampilkan di halaman detail.</string>
+    <string name="trakt_more_like_this_source_trakt">Trakt</string>
+    <string name="trakt_more_like_this_source_tmdb">TMDB</string>
     <string name="trakt_continue_watching_window">Jendela Lanjutkan Menonton</string>
     <string name="trakt_continue_watching_subtitle">Lanjutkan menonton berdasarkan riwayat Trakt</string>
     <string name="trakt_cw_window_title">Jendela Lanjutkan Menonton</string>
@@ -1082,6 +1088,8 @@
     <string name="details_director">Sutradara</string>
     <string name="details_failed_to_load">Gagal memuat</string>
     <string name="details_more_like_this">Yang Serupa</string>
+    <string name="detail_more_like_this_powered_by_tmdb">Didukung oleh TMDB</string>
+    <string name="detail_more_like_this_powered_by_trakt">Didukung oleh Trakt</string>
     <string name="details_seasons">Musim</string>
     <string name="details_series_missing_numbers">Addon ini menyediakan video untuk serial, tetapi tidak ada yang menyertakan nomor musim atau episode.</string>
     <string name="details_series_no_metadata">Addon ini tidak menyediakan metadata episode untuk serial ini.</string>

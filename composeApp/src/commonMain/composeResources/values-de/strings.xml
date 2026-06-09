@@ -772,6 +772,12 @@
     <string name="settings_trakt_authentication">AUTHENTIFIZIERUNG</string>
     <string name="settings_trakt_comments">Kommentare</string>
     <string name="settings_trakt_comments_description">Trakt-Kommentare auf Film- und Serien-Details anzeigen</string>
+    <string name="trakt_more_like_this_source_title">Quelle fuer Mehr davon</string>
+    <string name="trakt_more_like_this_source_subtitle">Waehle woher Empfehlungen auf Detailseiten kommen</string>
+    <string name="trakt_more_like_this_source_dialog_title">Quelle fuer Mehr davon</string>
+    <string name="trakt_more_like_this_source_dialog_subtitle">Waehle die Quelle fuer Empfehlungen auf Detailseiten.</string>
+    <string name="trakt_more_like_this_source_trakt">Trakt</string>
+    <string name="trakt_more_like_this_source_tmdb">TMDB</string>
     <string name="settings_trakt_connect">Trakt verbinden</string>
     <string name="settings_trakt_connected_as">Verbunden als %1$s</string>
     <string name="settings_trakt_default_user">Trakt-Benutzer</string>
@@ -903,6 +909,8 @@
     <string name="details_director">Regisseur</string>
     <string name="details_failed_to_load">Laden fehlgeschlagen</string>
     <string name="details_more_like_this">Mehr davon</string>
+    <string name="detail_more_like_this_powered_by_tmdb">Bereitgestellt von TMDB</string>
+    <string name="detail_more_like_this_powered_by_trakt">Bereitgestellt von Trakt</string>
     <string name="details_seasons">Staffeln</string>
     <string name="details_series_missing_numbers">Dieses Addon hat Videos für die Serie zurückgegeben, aber keines enthielt Staffel- oder Episodennummern.</string>
     <string name="details_series_no_metadata">Dieses Addon hat keine Episoden-Metadaten für diese Serie bereitgestellt.</string>

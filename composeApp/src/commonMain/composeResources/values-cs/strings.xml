@@ -820,6 +820,12 @@
     <string name="trakt_watch_progress_source_nuvio">Nuvio Sync</string>
     <string name="trakt_watch_progress_trakt_selected">Zdroj postupu sledování nastaven na Trakt</string>
     <string name="trakt_watch_progress_nuvio_selected">Zdroj postupu sledování nastaven na Nuvio Sync</string>
+    <string name="trakt_more_like_this_source_title">Zdroj Podobnych</string>
+    <string name="trakt_more_like_this_source_subtitle">Vyberte odkud pochazeji doporuceni na strankach detailu</string>
+    <string name="trakt_more_like_this_source_dialog_title">Zdroj Podobnych</string>
+    <string name="trakt_more_like_this_source_dialog_subtitle">Vyberte zdroj doporuceni zobrazenych na strankach detailu.</string>
+    <string name="trakt_more_like_this_source_trakt">Trakt</string>
+    <string name="trakt_more_like_this_source_tmdb">TMDB</string>
     <string name="trakt_continue_watching_window">Okno pro pokračování ve sledování</string>
     <string name="trakt_continue_watching_subtitle">Historie Traktu zohledněná pro pokračování ve sledování</string>
     <string name="trakt_cw_window_title">Okno pro pokračování ve sledování</string>
@@ -945,6 +951,8 @@
     <string name="details_director">Režisér</string>
     <string name="details_failed_to_load">Nepodařilo se načíst</string>
     <string name="details_more_like_this">Podobné</string>
+    <string name="detail_more_like_this_powered_by_tmdb">Poskytuje TMDB</string>
+    <string name="detail_more_like_this_powered_by_trakt">Poskytuje Trakt</string>
     <string name="details_seasons">Série</string>
     <string name="details_series_missing_numbers">Tento doplněk vrátil videa pro seriál, ale žádné neobsahovalo čísla série nebo epizody.</string>
     <string name="details_series_no_metadata">Tento doplněk neposkytl metadata epizod pro tento seriál.</string>

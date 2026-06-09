@@ -966,6 +966,12 @@
     <string name="trakt_watch_progress_source_nuvio">Nuvio Sync</string>
     <string name="trakt_watch_progress_trakt_selected">Źródło postępu ustawione na Trakt</string>
     <string name="trakt_watch_progress_nuvio_selected">Źródło postępu ustawione na Nuvio Sync</string>
+    <string name="trakt_more_like_this_source_title">Zrodlo Podobnych</string>
+    <string name="trakt_more_like_this_source_subtitle">Wybierz skad pochodza rekomendacje na stronach szczegolow</string>
+    <string name="trakt_more_like_this_source_dialog_title">Zrodlo Podobnych</string>
+    <string name="trakt_more_like_this_source_dialog_subtitle">Wybierz zrodlo rekomendacji pokazywanych na stronach szczegolow.</string>
+    <string name="trakt_more_like_this_source_trakt">Trakt</string>
+    <string name="trakt_more_like_this_source_tmdb">TMDB</string>
     <string name="trakt_continue_watching_window">Okno Kontynuuj oglądanie</string>
     <string name="trakt_continue_watching_subtitle">Historia Trakt uwzględniana w Kontynuuj oglądanie</string>
     <string name="trakt_cw_window_title">Okno Kontynuuj oglądanie</string>
@@ -1091,6 +1097,8 @@
     <string name="details_director">Reżyser</string>
     <string name="details_failed_to_load">Nie udało się załadować</string>
     <string name="details_more_like_this">Podobne</string>
+    <string name="detail_more_like_this_powered_by_tmdb">Obslugiwane przez TMDB</string>
+    <string name="detail_more_like_this_powered_by_trakt">Obslugiwane przez Trakt</string>
     <string name="details_seasons">Sezony</string>
     <string name="details_series_missing_numbers">Ten dodatek zwrócił filmy dla serialu, ale żaden nie zawierał numerów sezonów ani odcinków.</string>
     <string name="details_series_no_metadata">Ten dodatek nie dostarczył metadanych odcinków dla tego serialu.</string>

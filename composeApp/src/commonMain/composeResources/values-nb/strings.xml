@@ -914,6 +914,12 @@
     <string name="trakt_watch_progress_source_nuvio">Nuvio Sync</string>
     <string name="trakt_watch_progress_trakt_selected">Seer-fremdrift satt til Trakt</string>
     <string name="trakt_watch_progress_nuvio_selected">Seer-fremdrift satt til Nuvio Sync</string>
+    <string name="trakt_more_like_this_source_title">Kilde for Mer som dette</string>
+    <string name="trakt_more_like_this_source_subtitle">Velg hvor anbefalinger kommer fra paa detaljsider</string>
+    <string name="trakt_more_like_this_source_dialog_title">Kilde for Mer som dette</string>
+    <string name="trakt_more_like_this_source_dialog_subtitle">Velg kilden for anbefalinger som vises paa detaljsider.</string>
+    <string name="trakt_more_like_this_source_trakt">Trakt</string>
+    <string name="trakt_more_like_this_source_tmdb">TMDB</string>
     <string name="trakt_continue_watching_window">Fortsett å se-vindu</string>
     <string name="trakt_continue_watching_subtitle">Trakt-historikk som vurderes for Fortsett å se</string>
     <string name="trakt_cw_window_title">Fortsett å se-vindu</string>
@@ -1039,6 +1045,8 @@
     <string name="details_director">Regissør</string>
     <string name="details_failed_to_load">Kunne ikke laste</string>
     <string name="details_more_like_this">Mer som dette</string>
+    <string name="detail_more_like_this_powered_by_tmdb">Drevet av TMDB</string>
+    <string name="detail_more_like_this_powered_by_trakt">Drevet av Trakt</string>
     <string name="details_seasons">Sesonger</string>
     <string name="details_series_missing_numbers">Dette tillegget returnerte videoer for serien, men ingen inkluderte sesong- eller episodenummer.</string>
     <string name="details_series_no_metadata">Dette tillegget ga ikke episode-metadata for denne serien.</string>
