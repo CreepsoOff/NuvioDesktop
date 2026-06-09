@@ -105,11 +105,11 @@ object TraktRelatedRepository {
         headers: Map<String, String>,
     ): ResolvedRelatedTarget? {
         val type = resolveRelatedType(meta = meta, fallbackItemType = fallbackItemType) ?: return null
-        resolveDirectPathId(meta.id)?.let { return ResolvedRelatedTarget(type, it) }
-        resolveDirectPathId(fallbackItemId)?.let { return ResolvedRelatedTarget(type, it) }
+        resolveRelatedPathId(meta.id)?.let { return ResolvedRelatedTarget(type, it) }
+        resolveRelatedPathId(fallbackItemId)?.let { return ResolvedRelatedTarget(type, it) }
 
-        val tmdbId = resolveTmdbCandidate(meta.id)
-            ?: resolveTmdbCandidate(fallbackItemId)
+        val tmdbId = resolveRelatedTmdbCandidate(meta.id)
+            ?: resolveRelatedTmdbCandidate(fallbackItemId)
             ?: TmdbService.ensureTmdbId(meta.id, meta.type)?.toIntOrNull()
             ?: fallbackItemId?.let { TmdbService.ensureTmdbId(it, fallbackItemType ?: meta.type) }?.toIntOrNull()
             ?: return null
@@ -126,19 +126,6 @@ object TraktRelatedRepository {
             "series", "show", "tv", "tvshow" -> TraktRelatedType.SHOW
             else -> null
         }
-
-    private fun resolveDirectPathId(value: String?): String? {
-        val raw = value?.trim().orEmpty()
-        if (raw.isBlank()) return null
-        extractImdbId(raw)?.let { return it }
-        parseTraktContentIds(raw).trakt?.let { return it.toString() }
-        return raw
-            .takeIf { !it.startsWith("tmdb:", ignoreCase = true) }
-            ?.takeIf { it.all(Char::isDigit) }
-    }
-
-    private fun resolveTmdbCandidate(value: String?): Int? =
-        parseTraktContentIds(value).tmdb ?: extractTmdbId(value)
 
     private suspend fun resolveViaTraktSearch(
         type: TraktRelatedType,
@@ -176,7 +163,7 @@ object TraktRelatedRepository {
         return ids?.bestPathId()?.let { ResolvedRelatedTarget(type, it) }
     }
 
-    private fun buildTraktUrl(endpoint: String, query: Map<String, String> = emptyMap()): String {
+    internal fun buildTraktUrl(endpoint: String, query: Map<String, String> = emptyMap()): String {
         val queryString = (query + mapOf("page" to "1", "limit" to RELATED_LIMIT.toString()))
             .entries
             .filter { (_, value) -> value.isNotBlank() }
@@ -188,6 +175,19 @@ object TraktRelatedRepository {
 
     private fun jsonHeaders(headers: Map<String, String>): Map<String, String> =
         mapOf("Accept" to "application/json") + headers
+
+    internal fun resolveRelatedPathId(value: String?): String? {
+        val raw = value?.trim().orEmpty()
+        if (raw.isBlank()) return null
+        extractImdbId(raw)?.let { return it }
+        parseTraktContentIds(raw).trakt?.let { return it.toString() }
+        return raw
+            .takeIf { !it.startsWith("tmdb:", ignoreCase = true) }
+            ?.takeIf { it.all(Char::isDigit) }
+    }
+
+    internal fun resolveRelatedTmdbCandidate(value: String?): Int? =
+        parseTraktContentIds(value).tmdb ?: extractTmdbId(value)
 }
 
 private data class TimedCache(
