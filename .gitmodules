@@ -1,6 +1,7 @@
 [submodule "MPVKit"]
 	path = MPVKit
-	url = https://github.com/tapframe/MPVNuvio.git
+	url = https://github.com/NuvioMedia/MPVKit.git
+	branch = Nuvio
 [submodule "mediamp"]
 	path = mediamp
 	url = https://github.com/CreepsoOff/mediamp-nuvio.git
@@ -8,3 +9,7 @@
 [submodule "stremio-community-v5"]
 	path = stremio-community-v5
 	url = https://github.com/Zaarrg/stremio-community-v5.git
+[submodule "vendor/TorrServer"]
+	path = vendor/TorrServer
+	url = https://github.com/YouROK/TorrServer.git
+	branch = master

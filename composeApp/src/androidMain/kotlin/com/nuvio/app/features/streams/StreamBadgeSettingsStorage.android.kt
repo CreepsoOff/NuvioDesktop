@@ -35,16 +35,10 @@ actual object StreamBadgeSettingsStorage {
         saveString(streamBadgeRulesKey, rules)
     }
 
-    actual fun loadShowFileSizeBadges(): Boolean? {
-        val key = ProfileScopedKey.of(showFileSizeBadgesKey)
-        return preferences?.takeIf { it.contains(key) }?.getBoolean(key, true)
-    }
+    actual fun loadShowFileSizeBadges(): Boolean? = loadBoolean(showFileSizeBadgesKey)
 
     actual fun saveShowFileSizeBadges(enabled: Boolean) {
-        preferences
-            ?.edit()
-            ?.putBoolean(ProfileScopedKey.of(showFileSizeBadgesKey), enabled)
-            ?.apply()
+        saveBoolean(showFileSizeBadgesKey, enabled)
     }
 
     actual fun loadStreamBadgePlacement(): String? = loadString(streamBadgePlacementKey)
@@ -70,6 +64,23 @@ actual object StreamBadgeSettingsStorage {
         preferences
             ?.edit()
             ?.putString(ProfileScopedKey.of(key), value)
+            ?.apply()
+    }
+
+    private fun loadBoolean(key: String): Boolean? =
+        preferences?.let { sharedPreferences ->
+            val scopedKey = ProfileScopedKey.of(key)
+            if (sharedPreferences.contains(scopedKey)) {
+                sharedPreferences.getBoolean(scopedKey, false)
+            } else {
+                null
+            }
+        }
+
+    private fun saveBoolean(key: String, enabled: Boolean) {
+        preferences
+            ?.edit()
+            ?.putBoolean(ProfileScopedKey.of(key), enabled)
             ?.apply()
     }
 

@@ -23,17 +23,10 @@ actual object StreamBadgeSettingsStorage {
         saveString(streamBadgeRulesKey, rules)
     }
 
-    actual fun loadShowFileSizeBadges(): Boolean? {
-        val key = ProfileScopedKey.of(showFileSizeBadgesKey)
-        return if (NSUserDefaults.standardUserDefaults.objectForKey(key) != null) {
-            NSUserDefaults.standardUserDefaults.boolForKey(key)
-        } else {
-            null
-        }
-    }
+    actual fun loadShowFileSizeBadges(): Boolean? = loadBoolean(showFileSizeBadgesKey)
 
     actual fun saveShowFileSizeBadges(enabled: Boolean) {
-        NSUserDefaults.standardUserDefaults.setBool(enabled, forKey = ProfileScopedKey.of(showFileSizeBadgesKey))
+        saveBoolean(showFileSizeBadgesKey, enabled)
     }
 
     actual fun loadStreamBadgePlacement(): String? = loadString(streamBadgePlacementKey)
@@ -54,6 +47,20 @@ actual object StreamBadgeSettingsStorage {
 
     private fun saveString(key: String, value: String) {
         NSUserDefaults.standardUserDefaults.setObject(value, forKey = ProfileScopedKey.of(key))
+    }
+
+    private fun loadBoolean(key: String): Boolean? {
+        val defaults = NSUserDefaults.standardUserDefaults
+        val scopedKey = ProfileScopedKey.of(key)
+        return if (defaults.objectForKey(scopedKey) != null) {
+            defaults.boolForKey(scopedKey)
+        } else {
+            null
+        }
+    }
+
+    private fun saveBoolean(key: String, enabled: Boolean) {
+        NSUserDefaults.standardUserDefaults.setBool(enabled, forKey = ProfileScopedKey.of(key))
     }
 
     actual fun exportToSyncPayload(): JsonObject = buildJsonObject {

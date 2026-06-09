@@ -1261,53 +1261,6 @@ private fun StreamItem.instantServiceLabel(): String? {
     return "- $providerLabel Instant"
 }
 
-@Composable
-private fun StreamBadgeImage(badge: StreamBadge) {
-    StreamBadgeChip(
-        imageURL = badge.imageURL,
-        name = badge.name,
-        tagColor = badge.tagColor,
-        tagStyle = badge.tagStyle,
-        borderColor = badge.borderColor,
-        size = StreamBadgeChipSize.STREAM,
-    )
-}
-
-@Composable
-private fun StreamFileSizeBadge(stream: StreamItem) {
-    val bytes = stream.behaviorHints.videoSize ?: return
-    val gib = bytes.toDouble() / (1024.0 * 1024.0 * 1024.0)
-    val sizeLabel = if (gib >= 1.0) {
-        val roundedGiB = round(gib * 10.0) / 10.0
-        "$roundedGiB ${localizedByteUnit("GB")}"
-    } else {
-        val mib = bytes.toDouble() / (1024.0 * 1024.0)
-        "${round(mib).toInt()} ${localizedByteUnit("MB")}"
-    }
-
-    val badgeShape = StreamBadgeChipDefaults.shape
-    Box(
-        modifier = Modifier
-            .height(StreamBadgeChipSize.STREAM.containerHeight)
-            .clip(badgeShape)
-            .background(Color(0xFF0A0C0C))
-            .border(1.dp, Color(0xFF0A0C0C), badgeShape)
-            .padding(horizontal = StreamBadgeChipDefaults.fileSizeHorizontalPadding),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = stringResource(Res.string.streams_size, sizeLabel),
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontSize = StreamBadgeChipDefaults.fileSizeFontSize,
-                lineHeight = StreamBadgeChipDefaults.fileSizeLineHeight,
-                fontWeight = FontWeight.SemiBold,
-                letterSpacing = StreamBadgeChipDefaults.fileSizeLetterSpacing,
-            ),
-            color = Color.White,
-        )
-    }
-}
-
 private fun Long.toPlaybackClock(): String {
     val totalSeconds = (this / 1000L).coerceAtLeast(0L)
     val hours = totalSeconds / 3600L

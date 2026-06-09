@@ -700,6 +700,19 @@
     <string name="settings_stream_badge_preview_empty">No badge images in this URL.</string>
     <string name="settings_stream_badge_group_title">Group %1$d</string>
     <string name="settings_stream_badge_other_group_title">Other badges</string>
+    <string name="settings_fusion_badges_summary">%1$d/%2$d URLs, %3$d active Fusion badges</string>
+    <string name="settings_fusion_badges_empty">No Fusion badge URLs imported.</string>
+    <string name="settings_fusion_badge_url_label">Fusion badge JSON URL</string>
+    <string name="settings_fusion_badge_urls_imported">%1$d/%2$d Fusion URLs imported</string>
+    <string name="settings_fusion_badge_url_active">Active</string>
+    <string name="settings_fusion_badge_url_inactive">Inactive</string>
+    <string name="settings_fusion_badge_url_status_summary">%1$s, %2$d enabled badges, %3$d groups</string>
+    <string name="settings_fusion_badge_preview_action">Preview</string>
+    <string name="settings_fusion_badge_preview_title">Fusion badge preview</string>
+    <string name="settings_fusion_badge_preview_count">%1$d Fusion-style badges from this URL</string>
+    <string name="settings_fusion_badge_preview_empty">No Fusion-style badge images in this URL.</string>
+    <string name="settings_fusion_badge_group_title">Group %1$d</string>
+    <string name="settings_fusion_badge_other_group_title">Other Fusion badges</string>
     <string name="settings_debrid_key_valid">API key validated.</string>
     <string name="settings_debrid_key_invalid">Could not validate this API key.</string>
     <string name="settings_mdb_add_api_key_first">Add your MDBList API key below before turning ratings on.</string>
@@ -723,6 +736,8 @@
     <string name="settings_meta_comments_description">Reviews from Trakt</string>
     <string name="settings_meta_details">Details</string>
     <string name="settings_meta_details_description">Runtime, status, release, language, and related info.</string>
+    <string name="settings_meta_hero_trailer_playback">Hero Trailer Playback</string>
+    <string name="settings_meta_hero_trailer_playback_description">Play trailer previews in the metadata hero when a trailer is available.</string>
     <string name="settings_meta_episode_cards">Episode Cards</string>
     <string name="settings_meta_episode_cards_description">Choose how episodes are rendered on the metadata screen.</string>
     <string name="settings_meta_episode_style_horizontal">Horizontal</string>
@@ -1663,6 +1678,12 @@
     <string name="settings_playback_ios_display_color_hint_desc">Let mpv target the active display color space by default.</string>
     <string name="settings_playback_ios_target_primaries">Target primaries</string>
     <string name="settings_playback_ios_target_transfer">Target transfer</string>
+    <!-- Playback settings iOS audio output -->
+    <string name="settings_playback_ios_audio_output_section">iOS audio output</string>
+    <string name="settings_playback_ios_audio_output">Audio output</string>
+    <string name="settings_playback_ios_audio_output_auto_desc">Try AVFoundation first, then fall back to AudioUnit.</string>
+    <string name="settings_playback_ios_audio_output_avfoundation_desc">Experimental support for Spatial Audio and multichannel output.</string>
+    <string name="settings_playback_ios_audio_output_audiounit_desc">Use the legacy AudioUnit output.</string>
     <!-- Debrid Result Management section -->
     <string name="settings_debrid_section_result_management">Result Management</string>
     <string name="settings_debrid_max_results">Max results</string>
@@ -1763,6 +1784,7 @@
     <string name="submit_intro_capture">Capture</string>
     <!-- iOS advanced playback -->
     <string name="settings_playback_ios_hw_decoder_dialog">Hardware decoder</string>
+    <string name="settings_playback_ios_audio_output_dialog">Audio output</string>
     <string name="settings_playback_ios_target_primaries_dialog">Target primaries</string>
     <string name="settings_playback_ios_target_transfer_dialog">Target transfer</string>
     <!-- Collection editor -->

@@ -499,11 +499,42 @@ fun MetaDetailsScreen(
                 var trailerLoading by remember(meta.id) { mutableStateOf(false) }
                 var trailerErrorMessage by remember(meta.id) { mutableStateOf<String?>(null) }
                 var trailerRequestToken by remember(meta.id) { mutableIntStateOf(0) }
+                var isLeavingDetails by remember(meta.id) { mutableStateOf(false) }
+                val heroTrailerCandidate = remember(meta.trailers) {
+                    selectHeroTrailer(meta.trailers)
+                }
+                val heroTrailerPlaybackEnabled = AppFeaturePolicy.heroTrailerPlaybackSupported &&
+                    inAppTrailerPlaybackEnabled &&
+                    metaScreenSettingsUiState.heroTrailerPlayback
+                var heroTrailerPlaybackSource by remember(meta.id, heroTrailerCandidate?.id) { mutableStateOf<TrailerPlaybackSource?>(null) }
+                var heroTrailerReady by remember(meta.id, heroTrailerCandidate?.id) { mutableStateOf(false) }
+                var heroTrailerFinished by remember(meta.id, heroTrailerCandidate?.id) { mutableStateOf(false) }
+                val heroTrailerMuted by HeroTrailerAudioState.muted.collectAsStateWithLifecycle()
+                LaunchedEffect(heroTrailerPlaybackEnabled, heroTrailerCandidate?.id, heroTrailerCandidate?.key) {
+                    heroTrailerPlaybackSource = null
+                    heroTrailerReady = false
+                    heroTrailerFinished = false
+                    if (!heroTrailerPlaybackEnabled || heroTrailerCandidate == null) {
+                        return@LaunchedEffect
+                    }
+                    val resolvedSource = runCatching {
+                        TrailerPlaybackResolver.resolveFromYouTubeUrl(heroTrailerCandidate.youtubePlaybackUrl())
+                    }.getOrNull()
+                    if (resolvedSource == null) {
+                        heroTrailerFinished = true
+                    } else {
+                        heroTrailerPlaybackSource = resolvedSource
+                    }
+                }
+                val onBackFromDetails: () -> Unit = {
+                    isLeavingDetails = true
+                    heroTrailerReady = false
+                    heroTrailerFinished = true
+                    onBack()
+                }
                 val resolveTrailer: (MetaTrailer) -> Unit = remember(meta.id, inAppTrailerPlaybackEnabled, uriHandler) {
                     { trailer ->
-                        val youtubeUrl = trailer.key.takeIf {
-                            it.startsWith("http://") || it.startsWith("https://")
-                        } ?: "https://www.youtube.com/watch?v=${trailer.key}"
+                        val youtubeUrl = trailer.youtubePlaybackUrl()
                         if (!inAppTrailerPlaybackEnabled) {
                             runCatching { uriHandler.openUri(youtubeUrl) }
                         } else {
@@ -699,6 +730,15 @@ fun MetaDetailsScreen(
                 var heroHeightPx by remember(meta.id) { mutableIntStateOf(0) }
                 val thresholdPx = (heroHeightPx - safeAreaTopPx).coerceAtLeast(0f)
                 val headerTarget = if (heroHeightPx > 0 && scrollState.value > thresholdPx) 1f else 0f
+                val heroTrailerSourceUrl = heroTrailerPlaybackSource
+                    ?.videoUrl
+                    ?.takeIf { it.isNotBlank() && heroTrailerPlaybackEnabled && !heroTrailerFinished && !isLeavingDetails }
+                val heroTrailerSourceAudioUrl = heroTrailerPlaybackSource
+                    ?.audioUrl
+                    ?.takeIf { heroTrailerSourceUrl != null && it.isNotBlank() }
+                val heroTrailerPlayWhenReady = heroTrailerSourceUrl != null &&
+                    !isLeavingDetails &&
+                    (heroHeightPx == 0 || scrollState.value <= thresholdPx)
                 val headerProgress by animateFloatAsState(
                     targetValue = headerTarget,
                     animationSpec = tween(
@@ -746,6 +786,27 @@ fun MetaDetailsScreen(
                                 contentMaxWidth = contentMaxWidth,
                                 scrollOffset = scrollState.value,
                                 onHeightChanged = { heroHeightPx = it },
+                                heroTrailerSourceUrl = heroTrailerSourceUrl,
+                                heroTrailerSourceAudioUrl = heroTrailerSourceAudioUrl,
+                                heroTrailerReady = heroTrailerReady,
+                                heroTrailerPlayWhenReady = heroTrailerPlayWhenReady,
+                                heroTrailerMuted = heroTrailerMuted,
+                                onHeroTrailerMuteToggle = {
+                                    HeroTrailerAudioState.toggleMuted()
+                                },
+                                onHeroTrailerReady = {
+                                    if (!heroTrailerFinished) {
+                                        heroTrailerReady = true
+                                    }
+                                },
+                                onHeroTrailerEnded = {
+                                    heroTrailerReady = false
+                                    heroTrailerFinished = true
+                                },
+                                onHeroTrailerError = {
+                                    heroTrailerReady = false
+                                    heroTrailerFinished = true
+                                },
                             )
 
                             Column(
@@ -859,12 +920,12 @@ fun MetaDetailsScreen(
 
                         if (headerProgress <= 0.05f) {
                             NuvioBackButton(
-                                onClick = onBack,
+                                onClick = onBackFromDetails,
                                 modifier = Modifier.padding(
                                     start = 12.dp,
                                     top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 8.dp,
                                 ).zIndex(2f),
-                                containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.5f),
+                                containerColor = Color.Transparent,
                                 contentColor = MaterialTheme.colorScheme.onBackground,
                             )
                         }
@@ -873,7 +934,7 @@ fun MetaDetailsScreen(
                             meta = meta,
                             isSaved = isSaved,
                             progress = headerProgress,
-                            onBack = onBack,
+                            onBack = onBackFromDetails,
                             onToggleSaved = toggleSaved,
                             modifier = Modifier.zIndex(2f),
                         )
@@ -1116,7 +1177,7 @@ fun MetaDetailsScreen(
                     start = 12.dp,
                     top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 8.dp,
                 ),
-                containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.5f),
+                containerColor = Color.Transparent,
                 contentColor = MaterialTheme.colorScheme.onBackground,
             )
         }
