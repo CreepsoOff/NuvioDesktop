@@ -674,6 +674,12 @@
     <string name="settings_stream_badges_section">Stream Badges</string>
     <string name="settings_stream_size_badges_title">Size badges</string>
     <string name="settings_stream_size_badges_description">Show stream file-size badges when a source reports its video size.</string>
+    <string name="settings_stream_badge_position_title">Badge position</string>
+    <string name="settings_stream_badge_position_description">Choose whether stream badges appear above or below stream cards.</string>
+    <string name="settings_stream_badge_position_dialog_title">Badge position</string>
+    <string name="settings_stream_badge_position_dialog_description">Select where stream badges appear on stream cards.</string>
+    <string name="settings_stream_badge_position_top">Top</string>
+    <string name="settings_stream_badge_position_bottom">Bottom</string>
     <string name="settings_stream_badge_urls_title">Badge URLs</string>
     <string name="settings_stream_badge_urls_description">Import up to %1$d stream badge JSON URLs. Each URL can be updated or deleted separately.</string>
     <string name="settings_stream_badge_urls_search_description">Manage imported stream badge JSON URLs.</string>

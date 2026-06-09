@@ -50,6 +50,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.core.i18n.localizedByteUnit
+import com.nuvio.app.features.streams.StreamBadge
+import com.nuvio.app.features.streams.StreamBadgeChip
+import com.nuvio.app.features.streams.StreamBadgeChipSize
+import com.nuvio.app.features.streams.StreamBadgePlacement
 import com.nuvio.app.features.debrid.DebridSettingsRepository
 import com.nuvio.app.features.streams.StreamBadgeSettingsRepository
 import com.nuvio.app.features.streams.StreamItem
@@ -228,6 +232,7 @@ fun PlayerSourcesPanel(
                                             isCurrent = isCurrent,
                                             enabled = stream.isSelectableForPlayback(debridSettings.canResolvePlayableLinks),
                                             showFileSizeBadges = streamBadgeSettings.showFileSizeBadges,
+                                            badgePlacement = streamBadgeSettings.badgePlacement,
                                             onClick = { onStreamSelected(stream) },
                                         )
                                     }
@@ -247,6 +252,7 @@ private fun SourceStreamRow(
     isCurrent: Boolean,
     enabled: Boolean,
     showFileSizeBadges: Boolean,
+    badgePlacement: StreamBadgePlacement,
     onClick: () -> Unit,
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -279,6 +285,14 @@ private fun SourceStreamRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Column(modifier = Modifier.weight(1f)) {
+            if (badgePlacement == StreamBadgePlacement.TOP) {
+                PlayerStreamBadgeRow(
+                    stream = stream,
+                    showFileSizeBadges = showFileSizeBadges,
+                    modifier = Modifier.padding(bottom = 6.dp),
+                )
+            }
+
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -329,8 +343,11 @@ private fun SourceStreamRow(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                if (showFileSizeBadges) {
-                    PlayerStreamFileSizeBadge(stream = stream)
+                if (badgePlacement == StreamBadgePlacement.BOTTOM) {
+                    PlayerStreamBadgeRow(
+                        stream = stream,
+                        showFileSizeBadges = showFileSizeBadges,
+                    )
                 }
                 Text(
                     text = stream.addonName,
@@ -343,6 +360,41 @@ private fun SourceStreamRow(
             }
         }
     }
+}
+
+@Composable
+private fun PlayerStreamBadgeRow(
+    stream: StreamItem,
+    showFileSizeBadges: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val badgeImages = stream.badges.filter { it.imageURL.isNotBlank() }
+    if (badgeImages.isEmpty() && (!showFileSizeBadges || stream.behaviorHints.videoSize == null)) return
+
+    Row(
+        modifier = modifier.horizontalScroll(rememberScrollState()),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        badgeImages.forEach { badge ->
+            PlayerStreamBadgeImage(badge = badge)
+        }
+        if (showFileSizeBadges) {
+            PlayerStreamFileSizeBadge(stream = stream)
+        }
+    }
+}
+
+@Composable
+private fun PlayerStreamBadgeImage(badge: StreamBadge) {
+    StreamBadgeChip(
+        imageURL = badge.imageURL,
+        name = badge.name,
+        tagColor = badge.tagColor,
+        tagStyle = badge.tagStyle,
+        borderColor = badge.borderColor,
+        size = StreamBadgeChipSize.STREAM,
+    )
 }
 
 @Composable
