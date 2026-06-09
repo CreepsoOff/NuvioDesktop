@@ -826,6 +826,8 @@
     <string name="settings_playback_decoder_prefer_device">Prefer device decoders</string>
     <string name="settings_playback_decoder_priority">Decoder Priority</string>
     <string name="settings_playback_desktop_deband">Deband</string>
+    <string name="settings_playback_desktop_fullscreen_section">Fullscreen (Desktop)</string>
+    <string name="settings_playback_desktop_fullscreen_mode">Fullscreen method</string>
     <string name="settings_playback_desktop_gamma">Gamma</string>
     <string name="settings_playback_desktop_hdr_compute_peak">HDR Peak Detection</string>
     <string name="settings_playback_desktop_hwdec">Hardware Decoding</string>
@@ -849,6 +851,9 @@
     <string name="settings_playback_desktop_option_hlg">HLG</string>
     <string name="settings_playback_desktop_option_mobius">Mobius</string>
     <string name="settings_playback_desktop_option_native">Native</string>
+    <string name="settings_playback_desktop_option_fullscreen_native">Native borderless</string>
+    <string name="settings_playback_desktop_option_fullscreen_exclusive">AWT exclusive</string>
+    <string name="settings_playback_desktop_option_fullscreen_compose">Compose fullscreen</string>
     <string name="settings_playback_desktop_option_no">Off</string>
     <string name="settings_playback_desktop_option_nvdec">NVIDIA NVDEC</string>
     <string name="settings_playback_desktop_option_nvdec_copy">NVDEC (copy-back)</string>
@@ -1971,9 +1976,4 @@
     <string name="settings_image_rendering_restart_disable_message">High-quality image rendering will be disabled. Nuvio needs to restart to apply it.</string>
     <string name="settings_image_rendering_restart_confirm">Restart now</string>
     <string name="settings_image_rendering_restart_cancel">Cancel</string>
-    <string name="settings_playback_desktop_fullscreen_section">Fullscreen (Desktop)</string>
-    <string name="settings_playback_desktop_fullscreen_mode">Fullscreen method</string>
-    <string name="settings_playback_desktop_option_fullscreen_native">Native borderless</string>
-    <string name="settings_playback_desktop_option_fullscreen_exclusive">AWT exclusive</string>
-    <string name="settings_playback_desktop_option_fullscreen_compose">Compose fullscreen</string>
 </resources>
