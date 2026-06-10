@@ -1,11 +1,11 @@
 package com.nuvio.app.features.player.desktop.mpv
 
 import com.nuvio.app.desktop.DesktopPreferences
-import com.nuvio.app.features.player.IosHardwareDecoderMode
-import com.nuvio.app.features.player.IosTargetPrimaries
-import com.nuvio.app.features.player.IosTargetTransfer
-import com.nuvio.app.features.player.IosToneMappingMode
-import com.nuvio.app.features.player.IosVideoOutputPreset
+import com.nuvio.app.features.player.PlatformHardwareDecoderMode
+import com.nuvio.app.features.player.PlatformTargetPrimaries
+import com.nuvio.app.features.player.PlatformTargetTransfer
+import com.nuvio.app.features.player.PlatformToneMappingMode
+import com.nuvio.app.features.player.PlatformVideoOutputPreset
 import com.nuvio.app.features.player.PlayerHardwareDecoderMode
 import com.nuvio.app.features.player.PlayerSettingsUiState
 import com.nuvio.app.features.player.PlayerTargetPrimaries
@@ -376,49 +376,49 @@ private fun PlayerVideoOutputPreset.defaultTransfer(): PlayerTargetTransfer =
         else -> PlayerTargetTransfer.Auto
     }
 
-private fun IosVideoOutputPreset.toDesktopPreset(): PlayerVideoOutputPreset =
+private fun PlatformVideoOutputPreset.toDesktopPreset(): PlayerVideoOutputPreset =
     when (this) {
-        IosVideoOutputPreset.NativeEdr -> PlayerVideoOutputPreset.Native
-        IosVideoOutputPreset.SdrToneMapped -> PlayerVideoOutputPreset.ToneMappedSdr
-        IosVideoOutputPreset.Compatibility -> PlayerVideoOutputPreset.Compatibility
-        IosVideoOutputPreset.Custom -> PlayerVideoOutputPreset.Custom
+        PlatformVideoOutputPreset.NativeEdr -> PlayerVideoOutputPreset.Native
+        PlatformVideoOutputPreset.SdrToneMapped -> PlayerVideoOutputPreset.ToneMappedSdr
+        PlatformVideoOutputPreset.Compatibility -> PlayerVideoOutputPreset.Compatibility
+        PlatformVideoOutputPreset.Custom -> PlayerVideoOutputPreset.Custom
     }
 
-private fun IosHardwareDecoderMode.toDesktopHardwareDecoderMode(): PlayerHardwareDecoderMode =
+private fun PlatformHardwareDecoderMode.toDesktopHardwareDecoderMode(): PlayerHardwareDecoderMode =
     when (this) {
-        IosHardwareDecoderMode.Auto,
-        IosHardwareDecoderMode.VideoToolbox -> PlayerHardwareDecoderMode.Auto
-        IosHardwareDecoderMode.Off -> PlayerHardwareDecoderMode.Off
+        PlatformHardwareDecoderMode.Auto,
+        PlatformHardwareDecoderMode.VideoToolbox -> PlayerHardwareDecoderMode.Auto
+        PlatformHardwareDecoderMode.Off -> PlayerHardwareDecoderMode.Off
     }
 
-private fun IosToneMappingMode.toDesktopToneMappingMode(): PlayerToneMappingMode =
+private fun PlatformToneMappingMode.toDesktopToneMappingMode(): PlayerToneMappingMode =
     when (this) {
-        IosToneMappingMode.Auto -> PlayerToneMappingMode.Auto
-        IosToneMappingMode.Bt2390 -> PlayerToneMappingMode.Bt2390
-        IosToneMappingMode.Mobius -> PlayerToneMappingMode.Mobius
-        IosToneMappingMode.Reinhard -> PlayerToneMappingMode.Reinhard
-        IosToneMappingMode.Hable -> PlayerToneMappingMode.Hable
-        IosToneMappingMode.Gamma -> PlayerToneMappingMode.Gamma
-        IosToneMappingMode.Clip -> PlayerToneMappingMode.Clip
+        PlatformToneMappingMode.Auto -> PlayerToneMappingMode.Auto
+        PlatformToneMappingMode.Bt2390 -> PlayerToneMappingMode.Bt2390
+        PlatformToneMappingMode.Mobius -> PlayerToneMappingMode.Mobius
+        PlatformToneMappingMode.Reinhard -> PlayerToneMappingMode.Reinhard
+        PlatformToneMappingMode.Hable -> PlayerToneMappingMode.Hable
+        PlatformToneMappingMode.Gamma -> PlayerToneMappingMode.Gamma
+        PlatformToneMappingMode.Clip -> PlayerToneMappingMode.Clip
     }
 
-private fun IosTargetPrimaries.toDesktopTargetPrimaries(): PlayerTargetPrimaries =
+private fun PlatformTargetPrimaries.toDesktopTargetPrimaries(): PlayerTargetPrimaries =
     when (this) {
-        IosTargetPrimaries.Auto -> PlayerTargetPrimaries.Auto
-        IosTargetPrimaries.Bt709 -> PlayerTargetPrimaries.Bt709
-        IosTargetPrimaries.DisplayP3 -> PlayerTargetPrimaries.DisplayP3
-        IosTargetPrimaries.Bt2020 -> PlayerTargetPrimaries.Bt2020
+        PlatformTargetPrimaries.Auto -> PlayerTargetPrimaries.Auto
+        PlatformTargetPrimaries.Bt709 -> PlayerTargetPrimaries.Bt709
+        PlatformTargetPrimaries.DisplayP3 -> PlayerTargetPrimaries.DisplayP3
+        PlatformTargetPrimaries.Bt2020 -> PlayerTargetPrimaries.Bt2020
     }
 
-private fun IosTargetTransfer.toDesktopTargetTransfer(): PlayerTargetTransfer =
+private fun PlatformTargetTransfer.toDesktopTargetTransfer(): PlayerTargetTransfer =
     when (this) {
-        IosTargetTransfer.Auto -> PlayerTargetTransfer.Auto
-        IosTargetTransfer.Srgb -> PlayerTargetTransfer.Srgb
-        IosTargetTransfer.Bt1886 -> PlayerTargetTransfer.Bt1886
-        IosTargetTransfer.Gamma22 -> PlayerTargetTransfer.Gamma22
-        IosTargetTransfer.Gamma24 -> PlayerTargetTransfer.Gamma24
-        IosTargetTransfer.Pq -> PlayerTargetTransfer.Pq
-        IosTargetTransfer.Hlg -> PlayerTargetTransfer.Hlg
+        PlatformTargetTransfer.Auto -> PlayerTargetTransfer.Auto
+        PlatformTargetTransfer.Srgb -> PlayerTargetTransfer.Srgb
+        PlatformTargetTransfer.Bt1886 -> PlayerTargetTransfer.Bt1886
+        PlatformTargetTransfer.Gamma22 -> PlayerTargetTransfer.Gamma22
+        PlatformTargetTransfer.Gamma24 -> PlayerTargetTransfer.Gamma24
+        PlatformTargetTransfer.Pq -> PlayerTargetTransfer.Pq
+        PlatformTargetTransfer.Hlg -> PlayerTargetTransfer.Hlg
     }
 
 private fun Int.coerceVideoEq(): Int = coerceIn(-100, 100)

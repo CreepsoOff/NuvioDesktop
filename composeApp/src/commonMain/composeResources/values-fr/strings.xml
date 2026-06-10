@@ -1549,13 +1549,15 @@
     <string name="player_video_settings_contrast">Contraste</string>
     <string name="player_video_settings_saturation">Saturation</string>
     <string name="player_video_settings_gamma">Gamma</string>
+    <string name="player_video_settings_target_primaries">Primaires cibles</string>
+    <string name="player_video_settings_target_transfer">Transfert cible</string>
     <!-- iOS video output presets -->
     <string name="player_ios_preset_native_edr_label">Native EDR</string>
-    <string name="player_ios_preset_native_edr_desc">Optimal pour les iPhones et iPads compatibles HDR.</string>
+    <string name="player_ios_preset_native_edr_desc">Optimal pour les écrans compatibles HDR.</string>
     <string name="player_ios_preset_sdr_tone_mapped_label">SDR tone mapped</string>
     <string name="player_ios_preset_sdr_tone_mapped_desc">Blancs et noirs plus prévisibles sur une sortie de type SDR.</string>
     <string name="player_ios_preset_compatibility_label">Compatibilité</string>
-    <string name="player_ios_preset_compatibility_desc">Au plus près de l’ancien comportement MPV iOS.</string>
+    <string name="player_ios_preset_compatibility_desc">Réglages de lecture conservateurs pour une large compatibilité.</string>
     <string name="player_ios_preset_custom_label">Personnalisé</string>
     <string name="player_ios_preset_custom_desc">Utilise tes valeurs avancées ci-dessous.</string>
     <string name="player_ios_hardware_decoder_off">Désactivé</string>

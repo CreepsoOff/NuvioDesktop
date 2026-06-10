@@ -1,12 +1,12 @@
 package com.nuvio.app.features.player.desktop.mpv
 
 import com.nuvio.app.desktop.DesktopPreferences
+import com.nuvio.app.features.player.PlatformHardwareDecoderMode
+import com.nuvio.app.features.player.PlatformTargetPrimaries
+import com.nuvio.app.features.player.PlatformTargetTransfer
+import com.nuvio.app.features.player.PlatformToneMappingMode
+import com.nuvio.app.features.player.PlatformVideoOutputPreset
 import com.nuvio.app.features.player.PlayerHardwareDecoderMode
-import com.nuvio.app.features.player.IosHardwareDecoderMode
-import com.nuvio.app.features.player.IosTargetPrimaries
-import com.nuvio.app.features.player.IosTargetTransfer
-import com.nuvio.app.features.player.IosToneMappingMode
-import com.nuvio.app.features.player.IosVideoOutputPreset
 import com.nuvio.app.features.player.PlayerSettingsUiState
 import com.nuvio.app.features.player.PlayerTargetPrimaries
 import com.nuvio.app.features.player.PlayerTargetTransfer
@@ -148,17 +148,17 @@ class DesktopMpvPlaybackSettingsTest {
     }
 
     @Test
-    fun playerSettingsMirrorStoresIosVideoOptionsAsDesktopMpvTuning() {
+    fun playerSettingsMirrorStoresPlatformVideoOptionsAsDesktopMpvTuning() {
         resetDecoderPreferences()
         val startVersion = DesktopMpvPlaybackSettingsSignal.version.value
 
         storeDesktopVideoTuningFromPlayerSettings(
             PlayerSettingsUiState(
-                iosVideoOutputPreset = IosVideoOutputPreset.SdrToneMapped,
-                iosHardwareDecoderMode = IosHardwareDecoderMode.Off,
-                iosToneMappingMode = IosToneMappingMode.Mobius,
-                iosTargetPrimaries = IosTargetPrimaries.Bt709,
-                iosTargetTransfer = IosTargetTransfer.Srgb,
+                iosVideoOutputPreset = PlatformVideoOutputPreset.SdrToneMapped,
+                iosHardwareDecoderMode = PlatformHardwareDecoderMode.Off,
+                iosToneMappingMode = PlatformToneMappingMode.Mobius,
+                iosTargetPrimaries = PlatformTargetPrimaries.Bt709,
+                iosTargetTransfer = PlatformTargetTransfer.Srgb,
                 iosHdrComputePeakEnabled = false,
                 iosDebandEnabled = true,
                 iosInterpolationEnabled = true,
@@ -191,11 +191,11 @@ class DesktopMpvPlaybackSettingsTest {
     fun playerSettingsMirrorDoesNotNotifyWhenDesktopTuningIsAlreadyCurrent() {
         resetDecoderPreferences()
         val state = PlayerSettingsUiState(
-            iosVideoOutputPreset = IosVideoOutputPreset.Compatibility,
-            iosHardwareDecoderMode = IosHardwareDecoderMode.Auto,
-            iosToneMappingMode = IosToneMappingMode.Bt2390,
-            iosTargetPrimaries = IosTargetPrimaries.DisplayP3,
-            iosTargetTransfer = IosTargetTransfer.Gamma22,
+            iosVideoOutputPreset = PlatformVideoOutputPreset.Compatibility,
+            iosHardwareDecoderMode = PlatformHardwareDecoderMode.Auto,
+            iosToneMappingMode = PlatformToneMappingMode.Bt2390,
+            iosTargetPrimaries = PlatformTargetPrimaries.DisplayP3,
+            iosTargetTransfer = PlatformTargetTransfer.Gamma22,
             iosBrightness = 9,
         )
 

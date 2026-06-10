@@ -59,6 +59,8 @@ import nuvio.composeapp.generated.resources.player_video_settings_interpolation_
 import nuvio.composeapp.generated.resources.player_video_settings_output_preset
 import nuvio.composeapp.generated.resources.player_video_settings_reset_tuning
 import nuvio.composeapp.generated.resources.player_video_settings_saturation
+import nuvio.composeapp.generated.resources.player_video_settings_target_primaries
+import nuvio.composeapp.generated.resources.player_video_settings_target_transfer
 import nuvio.composeapp.generated.resources.player_video_settings_title
 import nuvio.composeapp.generated.resources.player_video_settings_tone_mapping
 import org.jetbrains.compose.resources.stringResource
@@ -140,10 +142,10 @@ internal fun PlatformVideoSettingsModal(
                     ) {
                         OptionGroup(
                             title = stringResource(Res.string.player_video_settings_output_preset),
-                            options = IosVideoOutputPreset.entries,
+                            options = PlatformVideoOutputPreset.entries,
                             selected = settings.iosVideoOutputPreset,
-                            label = { it.localizedLabel() },
-                            description = { it.localizedDescription() },
+                            label = { it.localizedPlatformLabel() },
+                            description = { it.localizedPlatformDescription() },
                             onSelect = {
                                 PlayerSettingsRepository.setIosVideoOutputPreset(it)
                                 onSettingsChanged()
@@ -162,7 +164,7 @@ internal fun PlatformVideoSettingsModal(
 
                         OptionGroup(
                             title = stringResource(Res.string.player_video_settings_tone_mapping),
-                            options = IosToneMappingMode.entries,
+                            options = PlatformToneMappingMode.entries,
                             selected = settings.iosToneMappingMode,
                             label = { it.label },
                             onSelect = {
@@ -172,8 +174,8 @@ internal fun PlatformVideoSettingsModal(
                         )
 
                         OptionGroup(
-                            title = "Target primaries",
-                            options = IosTargetPrimaries.entries,
+                            title = stringResource(Res.string.player_video_settings_target_primaries),
+                            options = PlatformTargetPrimaries.entries,
                             selected = settings.iosTargetPrimaries,
                             label = { it.label },
                             onSelect = {
@@ -183,8 +185,8 @@ internal fun PlatformVideoSettingsModal(
                         )
 
                         OptionGroup(
-                            title = "Target transfer",
-                            options = IosTargetTransfer.entries,
+                            title = stringResource(Res.string.player_video_settings_target_transfer),
+                            options = PlatformTargetTransfer.entries,
                             selected = settings.iosTargetTransfer,
                             label = { it.label },
                             onSelect = {

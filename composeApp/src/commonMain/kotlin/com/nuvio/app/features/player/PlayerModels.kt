@@ -144,7 +144,7 @@ enum class IosVideoOutputPreset(
 ) {
     NativeEdr(
         label = "Native EDR",
-        description = "Best for HDR-capable iPhones and iPads.",
+        description = "Best for HDR-capable displays.",
     ),
     SdrToneMapped(
         label = "SDR tone mapped",
@@ -152,7 +152,7 @@ enum class IosVideoOutputPreset(
     ),
     Compatibility(
         label = "Compatibility",
-        description = "Closest to the older iOS MPV behavior.",
+        description = "Conservative playback settings for broad device compatibility.",
     ),
     Custom(
         label = "Custom",
@@ -214,6 +214,12 @@ enum class IosAudioOutputMode(
     AudioUnit("audiounit", "AudioUnit"),
 }
 
+typealias PlatformVideoOutputPreset = IosVideoOutputPreset
+typealias PlatformToneMappingMode = IosToneMappingMode
+typealias PlatformTargetPrimaries = IosTargetPrimaries
+typealias PlatformTargetTransfer = IosTargetTransfer
+typealias PlatformHardwareDecoderMode = IosHardwareDecoderMode
+
 @Composable
 fun IosVideoOutputPreset.localizedLabel(): String = when (this) {
     IosVideoOutputPreset.NativeEdr -> stringResource(Res.string.player_ios_preset_native_edr_label)
@@ -235,6 +241,12 @@ fun IosHardwareDecoderMode.localizedLabel(): String = when (this) {
     IosHardwareDecoderMode.Off -> stringResource(Res.string.player_ios_hardware_decoder_off)
     else -> label
 }
+
+@Composable
+fun PlatformVideoOutputPreset.localizedPlatformLabel(): String = localizedLabel()
+
+@Composable
+fun PlatformVideoOutputPreset.localizedPlatformDescription(): String = localizedDescription()
 
 data class PlayerPlaybackSnapshot(
     val isLoading: Boolean = true,
