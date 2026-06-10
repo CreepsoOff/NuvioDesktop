@@ -3092,7 +3092,7 @@ fun PlayerScreen(
                 onDismiss = { showSubtitleModal = false },
             )
 
-            IosVideoSettingsModal(
+            PlatformVideoSettingsModal(
                 visible = showVideoSettingsModal,
                 settings = playerSettingsUiState,
                 onSettingsChanged = {

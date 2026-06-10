@@ -40,8 +40,13 @@ import java.awt.KeyEventDispatcher
 import java.awt.KeyboardFocusManager
 import java.awt.Point
 import java.awt.Toolkit
+import java.awt.event.ComponentAdapter
+import java.awt.event.ComponentEvent
 import java.awt.event.KeyEvent
+import java.awt.event.WindowEvent
+import java.awt.event.WindowStateListener
 import java.awt.image.BufferedImage
+import java.beans.PropertyChangeListener
 import java.util.Locale
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.JsonObject
@@ -1262,9 +1267,33 @@ actual fun rememberPlayerFullscreenController(): PlayerFullscreenController {
     }
 
     LaunchedEffect(window, fullscreenRevision) {
-        while (true) {
-            isFullscreen = window?.isPlayerFullscreen() == true
-            delay(250)
+        isFullscreen = window?.isPlayerFullscreen() == true
+    }
+
+    DisposableEffect(window) {
+        val composeWindow = window ?: return@DisposableEffect onDispose {}
+        fun refreshFullscreenState() {
+            isFullscreen = composeWindow.isPlayerFullscreen()
+        }
+        val componentListener = object : ComponentAdapter() {
+            override fun componentResized(event: ComponentEvent) = refreshFullscreenState()
+            override fun componentMoved(event: ComponentEvent) = refreshFullscreenState()
+            override fun componentShown(event: ComponentEvent) = refreshFullscreenState()
+        }
+        val windowStateListener = WindowStateListener { _: WindowEvent ->
+            refreshFullscreenState()
+        }
+        val propertyListener = PropertyChangeListener {
+            refreshFullscreenState()
+        }
+        composeWindow.addComponentListener(componentListener)
+        composeWindow.addWindowStateListener(windowStateListener)
+        composeWindow.addPropertyChangeListener("graphicsConfiguration", propertyListener)
+        refreshFullscreenState()
+        onDispose {
+            composeWindow.removeComponentListener(componentListener)
+            composeWindow.removeWindowStateListener(windowStateListener)
+            composeWindow.removePropertyChangeListener("graphicsConfiguration", propertyListener)
         }
     }
 

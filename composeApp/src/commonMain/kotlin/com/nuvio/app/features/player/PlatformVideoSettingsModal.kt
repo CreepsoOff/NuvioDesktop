@@ -65,7 +65,7 @@ import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
 
 @Composable
-internal fun IosVideoSettingsModal(
+internal fun PlatformVideoSettingsModal(
     visible: Boolean,
     settings: PlayerSettingsUiState,
     onSettingsChanged: () -> Unit,
