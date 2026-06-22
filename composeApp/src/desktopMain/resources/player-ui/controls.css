@@ -765,7 +765,8 @@ button:disabled {
 .swatch,
 .sync-cue,
 .track-row,
-.segment-button {
+.segment-button,
+.video-toggle-row {
   transform: translateZ(0);
   transition:
     transform var(--motion-fast) var(--ease-out),
@@ -1713,6 +1714,10 @@ button:disabled {
   width: min(92vw, 520px);
 }
 
+.track-panel.video-settings {
+  width: min(92vw, 560px);
+}
+
 .track-header {
   padding: 20px;
   font-size: 18px;
@@ -1872,6 +1877,107 @@ button:disabled {
   font-size: 13px;
   line-height: 1.25;
   font-weight: 700;
+}
+
+.video-settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: auto;
+  padding: 0 20px 20px;
+}
+
+.video-toggle-row,
+.video-slider-row {
+  display: flex;
+  min-width: 0;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  background: rgba(255, 255, 255, .07);
+}
+
+.video-toggle-row {
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  padding: 14px;
+  color: #fff;
+  text-align: left;
+}
+
+.video-toggle-row:hover {
+  background: rgba(255, 255, 255, .11);
+}
+
+.video-toggle-row:active,
+.video-toggle-row.is-pressed {
+  transform: scale(.985);
+}
+
+.video-slider-row {
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+}
+
+.video-setting-label,
+.video-setting-description {
+  display: block;
+  min-width: 0;
+}
+
+.video-setting-label {
+  color: rgba(255, 255, 255, .92);
+  font-size: 13px;
+  line-height: 1.25;
+  font-weight: 800;
+}
+
+.video-setting-description {
+  margin-top: 4px;
+  color: rgba(255, 255, 255, .62);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.toggle-pill {
+  min-width: 46px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .1);
+  color: rgba(255, 255, 255, .72);
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 800;
+  text-align: center;
+}
+
+.toggle-pill.enabled {
+  background: var(--theme-accent);
+  color: var(--theme-on-accent);
+}
+
+.video-slider-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.video-slider-value {
+  min-width: 44px;
+  color: rgba(255, 255, 255, .88);
+  font-size: 13px;
+  line-height: 1.2;
+  font-weight: 800;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.video-slider {
+  width: 100%;
+  accent-color: var(--theme-accent);
 }
 
 .stepper {

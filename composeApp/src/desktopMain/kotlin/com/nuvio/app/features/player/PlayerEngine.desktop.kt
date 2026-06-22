@@ -108,6 +108,12 @@ private fun NativePlayerSurface(
     val playerSettings by PlayerSettingsRepository.uiState.collectAsState()
     val decoderPriority = playerSettings.decoderPriority
     val nvidiaRtxSuperResolutionEnabled = playerSettings.nvidiaRtxSuperResolutionEnabled
+    val desktopVideoDebandEnabled = playerSettings.desktopVideoDebandEnabled
+    val desktopVideoInterpolationEnabled = playerSettings.desktopVideoInterpolationEnabled
+    val desktopVideoBrightness = playerSettings.desktopVideoBrightness
+    val desktopVideoContrast = playerSettings.desktopVideoContrast
+    val desktopVideoSaturation = playerSettings.desktopVideoSaturation
+    val desktopVideoGamma = playerSettings.desktopVideoGamma
 
     LaunchedEffect(controller) {
         onControllerReady(controller)
@@ -174,6 +180,18 @@ private fun NativePlayerSurface(
 
     LaunchedEffect(controller, resizeMode) {
         controller.setResizeMode(resizeMode)
+    }
+
+    LaunchedEffect(
+        controller,
+        desktopVideoDebandEnabled,
+        desktopVideoInterpolationEnabled,
+        desktopVideoBrightness,
+        desktopVideoContrast,
+        desktopVideoSaturation,
+        desktopVideoGamma,
+    ) {
+        controller.configureDesktopVideoTuning(PlayerSettingsRepository.uiState.value)
     }
 
     LaunchedEffect(controller, playerControlsState) {

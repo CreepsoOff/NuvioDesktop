@@ -116,6 +116,30 @@ const sourceReloadButton = document.getElementById("sourceReloadButton");
 const sourceCloseButton = document.getElementById("sourceCloseButton");
 const sourceFilterList = document.getElementById("sourceFilterList");
 const sourceList = document.getElementById("sourceList");
+const videoSettingsModal = document.getElementById("videoSettingsModal");
+const videoSettingsPanelTitle = document.getElementById("videoSettingsPanelTitle");
+const videoSettingsResetButton = document.getElementById("videoSettingsResetButton");
+const videoSettingsCloseButton = document.getElementById("videoSettingsCloseButton");
+const videoDebandToggle = document.getElementById("videoDebandToggle");
+const videoDebandLabel = document.getElementById("videoDebandLabel");
+const videoDebandDescription = document.getElementById("videoDebandDescription");
+const videoDebandValue = document.getElementById("videoDebandValue");
+const videoInterpolationToggle = document.getElementById("videoInterpolationToggle");
+const videoInterpolationLabel = document.getElementById("videoInterpolationLabel");
+const videoInterpolationDescription = document.getElementById("videoInterpolationDescription");
+const videoInterpolationValue = document.getElementById("videoInterpolationValue");
+const videoBrightnessLabel = document.getElementById("videoBrightnessLabel");
+const videoBrightnessValue = document.getElementById("videoBrightnessValue");
+const videoBrightnessSlider = document.getElementById("videoBrightnessSlider");
+const videoContrastLabel = document.getElementById("videoContrastLabel");
+const videoContrastValue = document.getElementById("videoContrastValue");
+const videoContrastSlider = document.getElementById("videoContrastSlider");
+const videoSaturationLabel = document.getElementById("videoSaturationLabel");
+const videoSaturationValue = document.getElementById("videoSaturationValue");
+const videoSaturationSlider = document.getElementById("videoSaturationSlider");
+const videoGammaLabel = document.getElementById("videoGammaLabel");
+const videoGammaValue = document.getElementById("videoGammaValue");
+const videoGammaSlider = document.getElementById("videoGammaSlider");
 const episodesModal = document.getElementById("episodesModal");
 const episodeListView = document.getElementById("episodeListView");
 const episodeStreamsView = document.getElementById("episodeStreamsView");
@@ -180,6 +204,16 @@ let state = {
   unlockLabel: "Unlock player controls",
   submitIntroLabel: "Submit Intro",
   videoSettingsLabel: "Video settings",
+  videoSettingsPanelTitle: "Video",
+  videoSettingsResetTuningLabel: "Reset tuning",
+  videoSettingsDebandLabel: "Deband",
+  videoSettingsDebandDescription: "Reduce color banding at a small performance cost.",
+  videoSettingsInterpolationLabel: "Frame interpolation",
+  videoSettingsInterpolationDescription: "Smooth motion when mpv can use display sync cleanly.",
+  videoSettingsBrightnessLabel: "Brightness",
+  videoSettingsContrastLabel: "Contrast",
+  videoSettingsSaturationLabel: "Saturation",
+  videoSettingsGammaLabel: "Gamma",
   tapToUnlockLabel: "Tap to unlock",
   playbackErrorTitle: "Playback error",
   playbackErrorMessage: "",
@@ -270,6 +304,12 @@ let state = {
   nextEpisodePlayable: false,
   showSubmitIntro: false,
   showVideoSettings: false,
+  desktopVideoDebandEnabled: true,
+  desktopVideoInterpolationEnabled: false,
+  desktopVideoBrightness: 0,
+  desktopVideoContrast: 0,
+  desktopVideoSaturation: 0,
+  desktopVideoGamma: 0,
   showSources: false,
   showEpisodes: false,
   showExternalPlayer: false,
@@ -800,6 +840,7 @@ const modalByName = {
   audio: audioModal,
   subtitles: subtitleModal,
   sources: sourceModal,
+  videoSettings: videoSettingsModal,
   episodes: episodesModal,
   submitIntro: submitIntroModal,
   p2pConsent: p2pConsentModal,
@@ -1530,6 +1571,45 @@ const renderSubmitIntroModal = () => {
   submitIntroStatus.textContent = submitIntroDraft.status || state.submitIntroStatusMessage || "";
 };
 
+const clampedVideoSetting = value => {
+  const number = Math.round(Number(value) || 0);
+  return Math.max(-50, Math.min(50, number));
+};
+
+const syncVideoToggle = (valueElement, enabled) => {
+  valueElement.textContent = enabled ? (state.onLabel || "On") : (state.offLabel || "Off");
+  valueElement.classList.toggle("enabled", Boolean(enabled));
+};
+
+const syncVideoSlider = (slider, valueElement, value) => {
+  const next = clampedVideoSetting(value);
+  if (document.activeElement !== slider) {
+    slider.value = String(next);
+  }
+  valueElement.textContent = String(next);
+};
+
+const renderVideoSettingsModal = () => {
+  videoSettingsPanelTitle.textContent = state.videoSettingsPanelTitle || state.videoSettingsLabel || "Video";
+  videoSettingsResetButton.textContent = state.videoSettingsResetTuningLabel || "Reset tuning";
+  videoSettingsCloseButton.textContent = state.panelCloseLabel || "Close";
+  videoDebandLabel.textContent = state.videoSettingsDebandLabel || "Deband";
+  videoDebandDescription.textContent = state.videoSettingsDebandDescription || "";
+  videoInterpolationLabel.textContent = state.videoSettingsInterpolationLabel || "Frame interpolation";
+  videoInterpolationDescription.textContent = state.videoSettingsInterpolationDescription || "";
+  videoBrightnessLabel.textContent = state.videoSettingsBrightnessLabel || "Brightness";
+  videoContrastLabel.textContent = state.videoSettingsContrastLabel || "Contrast";
+  videoSaturationLabel.textContent = state.videoSettingsSaturationLabel || "Saturation";
+  videoGammaLabel.textContent = state.videoSettingsGammaLabel || "Gamma";
+
+  syncVideoToggle(videoDebandValue, Boolean(state.desktopVideoDebandEnabled));
+  syncVideoToggle(videoInterpolationValue, Boolean(state.desktopVideoInterpolationEnabled));
+  syncVideoSlider(videoBrightnessSlider, videoBrightnessValue, state.desktopVideoBrightness);
+  syncVideoSlider(videoContrastSlider, videoContrastValue, state.desktopVideoContrast);
+  syncVideoSlider(videoSaturationSlider, videoSaturationValue, state.desktopVideoSaturation);
+  syncVideoSlider(videoGammaSlider, videoGammaValue, state.desktopVideoGamma);
+};
+
 const renderP2pConsentModal = () => {
   p2pConsentTitle.textContent = state.p2pConsentTitle || "P2P Streaming";
   p2pConsentBody.textContent = state.p2pConsentBody || "";
@@ -1542,6 +1622,7 @@ const renderActiveModal = () => {
   if (activeModal === "audio") renderAudioTrackList();
   if (activeModal === "subtitles") renderSubtitleModal();
   if (activeModal === "sources") renderSourceModal();
+  if (activeModal === "videoSettings") renderVideoSettingsModal();
   if (activeModal === "episodes") renderEpisodesModal();
   if (activeModal === "submitIntro") renderSubmitIntroModal();
   if (activeModal === "p2pConsent") renderP2pConsentModal();
@@ -2182,6 +2263,10 @@ document.querySelectorAll("[data-command]").forEach(button => {
       openPlayerModal("submitIntro");
       return;
     }
+    if (command === "videoSettings") {
+      openPlayerModal("videoSettings");
+      return;
+    }
     if (command === "toggleFullscreen") {
       togglePlayerFullscreen();
       return;
@@ -2291,6 +2376,35 @@ sourceReloadButton.addEventListener("click", event => {
 sourceCloseButton.addEventListener("click", event => {
   event.stopPropagation();
   closePlayerModal();
+});
+videoSettingsCloseButton.addEventListener("click", event => {
+  event.stopPropagation();
+  closePlayerModal();
+});
+videoSettingsResetButton.addEventListener("click", event => {
+  event.stopPropagation();
+  send("desktopVideoReset", 0);
+});
+videoDebandToggle.addEventListener("click", event => {
+  event.stopPropagation();
+  send("desktopVideoDeband", state.desktopVideoDebandEnabled ? 0 : 1);
+});
+videoInterpolationToggle.addEventListener("click", event => {
+  event.stopPropagation();
+  send("desktopVideoInterpolation", state.desktopVideoInterpolationEnabled ? 0 : 1);
+});
+[
+  [videoBrightnessSlider, "desktopVideoBrightness", videoBrightnessValue],
+  [videoContrastSlider, "desktopVideoContrast", videoContrastValue],
+  [videoSaturationSlider, "desktopVideoSaturation", videoSaturationValue],
+  [videoGammaSlider, "desktopVideoGamma", videoGammaValue],
+].forEach(([slider, command, valueElement]) => {
+  slider.addEventListener("input", event => {
+    event.stopPropagation();
+    const value = clampedVideoSetting(slider.value);
+    valueElement.textContent = String(value);
+    send(command, value);
+  });
 });
 sourceList.addEventListener("scroll", () => {
   if (activeModal === "sources") {

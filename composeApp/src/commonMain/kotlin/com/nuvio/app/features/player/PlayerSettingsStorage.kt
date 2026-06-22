@@ -138,6 +138,18 @@ internal expect object PlayerSettingsStorage {
     fun saveIosGamma(value: Int)
     fun loadNvidiaRtxSuperResolutionEnabled(): Boolean?
     fun saveNvidiaRtxSuperResolutionEnabled(enabled: Boolean)
+    fun loadDesktopVideoDebandEnabled(): Boolean?
+    fun saveDesktopVideoDebandEnabled(enabled: Boolean)
+    fun loadDesktopVideoInterpolationEnabled(): Boolean?
+    fun saveDesktopVideoInterpolationEnabled(enabled: Boolean)
+    fun loadDesktopVideoBrightness(): Int?
+    fun saveDesktopVideoBrightness(value: Int)
+    fun loadDesktopVideoContrast(): Int?
+    fun saveDesktopVideoContrast(value: Int)
+    fun loadDesktopVideoSaturation(): Int?
+    fun saveDesktopVideoSaturation(value: Int)
+    fun loadDesktopVideoGamma(): Int?
+    fun saveDesktopVideoGamma(value: Int)
     fun exportToSyncPayload(): JsonObject
     fun replaceFromSyncPayload(payload: JsonObject)
 }

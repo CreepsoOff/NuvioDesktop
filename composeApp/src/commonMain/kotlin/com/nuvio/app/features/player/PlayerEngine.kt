@@ -21,6 +21,7 @@ interface PlayerEngineController {
     fun applySubtitleStyle(style: SubtitleStyleState) {}
     fun setSubtitleDelayMs(delayMs: Int) {}
     fun configureIosVideoOutput(settings: PlayerSettingsUiState) {}
+    fun configureDesktopVideoTuning(settings: PlayerSettingsUiState) {}
 }
 
 enum class PlayerControlsAction {
@@ -74,6 +75,16 @@ data class PlayerControlsState(
     val unlockLabel: String = "Unlock player controls",
     val submitIntroLabel: String = "Submit Intro",
     val videoSettingsLabel: String = "Video settings",
+    val videoSettingsPanelTitle: String = "Video",
+    val videoSettingsResetTuningLabel: String = "Reset tuning",
+    val videoSettingsDebandLabel: String = "Deband",
+    val videoSettingsDebandDescription: String = "Reduce color banding at a small performance cost.",
+    val videoSettingsInterpolationLabel: String = "Frame interpolation",
+    val videoSettingsInterpolationDescription: String = "Smooth motion when mpv can use display sync cleanly.",
+    val videoSettingsBrightnessLabel: String = "Brightness",
+    val videoSettingsContrastLabel: String = "Contrast",
+    val videoSettingsSaturationLabel: String = "Saturation",
+    val videoSettingsGammaLabel: String = "Gamma",
     val tapToUnlockLabel: String = "Tap to unlock",
     val playbackErrorTitle: String = "Playback error",
     val playbackErrorMessage: String = "",
@@ -164,6 +175,12 @@ data class PlayerControlsState(
     val nextEpisodePlayable: Boolean = false,
     val showSubmitIntro: Boolean = false,
     val showVideoSettings: Boolean = false,
+    val desktopVideoDebandEnabled: Boolean = true,
+    val desktopVideoInterpolationEnabled: Boolean = false,
+    val desktopVideoBrightness: Int = 0,
+    val desktopVideoContrast: Int = 0,
+    val desktopVideoSaturation: Int = 0,
+    val desktopVideoGamma: Int = 0,
     val showSources: Boolean = false,
     val showEpisodes: Boolean = false,
     val showExternalPlayer: Boolean = false,

@@ -14,6 +14,7 @@ import com.nuvio.app.features.player.PlayerControlsState
 import com.nuvio.app.features.player.PlayerEngineController
 import com.nuvio.app.features.player.PlayerPlaybackSnapshot
 import com.nuvio.app.features.player.PlayerResizeMode
+import com.nuvio.app.features.player.PlayerSettingsUiState
 import com.nuvio.app.features.player.SUBTITLE_DELAY_MAX_MS
 import com.nuvio.app.features.player.SUBTITLE_DELAY_MIN_MS
 import com.nuvio.app.features.player.SubtitleColorSwatches
@@ -38,6 +39,7 @@ internal class NativePlayerController(
     private var handle: Long = 0L
     private var pendingSource: PendingSource? = null
     private var controlsState = PlayerControlsState()
+    private var videoTuning = DesktopVideoTuning()
     private var lastSentControlsStructureKey: NativeControlsStructureKey? = null
     private var onAction: (PlayerControlsAction) -> Boolean = { false }
     private var onEvent: (String, Double) -> Boolean = { _, _ -> false }
@@ -103,6 +105,7 @@ internal class NativePlayerController(
                     eventSink = eventSink,
                 )
                 if (handle == 0L) error("Native player did not return a handle.")
+                applyVideoTuning(handle, videoTuning)
                 updateControls(controlsState)
             }.onFailure { error ->
                 pending.onError(error.message)
@@ -160,6 +163,33 @@ internal class NativePlayerController(
                 },
             )
         }
+    }
+
+    override fun configureDesktopVideoTuning(settings: PlayerSettingsUiState) {
+        val tuning = DesktopVideoTuning(
+            brightness = settings.desktopVideoBrightness,
+            contrast = settings.desktopVideoContrast,
+            saturation = settings.desktopVideoSaturation,
+            gamma = settings.desktopVideoGamma,
+            deband = settings.desktopVideoDebandEnabled,
+            interpolation = settings.desktopVideoInterpolationEnabled,
+        )
+        videoTuning = tuning
+        handle.takeIf { it != 0L }?.let { current ->
+            applyVideoTuning(current, tuning)
+        }
+    }
+
+    private fun applyVideoTuning(currentHandle: Long, tuning: DesktopVideoTuning) {
+        NativePlayerBridge.applyVideoTuning(
+            handle = currentHandle,
+            brightness = tuning.brightness.coerceIn(-50, 50),
+            contrast = tuning.contrast.coerceIn(-50, 50),
+            saturation = tuning.saturation.coerceIn(-50, 50),
+            gamma = tuning.gamma.coerceIn(-50, 50),
+            deband = tuning.deband,
+            interpolation = tuning.interpolation,
+        )
     }
 
     private fun handlePlayerEvent(type: String, value: Double) {
@@ -477,6 +507,15 @@ private data class PendingSource(
     val onError: (String?) -> Unit,
 )
 
+private data class DesktopVideoTuning(
+    val brightness: Int = 0,
+    val contrast: Int = 0,
+    val saturation: Int = 0,
+    val gamma: Int = 0,
+    val deband: Boolean = true,
+    val interpolation: Boolean = false,
+)
+
 private fun Map<String, String>.toHeaderLines(): List<String> =
     entries.mapNotNull { (key, value) ->
         val cleanKey = key.trim()
@@ -578,6 +617,26 @@ private fun PlayerControlsState.toControlsJson(isFullscreen: Boolean): String =
         appendJsonField("submitIntroLabel", submitIntroLabel)
         append(',')
         appendJsonField("videoSettingsLabel", videoSettingsLabel)
+        append(',')
+        appendJsonField("videoSettingsPanelTitle", videoSettingsPanelTitle)
+        append(',')
+        appendJsonField("videoSettingsResetTuningLabel", videoSettingsResetTuningLabel)
+        append(',')
+        appendJsonField("videoSettingsDebandLabel", videoSettingsDebandLabel)
+        append(',')
+        appendJsonField("videoSettingsDebandDescription", videoSettingsDebandDescription)
+        append(',')
+        appendJsonField("videoSettingsInterpolationLabel", videoSettingsInterpolationLabel)
+        append(',')
+        appendJsonField("videoSettingsInterpolationDescription", videoSettingsInterpolationDescription)
+        append(',')
+        appendJsonField("videoSettingsBrightnessLabel", videoSettingsBrightnessLabel)
+        append(',')
+        appendJsonField("videoSettingsContrastLabel", videoSettingsContrastLabel)
+        append(',')
+        appendJsonField("videoSettingsSaturationLabel", videoSettingsSaturationLabel)
+        append(',')
+        appendJsonField("videoSettingsGammaLabel", videoSettingsGammaLabel)
         append(',')
         appendJsonField("tapToUnlockLabel", tapToUnlockLabel)
         append(',')
@@ -758,6 +817,18 @@ private fun PlayerControlsState.toControlsJson(isFullscreen: Boolean): String =
         appendJsonField("showSubmitIntro", showSubmitIntro)
         append(',')
         appendJsonField("showVideoSettings", showVideoSettings)
+        append(',')
+        appendJsonField("desktopVideoDebandEnabled", desktopVideoDebandEnabled)
+        append(',')
+        appendJsonField("desktopVideoInterpolationEnabled", desktopVideoInterpolationEnabled)
+        append(',')
+        appendJsonField("desktopVideoBrightness", desktopVideoBrightness)
+        append(',')
+        appendJsonField("desktopVideoContrast", desktopVideoContrast)
+        append(',')
+        appendJsonField("desktopVideoSaturation", desktopVideoSaturation)
+        append(',')
+        appendJsonField("desktopVideoGamma", desktopVideoGamma)
         append(',')
         appendJsonField("showSources", showSources)
         append(',')

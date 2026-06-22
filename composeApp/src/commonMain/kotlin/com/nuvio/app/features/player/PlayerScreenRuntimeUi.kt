@@ -186,6 +186,16 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
         unlockLabel = stringResource(Res.string.compose_player_unlock_controls),
         submitIntroLabel = stringResource(Res.string.submit_intro_action),
         videoSettingsLabel = stringResource(Res.string.player_action_video_settings),
+        videoSettingsPanelTitle = stringResource(Res.string.player_video_settings_title),
+        videoSettingsResetTuningLabel = stringResource(Res.string.player_video_settings_reset_tuning),
+        videoSettingsDebandLabel = stringResource(Res.string.player_video_settings_deband),
+        videoSettingsDebandDescription = stringResource(Res.string.player_video_settings_deband_desc),
+        videoSettingsInterpolationLabel = stringResource(Res.string.player_video_settings_interpolation),
+        videoSettingsInterpolationDescription = stringResource(Res.string.player_video_settings_interpolation_desc),
+        videoSettingsBrightnessLabel = stringResource(Res.string.player_video_settings_brightness),
+        videoSettingsContrastLabel = stringResource(Res.string.player_video_settings_contrast),
+        videoSettingsSaturationLabel = stringResource(Res.string.player_video_settings_saturation),
+        videoSettingsGammaLabel = stringResource(Res.string.player_video_settings_gamma),
         tapToUnlockLabel = stringResource(Res.string.compose_player_tap_to_unlock),
         playbackErrorTitle = stringResource(Res.string.compose_player_playback_error),
         playbackErrorMessage = errorMessage.orEmpty(),
@@ -260,7 +270,13 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
             playerSettingsUiState.introSubmitEnabled &&
             playerSettingsUiState.introDbApiKey.isNotBlank() &&
             !activeSubmitIntroImdbId().isNullOrBlank(),
-        showVideoSettings = isIos,
+        showVideoSettings = isIos || isDesktop,
+        desktopVideoDebandEnabled = playerSettingsUiState.desktopVideoDebandEnabled,
+        desktopVideoInterpolationEnabled = playerSettingsUiState.desktopVideoInterpolationEnabled,
+        desktopVideoBrightness = playerSettingsUiState.desktopVideoBrightness,
+        desktopVideoContrast = playerSettingsUiState.desktopVideoContrast,
+        desktopVideoSaturation = playerSettingsUiState.desktopVideoSaturation,
+        desktopVideoGamma = playerSettingsUiState.desktopVideoGamma,
         showSources = activeVideoId != null,
         showEpisodes = isSeries,
         showExternalPlayer = args.onOpenInExternalPlayer != null,
@@ -482,7 +498,7 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
                 refreshTracks()
                 showAudioModal = true
             },
-            onVideoSettingsClick = if (isIos) {
+            onVideoSettingsClick = if (isIos || isDesktop) {
                 {
                     showVideoSettingsModal = true
                     controlsVisible = true
@@ -615,7 +631,7 @@ private fun PlayerScreenRuntime.handlePlayerControlsAction(action: PlayerControl
             if (playerControlsLocked) unlockPlayerControls() else lockPlayerControls()
         }
         PlayerControlsAction.VideoSettings -> {
-            if (isIos) {
+            if (isIos || isDesktop) {
                 showVideoSettingsModal = true
                 controlsVisible = true
             }
@@ -705,6 +721,13 @@ private fun PlayerScreenRuntime.handlePlayerControlsEvent(type: String, value: D
             submitIntroStatusMessage = null
         }
         "submitIntroCommit" -> submitIntroFromPlayerControls()
+        "desktopVideoDeband" -> PlayerSettingsRepository.setDesktopVideoDebandEnabled(value >= 0.5)
+        "desktopVideoInterpolation" -> PlayerSettingsRepository.setDesktopVideoInterpolationEnabled(value >= 0.5)
+        "desktopVideoBrightness" -> PlayerSettingsRepository.setDesktopVideoBrightness(value.toInt())
+        "desktopVideoContrast" -> PlayerSettingsRepository.setDesktopVideoContrast(value.toInt())
+        "desktopVideoSaturation" -> PlayerSettingsRepository.setDesktopVideoSaturation(value.toInt())
+        "desktopVideoGamma" -> PlayerSettingsRepository.setDesktopVideoGamma(value.toInt())
+        "desktopVideoReset" -> PlayerSettingsRepository.resetDesktopVideoTuning()
         "skipInterval" -> {
             val interval = activeSkipInterval ?: return true
             playerController?.seekTo((interval.endTime * 1000).toLong())

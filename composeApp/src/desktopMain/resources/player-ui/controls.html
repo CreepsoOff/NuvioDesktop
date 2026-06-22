@@ -333,6 +333,61 @@
           <div class="track-list" id="sourceList"></div>
         </div>
       </section>
+      <section class="modal-layer" id="videoSettingsModal" aria-label="Video settings" hidden>
+        <div class="track-panel video-settings">
+          <div class="track-header-row">
+            <div class="track-title" id="videoSettingsPanelTitle">Video</div>
+            <div class="panel-actions">
+              <button class="panel-button" id="videoSettingsResetButton" type="button">Reset tuning</button>
+              <button class="panel-button" id="videoSettingsCloseButton" type="button">Close</button>
+            </div>
+          </div>
+          <div class="video-settings-list">
+            <button class="video-toggle-row" id="videoDebandToggle" type="button">
+              <span>
+                <span class="video-setting-label" id="videoDebandLabel">Deband</span>
+                <span class="video-setting-description" id="videoDebandDescription">Reduce color banding at a small performance cost.</span>
+              </span>
+              <span class="toggle-pill" id="videoDebandValue">On</span>
+            </button>
+            <button class="video-toggle-row" id="videoInterpolationToggle" type="button">
+              <span>
+                <span class="video-setting-label" id="videoInterpolationLabel">Frame interpolation</span>
+                <span class="video-setting-description" id="videoInterpolationDescription">Smooth motion when mpv can use display sync cleanly.</span>
+              </span>
+              <span class="toggle-pill" id="videoInterpolationValue">Off</span>
+            </button>
+            <label class="video-slider-row">
+              <span class="video-slider-meta">
+                <span class="video-setting-label" id="videoBrightnessLabel">Brightness</span>
+                <span class="video-slider-value" id="videoBrightnessValue">0</span>
+              </span>
+              <input class="video-slider" id="videoBrightnessSlider" type="range" min="-50" max="50" step="1" value="0">
+            </label>
+            <label class="video-slider-row">
+              <span class="video-slider-meta">
+                <span class="video-setting-label" id="videoContrastLabel">Contrast</span>
+                <span class="video-slider-value" id="videoContrastValue">0</span>
+              </span>
+              <input class="video-slider" id="videoContrastSlider" type="range" min="-50" max="50" step="1" value="0">
+            </label>
+            <label class="video-slider-row">
+              <span class="video-slider-meta">
+                <span class="video-setting-label" id="videoSaturationLabel">Saturation</span>
+                <span class="video-slider-value" id="videoSaturationValue">0</span>
+              </span>
+              <input class="video-slider" id="videoSaturationSlider" type="range" min="-50" max="50" step="1" value="0">
+            </label>
+            <label class="video-slider-row">
+              <span class="video-slider-meta">
+                <span class="video-setting-label" id="videoGammaLabel">Gamma</span>
+                <span class="video-slider-value" id="videoGammaValue">0</span>
+              </span>
+              <input class="video-slider" id="videoGammaSlider" type="range" min="-50" max="50" step="1" value="0">
+            </label>
+          </div>
+        </div>
+      </section>
       <section class="modal-layer" id="episodesModal" aria-label="Episodes" hidden>
         <div class="track-panel wide">
           <div id="episodeListView">

@@ -48,6 +48,15 @@ internal object NativePlayerBridge {
     external fun setVolume(handle: Long, level: Float)
     external fun volume(handle: Long): Float
     external fun setResizeMode(handle: Long, mode: Int)
+    external fun applyVideoTuning(
+        handle: Long,
+        brightness: Int,
+        contrast: Int,
+        saturation: Int,
+        gamma: Int,
+        deband: Boolean,
+        interpolation: Boolean,
+    )
     external fun durationMs(handle: Long): Long
     external fun positionMs(handle: Long): Long
     external fun bufferedPositionMs(handle: Long): Long
