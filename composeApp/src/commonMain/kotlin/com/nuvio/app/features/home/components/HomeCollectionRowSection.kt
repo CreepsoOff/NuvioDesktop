@@ -136,6 +136,7 @@ private fun CollectionFolderCard(
     ) {
         val shapeCorner = RoundedCornerShape(posterCardStyle.cornerRadiusDp.dp)
         val imageUrl = collectionFolderCardImageUrl(folder)
+        val animatedImageUrl = collectionFolderCardAnimatedImageUrl(folder)
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -156,10 +157,11 @@ private fun CollectionFolderCard(
                     !imageUrl.isNullOrBlank() -> {
                         CollectionCardRemoteImage(
                             imageUrl = imageUrl,
+                            animatedImageUrl = animatedImageUrl,
                             contentDescription = folder.title,
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop,
-                            animateIfPossible = animateGifs && isAnimatedCollectionFolderImage(folder, imageUrl),
+                            animateIfPossible = animateGifs && animatedImageUrl != null,
                         )
                     }
                     !folder.coverEmoji.isNullOrBlank() -> {
@@ -194,21 +196,13 @@ private fun CollectionFolderCard(
 }
 
 private fun collectionFolderCardImageUrl(folder: CollectionFolder): String? {
-    return if (folder.mobileFocusGifEnabled) {
-        firstNonBlank(folder.focusGifUrl, folder.coverImageUrl)
-    } else {
-        firstNonBlank(folder.coverImageUrl)
-    }
+    return firstNonBlank(folder.coverImageUrl, folder.focusGifUrl)
+}
+
+private fun collectionFolderCardAnimatedImageUrl(folder: CollectionFolder): String? {
+    return firstNonBlank(folder.focusGifUrl).takeIf { folder.mobileFocusGifEnabled }
 }
 
 private fun firstNonBlank(vararg candidates: String?): String? {
     return candidates.firstOrNull { !it.isNullOrBlank() }?.trim()
-}
-
-private fun isAnimatedCollectionFolderImage(
-    folder: CollectionFolder,
-    imageUrl: String,
-): Boolean {
-    val gifUrl = firstNonBlank(folder.focusGifUrl) ?: return false
-    return folder.mobileFocusGifEnabled && imageUrl == gifUrl
 }

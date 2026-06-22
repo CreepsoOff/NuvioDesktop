@@ -66,12 +66,14 @@ private class GifImageViewHolder {
 @Composable
 internal actual fun CollectionCardRemoteImage(
     imageUrl: String,
+    animatedImageUrl: String?,
     contentDescription: String,
     modifier: Modifier,
     contentScale: ContentScale,
     animateIfPossible: Boolean,
 ) {
-    if (!animateIfPossible) {
+    val gifUrl = animatedImageUrl?.takeIf { it.isNotBlank() }
+    if (!animateIfPossible || gifUrl == null) {
         AsyncImage(
             model = imageUrl,
             contentDescription = contentDescription,
@@ -81,14 +83,14 @@ internal actual fun CollectionCardRemoteImage(
         return
     }
 
-    var gifImage by remember(imageUrl) { mutableStateOf(cachedGifImage(imageUrl)) }
+    var gifImage by remember(gifUrl) { mutableStateOf(cachedGifImage(gifUrl)) }
 
-    LaunchedEffect(imageUrl) {
-        gifImage = loadGifImage(imageUrl)
+    LaunchedEffect(gifUrl) {
+        gifImage = loadGifImage(gifUrl)
     }
 
-    val imageViewHolder = remember(imageUrl) { GifImageViewHolder() }
-    DisposableEffect(imageUrl) {
+    val imageViewHolder = remember(gifUrl) { GifImageViewHolder() }
+    DisposableEffect(gifUrl) {
         onDispose {
             imageViewHolder.clear()
         }
@@ -101,15 +103,15 @@ internal actual fun CollectionCardRemoteImage(
                 contentMode = UIViewContentMode.UIViewContentModeScaleAspectFill
                 clipsToBounds = true
                 userInteractionEnabled = false
-                tag = imageUrl.hashCode().toLong()
+                tag = gifUrl.hashCode().toLong()
                 imageViewHolder.imageView = this
                 updateGifImage(gifImage)
             }
         },
         update = { imageView ->
             imageViewHolder.imageView = imageView
-            if (imageView.tag != imageUrl.hashCode().toLong()) {
-                imageView.tag = imageUrl.hashCode().toLong()
+            if (imageView.tag != gifUrl.hashCode().toLong()) {
+                imageView.tag = gifUrl.hashCode().toLong()
             }
             imageView.updateGifImage(gifImage)
         },
