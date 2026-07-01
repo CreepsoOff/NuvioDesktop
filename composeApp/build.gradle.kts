@@ -257,7 +257,8 @@ abstract class PackageWindowsNativeRuntimeTask : DefaultTask() {
 }
 
 abstract class GenerateRuntimeConfigsTask : DefaultTask() {
-    private val defaultSupabaseUrl = "https://dpyhjjcoabcglfmgecug.supabase.co"
+    private val defaultNuvioSupabaseUrl = "https://api.nuvio.tv"
+    private val defaultNuvioPublishableKey = "sb_publishable_1Clq8rlTVACkdcZuqr6_AD__xUUC_EN"
 
     @get:OutputDirectory
     abstract val outputDir: DirectoryProperty
@@ -323,8 +324,25 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
     fun generate() {
         val releaseProperties = loadProperties(releasePropertiesFile.asFile.orNull)
         val localProperties = loadProperties(localPropertiesFile.asFile.orNull)
-        val supabaseUrl = resolveRuntimeValue("SUPABASE_URL", releaseProperties, localProperties, defaultSupabaseUrl)
+        val supabaseUrl = resolveRuntimeValue("SUPABASE_URL", releaseProperties, localProperties)
         val supabaseAnonKey = resolveRuntimeValue("SUPABASE_ANON_KEY", releaseProperties, localProperties)
+        val nuvioSupabaseUrl = resolveRuntimeValue(
+            "NUVIO_SUPABASE_URL",
+            releaseProperties,
+            localProperties,
+            supabaseUrl.ifBlank { defaultNuvioSupabaseUrl },
+        )
+        val nuvioSupabaseAnonKey = resolveRuntimeValue(
+            "NUVIO_SUPABASE_ANON_KEY",
+            releaseProperties,
+            localProperties,
+            supabaseAnonKey.ifBlank { defaultNuvioPublishableKey },
+        )
+        val syncBackendManifestUrl = resolveRuntimeValue(
+            "SYNC_BACKEND_MANIFEST_URL",
+            releaseProperties,
+            localProperties,
+        )
         val traktClientId = resolveRuntimeValue("TRAKT_CLIENT_ID", releaseProperties, localProperties)
         val traktClientSecret = resolveRuntimeValue("TRAKT_CLIENT_SECRET", releaseProperties, localProperties)
         val traktRedirectUri = resolveRuntimeValue(
@@ -354,6 +372,17 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
                 |object SupabaseConfig {
                 |    const val URL = "${kotlinStringLiteral(supabaseUrl)}"
                 |    const val ANON_KEY = "${kotlinStringLiteral(supabaseAnonKey)}"
+                |    const val NUVIO_URL = "${kotlinStringLiteral(nuvioSupabaseUrl)}"
+                |    const val NUVIO_ANON_KEY = "${kotlinStringLiteral(nuvioSupabaseAnonKey)}"
+                |}
+                """.trimMargin()
+            )
+            resolve("SyncBackendBootstrapConfig.kt").writeText(
+                """
+                |package com.nuvio.app.core.network
+                |
+                |object SyncBackendBootstrapConfig {
+                |    const val SWITCH_MANIFEST_URL = "${kotlinStringLiteral(syncBackendManifestUrl)}"
                 |}
                 """.trimMargin()
             )

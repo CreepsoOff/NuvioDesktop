@@ -22,7 +22,7 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.nuvio.app.core.deeplink.handleAppUrl
 import com.nuvio.app.core.build.AppVersionConfig
-import com.nuvio.app.core.network.SupabaseConfig
+import com.nuvio.app.core.network.SupabaseProvider
 import com.nuvio.app.desktop.DesktopBorderlessFullscreenController
 import com.nuvio.app.desktop.DesktopDevStreamMode
 import com.nuvio.app.desktop.DesktopExternalPlaybackWindowController
@@ -124,8 +124,10 @@ fun main(args: Array<String>) {
         "compose.resources.dir=${DesktopRuntimeLog.safePath(System.getProperty("compose.application.resources.dir"))}",
     )
     DesktopRuntimeLog.info("java.library.path=${DesktopRuntimeLog.safePathList(System.getProperty("java.library.path"))}")
-    DesktopRuntimeLog.info("supabase.url.present=${SupabaseConfig.URL.isNotBlank()}")
-    DesktopRuntimeLog.info("supabase.anon.present=${SupabaseConfig.ANON_KEY.isNotBlank()}")
+    val syncBackend = SupabaseProvider.selectedBackend
+    DesktopRuntimeLog.info("supabase.backend=${syncBackend.id}")
+    DesktopRuntimeLog.info("supabase.url.present=${syncBackend.normalizedSupabaseUrl.isNotBlank()}")
+    DesktopRuntimeLog.info("supabase.anon.present=${syncBackend.anonKey.isNotBlank()}")
     ensureWindowsUrlProtocolRegistration()
     val rawStartupUrls = extractStartupDeepLinks(args)
     val devStreamMode = DesktopDevStreamMode.from(args, rawStartupUrls)

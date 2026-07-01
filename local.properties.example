@@ -1,0 +1,12 @@
+# Android SDK local path, machine-specific.
+sdk.dir=F\:\\Android\\Sdk
+
+# Nuvio public cloud API. The sb_publishable_* value is a public publishable key
+# from the Nuvio Cloud API documentation, not a service role key.
+SUPABASE_URL=https://api.nuvio.tv
+SUPABASE_ANON_KEY=sb_publishable_1Clq8rlTVACkdcZuqr6_AD__xUUC_EN
+NUVIO_SUPABASE_URL=https://api.nuvio.tv
+NUVIO_SUPABASE_ANON_KEY=sb_publishable_1Clq8rlTVACkdcZuqr6_AD__xUUC_EN
+
+# Optional backend switch manifest. Leave blank unless an official manifest URL is provided.
+SYNC_BACKEND_MANIFEST_URL=
