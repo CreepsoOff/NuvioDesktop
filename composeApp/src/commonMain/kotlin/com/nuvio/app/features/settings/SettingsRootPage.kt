@@ -9,6 +9,7 @@ import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.material.icons.rounded.Extension
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Keyboard
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Palette
@@ -21,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.nuvio.app.core.build.AppVersionConfig
+import com.nuvio.app.isDesktop
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.compose_about_made_with
 import nuvio.composeapp.generated.resources.compose_about_version_format
@@ -53,6 +55,8 @@ import nuvio.composeapp.generated.resources.compose_settings_root_about_section
 import nuvio.composeapp.generated.resources.compose_settings_root_account_section
 import nuvio.composeapp.generated.resources.compose_settings_page_content_discovery
 import nuvio.composeapp.generated.resources.compose_settings_page_trakt
+import nuvio.composeapp.generated.resources.settings_keybinds_description
+import nuvio.composeapp.generated.resources.settings_keybinds_title
 import nuvio.composeapp.generated.resources.settings_playback_subtitle
 import nuvio.composeapp.generated.resources.about_supporters_contributors_subtitle
 import nuvio.composeapp.generated.resources.about_licenses_attributions_subtitle
@@ -61,6 +65,7 @@ import org.jetbrains.compose.resources.stringResource
 internal fun LazyListScope.settingsRootContent(
     isTablet: Boolean,
     onPlaybackClick: () -> Unit,
+    onKeybindsClick: () -> Unit,
     onAppearanceClick: () -> Unit,
     onAdvancedClick: () -> Unit,
     onNotificationsClick: () -> Unit,
@@ -155,6 +160,16 @@ internal fun LazyListScope.settingsRootContent(
                         onClick = onPlaybackClick,
                     )
                     SettingsGroupDivider(isTablet = isTablet)
+                    if (isDesktop) {
+                        SettingsNavigationRow(
+                            title = stringResource(Res.string.settings_keybinds_title),
+                            description = stringResource(Res.string.settings_keybinds_description),
+                            icon = Icons.Rounded.Keyboard,
+                            isTablet = isTablet,
+                            onClick = onKeybindsClick,
+                        )
+                        SettingsGroupDivider(isTablet = isTablet)
+                    }
                     SettingsNavigationRow(
                         title = stringResource(Res.string.compose_settings_page_integrations),
                         description = stringResource(Res.string.compose_settings_root_integrations_description),
@@ -172,9 +187,6 @@ internal fun LazyListScope.settingsRootContent(
                     )
                 }
             }
-        }
-        item {
-            KeybindsSettingsContent(isTablet = isTablet)
         }
         item {
             DebugLogsSettingsSection(isTablet = isTablet)

@@ -60,11 +60,11 @@ internal actual fun platformSettingsSearchEntries(): List<SettingsSearchEntry> {
             key = "desktop-keybinds",
             title = keybindsTitle,
             description = keybindsDescription,
-            page = rootPage,
+            page = keybindsTitle,
             section = generalSection,
             category = generalCategory,
             icon = Icons.Rounded.Keyboard,
-            target = SettingsSearchTarget.Page(SettingsPage.Root),
+            target = SettingsSearchTarget.Page(SettingsPage.Keybinds),
         ))
         add(SettingsSearchEntry(
             key = "desktop-decoder",

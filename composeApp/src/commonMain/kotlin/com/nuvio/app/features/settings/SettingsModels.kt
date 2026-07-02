@@ -32,6 +32,7 @@ import nuvio.composeapp.generated.resources.compose_settings_page_supporters_con
 import nuvio.composeapp.generated.resources.compose_settings_page_tmdb_enrichment
 import nuvio.composeapp.generated.resources.compose_settings_page_trakt
 import nuvio.composeapp.generated.resources.settings_account
+import nuvio.composeapp.generated.resources.settings_keybinds_title
 import org.jetbrains.compose.resources.StringResource
 
 internal enum class SettingsCategory(
@@ -71,6 +72,11 @@ internal enum class SettingsPage(
     ),
     Playback(
         titleRes = Res.string.compose_settings_page_playback,
+        category = SettingsCategory.General,
+        parentPage = Root,
+    ),
+    Keybinds(
+        titleRes = Res.string.settings_keybinds_title,
         category = SettingsCategory.General,
         parentPage = Root,
     ),
