@@ -1,6 +1,7 @@
 package com.nuvio.app.core.sync
 
 import co.touchlab.kermit.Logger
+import com.nuvio.app.isDesktop
 import com.nuvio.app.core.auth.AuthRepository
 import com.nuvio.app.core.auth.AuthState
 import com.nuvio.app.core.network.SupabaseProvider
@@ -63,6 +64,13 @@ private const val PUSH_DEBOUNCE_MS = 1500L
 object ProfileSettingsSync {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val log = Logger.withTag("ProfileSettingsSync")
+    // Profile SETTINGS (player prefs, theme, poster style, meta screen, debrid,
+    // tmdb, trakt, etc.) are platform-specific, so Desktop writes them to its own
+    // "desktop" bucket instead of overwriting the mobile settings blob (matches
+    // upstream). Add-ons, plugins, watch progress, watched and profiles sync with
+    // no platform param and stay fully shared across mobile <-> desktop.
+    private val profileSettingsPlatform: String
+        get() = if (isDesktop) DESKTOP_SYNC_PLATFORM else MOBILE_SYNC_PLATFORM
     private val syncMutex = Mutex()
     private val json = Json {
         ignoreUnknownKeys = true
@@ -96,7 +104,7 @@ object ProfileSettingsSync {
 
                 val params = buildJsonObject {
                     put("p_profile_id", profileId)
-                    put("p_platform", MOBILE_SYNC_PLATFORM)
+                    put("p_platform", profileSettingsPlatform)
                 }
                 val result = SupabaseProvider.client.postgrest.rpc("sync_pull_profile_settings_blob", params)
                 val response = result.decodeList<SettingsBlobResponse>().firstOrNull()
@@ -195,7 +203,7 @@ object ProfileSettingsSync {
     private suspend fun pushToRemoteLocked(profileId: Int, blob: MobileProfileSettingsBlob) {
         val params = buildJsonObject {
             put("p_profile_id", profileId)
-            put("p_platform", MOBILE_SYNC_PLATFORM)
+            put("p_platform", profileSettingsPlatform)
             put("p_settings_json", json.encodeToJsonElement(MobileProfileSettingsBlob.serializer(), blob))
         }
         SupabaseProvider.client.postgrest.rpc("sync_push_profile_settings_blob", params)
