@@ -57,7 +57,6 @@ import com.nuvio.app.isDesktop
 import com.nuvio.app.core.format.formatReleaseDateForDisplay
 import com.nuvio.app.core.ui.NuvioImageFilterQuality
 import com.nuvio.app.core.ui.NuvioTokens
-import com.nuvio.app.core.ui.rememberSizedImageRequest
 import com.nuvio.app.core.ui.upgradeTmdbImageQuality
 import com.nuvio.app.features.home.MetaPreview
 import kotlinx.coroutines.CoroutineScope
@@ -395,18 +394,16 @@ private fun DesktopHomeHeroFrame(
     ) {
         visiblePages.forEach { layer ->
             val item = items[layer.page]
-            // Route the hero background through our sized-image pipeline so it
-            // honors the desktop image-rendering preference (native WIC exact
-            // decode vs legacy Skia over-decode) exactly like the rest of the
-            // app, keeping our higher-quality still render on Windows.
-            val request = rememberSizedImageRequest(
-                imageUrl = item.banner ?: item.poster,
-                width = heroWidth,
-                height = layout.heroHeight,
-                memoryCacheKeyPrefix = "home-hero-desktop",
-            )
+            // Load the full-bleed hero backdrop from the upgraded source URL and
+            // let Coil size it to the exact drawn area (which the WIC decoder then
+            // matches 1:1). Passing an explicit exact size here instead
+            // reintroduced a draw-time downscale ("crispy") on Windows for this
+            // large full-width hero, so keep the auto-sized URL model.
+            val backgroundUrl = remember(item.banner, item.poster) {
+                (item.banner ?: item.poster)?.upgradeTmdbImageQuality()
+            }
             AsyncImage(
-                model = request,
+                model = backgroundUrl,
                 contentDescription = item.name,
                 modifier = Modifier
                     .fillMaxSize()
