@@ -46,6 +46,7 @@ import com.nuvio.app.features.trakt.normalizeTraktContinueWatchingDaysCap
 import com.nuvio.app.features.trakt.shouldUseTraktProgress
 import com.nuvio.app.features.watched.WatchedItem
 import com.nuvio.app.features.watched.WatchedRepository
+import com.nuvio.app.features.watched.episodePlaybackId
 import com.nuvio.app.features.watchprogress.CachedInProgressItem
 import com.nuvio.app.features.watchprogress.CachedNextUpItem
 import com.nuvio.app.features.watchprogress.ContinueWatchingEnrichmentCache
@@ -598,6 +599,25 @@ fun HomeScreen(
     val enabledHomeItems = remember(homeSettingsUiState.items) {
         homeSettingsUiState.items.filter { it.enabled }
     }
+    val visibleSeriesPosterTargets = remember(enabledHomeItems, sectionsMap) {
+        enabledHomeItems
+            .filterNot { it.isCollection }
+            .mapNotNull { settingsItem -> sectionsMap[settingsItem.key] }
+            .flatMap { section -> section.items.take(HOME_CATALOG_PREVIEW_LIMIT) }
+            .filter { item -> item.type.isHomeSeriesLikeType() }
+            .distinctBy { item -> item.type.trim().lowercase() to item.id }
+    }
+    LaunchedEffect(
+        visibleSeriesPosterTargets,
+        watchedUiState.items,
+        watchProgressUiState.entries,
+    ) {
+        reconcileVisibleSeriesPosterBadges(
+            items = visibleSeriesPosterTargets,
+            watchedItems = watchedUiState.items,
+            progressEntries = watchProgressUiState.entries,
+        )
+    }
     val hasRenderableCollectionRows = remember(enabledHomeItems, collectionsMap) {
         enabledHomeItems.any { item ->
             item.isCollection && collectionsMap[item.key] != null
@@ -810,6 +830,48 @@ private const val MILLIS_PER_DAY = 24L * 60L * 60L * 1000L
 private const val OPTIMISTIC_NEXT_UP_SEED_WINDOW_MS = 3L * 60L * 1000L
 private const val NEXT_UP_RESOLUTION_CONCURRENCY = 4
 private const val NEXT_UP_RESOLUTION_BATCH_SIZE = NEXT_UP_RESOLUTION_CONCURRENCY
+
+private suspend fun reconcileVisibleSeriesPosterBadges(
+    items: List<MetaPreview>,
+    watchedItems: List<WatchedItem>,
+    progressEntries: List<WatchProgressEntry>,
+) {
+    if (items.isEmpty()) return
+    val touchedSeriesIds = buildSet {
+        watchedItems.forEach { item ->
+            if (item.type.isHomeSeriesLikeType() && item.season != null && item.episode != null) {
+                add(item.id)
+            }
+        }
+        progressEntries.forEach { entry ->
+            if (entry.parentMetaType.isHomeSeriesLikeType() && entry.isEpisode && entry.isEffectivelyCompleted) {
+                add(entry.parentMetaId)
+            }
+        }
+    }
+    if (touchedSeriesIds.isEmpty()) return
+
+    val todayIsoDate = CurrentDateProvider.todayIsoDate()
+    withContext(Dispatchers.Default) {
+        items
+            .filter { item -> item.id in touchedSeriesIds }
+            .forEach { item ->
+                val meta = runCatching {
+                    MetaDetailsRepository.fetch(type = item.type, id = item.id)
+                }.getOrNull() ?: return@forEach
+                WatchedRepository.reconcileSeriesWatchedState(
+                    meta = meta,
+                    todayIsoDate = todayIsoDate,
+                    isEpisodeCompleted = { episode ->
+                        WatchProgressRepository.progressForVideo(meta.episodePlaybackId(episode))?.isEffectivelyCompleted == true
+                    },
+                )
+            }
+    }
+}
+
+private fun String.isHomeSeriesLikeType(): Boolean =
+    trim().lowercase() in setOf("series", "show", "tv", "tvshow")
 
 internal fun filterEntriesForTraktContinueWatchingWindow(
     entries: List<WatchProgressEntry>,

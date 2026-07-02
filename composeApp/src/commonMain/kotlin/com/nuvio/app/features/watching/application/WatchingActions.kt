@@ -55,6 +55,9 @@ object WatchingActions {
 
         if (isCurrentlyWatched) {
             WatchedRepository.unmarkWatched(seriesItems)
+            WatchProgressRepository.clearProgress(
+                releasedMainEpisodes.map(meta::episodePlaybackId),
+            )
         } else {
             WatchedRepository.markWatched(seriesItems)
             WatchProgressRepository.clearProgress(
@@ -71,6 +74,7 @@ object WatchingActions {
         val watchedItem = meta.toEpisodeWatchedItem(episode)
         if (isCurrentlyWatched) {
             WatchedRepository.unmarkWatched(watchedItem)
+            WatchProgressRepository.clearProgress(meta.episodePlaybackId(episode))
         } else {
             WatchedRepository.markWatched(watchedItem)
             WatchProgressRepository.clearProgress(meta.episodePlaybackId(episode))
@@ -153,6 +157,7 @@ object WatchingActions {
         val watchedItems = episodes.map(meta::toEpisodeWatchedItem)
         if (areCurrentlyWatched) {
             WatchedRepository.unmarkWatched(watchedItems)
+            WatchProgressRepository.clearProgress(episodes.map(meta::episodePlaybackId))
         } else {
             WatchedRepository.markWatched(watchedItems)
             WatchProgressRepository.clearProgress(episodes.map(meta::episodePlaybackId))
