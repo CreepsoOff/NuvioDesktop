@@ -2,7 +2,6 @@ package com.nuvio.app.features.settings
 
 import com.nuvio.app.core.build.AppFeaturePolicy
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -469,7 +468,6 @@ private fun MobileSettingsScreen(
                         settingsRootContent(
                             isTablet = false,
                             onPlaybackClick = { onPageChange(SettingsPage.Playback) },
-                            onStreamsClick = { onPageChange(SettingsPage.Streams) },
                             onAppearanceClick = { onPageChange(SettingsPage.Appearance) },
                             onAdvancedClick = { onPageChange(SettingsPage.Advanced) },
                             onNotificationsClick = { onPageChange(SettingsPage.Notifications) },
@@ -514,6 +512,10 @@ private fun MobileSettingsScreen(
                     onLiquidGlassNativeTabBarToggle = onLiquidGlassNativeTabBarToggle,
                     selectedAppLanguage = selectedAppLanguage,
                     onAppLanguageSelected = onAppLanguageSelected,
+                    onHomescreenClick = onHomescreenClick,
+                    onMetaScreenClick = onMetaScreenClick,
+                    onStreamsClick = { onPageChange(SettingsPage.Streams) },
+                    onCollectionsClick = onCollectionsClick,
                     onContinueWatchingClick = onContinueWatchingClick,
                     onPosterCustomizationClick = { onPageChange(SettingsPage.PosterCustomization) },
                 )
@@ -545,9 +547,6 @@ private fun MobileSettingsScreen(
                     showPluginsEntry = AppFeaturePolicy.pluginsEnabled,
                     onAddonsClick = onAddonsClick,
                     onPluginsClick = onPluginsClick,
-                    onHomescreenClick = onHomescreenClick,
-                    onMetaScreenClick = onMetaScreenClick,
-                    onCollectionsClick = onCollectionsClick,
                 )
                 SettingsPage.Addons -> addonsSettingsContent()
                 SettingsPage.Plugins -> if (AppFeaturePolicy.pluginsEnabled) pluginsSettingsContent() else addonsSettingsContent()
@@ -697,7 +696,6 @@ private fun TabletSettingsScreen(
                 .width(280.dp)
                 .fillMaxSize(),
             color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         ) {
             Column(
                 modifier = Modifier
@@ -826,7 +824,6 @@ private fun TabletSettingsScreen(
                             settingsRootContent(
                                 isTablet = true,
                                 onPlaybackClick = { openInlinePage(SettingsPage.Playback) },
-                                onStreamsClick = { openInlinePage(SettingsPage.Streams) },
                                 onAppearanceClick = { openInlinePage(SettingsPage.Appearance) },
                                 onAdvancedClick = { openInlinePage(SettingsPage.Advanced) },
                                 onNotificationsClick = { openInlinePage(SettingsPage.Notifications) },
@@ -875,6 +872,10 @@ private fun TabletSettingsScreen(
                         onLiquidGlassNativeTabBarToggle = onLiquidGlassNativeTabBarToggle,
                         selectedAppLanguage = selectedAppLanguage,
                         onAppLanguageSelected = onAppLanguageSelected,
+                        onHomescreenClick = { openInlinePage(SettingsPage.Homescreen) },
+                        onMetaScreenClick = { openInlinePage(SettingsPage.MetaScreen) },
+                        onStreamsClick = { openInlinePage(SettingsPage.Streams) },
+                        onCollectionsClick = onCollectionsClick,
                         onContinueWatchingClick = { openInlinePage(SettingsPage.ContinueWatching) },
                         onPosterCustomizationClick = { openInlinePage(SettingsPage.PosterCustomization) },
                     )
@@ -906,9 +907,6 @@ private fun TabletSettingsScreen(
                         showPluginsEntry = AppFeaturePolicy.pluginsEnabled,
                         onAddonsClick = { openInlinePage(SettingsPage.Addons) },
                         onPluginsClick = { openInlinePage(SettingsPage.Plugins) },
-                        onHomescreenClick = { openInlinePage(SettingsPage.Homescreen) },
-                        onMetaScreenClick = { openInlinePage(SettingsPage.MetaScreen) },
-                        onCollectionsClick = onCollectionsClick,
                     )
                     SettingsPage.Addons -> addonsSettingsContent()
                     SettingsPage.Plugins -> if (AppFeaturePolicy.pluginsEnabled) pluginsSettingsContent() else addonsSettingsContent()

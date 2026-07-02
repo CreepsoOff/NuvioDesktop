@@ -93,6 +93,7 @@ internal fun settingsSearchEntries(
     val advancedPage = stringResource(Res.string.compose_settings_page_advanced)
     val layoutPage = stringResource(Res.string.compose_settings_page_appearance)
     val contentDiscoveryPage = stringResource(Res.string.compose_settings_page_content_discovery)
+    val appearanceHomeSection = stringResource(Res.string.settings_appearance_section_home)
     val downloadsPage = stringResource(Res.string.compose_settings_root_downloads_title)
     val playbackPage = stringResource(Res.string.compose_settings_page_playback)
     val streamsPage = stringResource(Res.string.compose_settings_page_streams)
@@ -448,8 +449,8 @@ internal fun settingsSearchEntries(
         key = "collections",
         title = collectionsPage,
         description = stringResource(Res.string.settings_content_discovery_collections_description),
-        page = contentDiscoveryPage,
-        section = stringResource(Res.string.settings_content_discovery_section_home),
+        page = layoutPage,
+        section = appearanceHomeSection,
         category = generalCategory,
         icon = Icons.Rounded.CollectionsBookmark,
         target = SettingsSearchTarget.Collections,
