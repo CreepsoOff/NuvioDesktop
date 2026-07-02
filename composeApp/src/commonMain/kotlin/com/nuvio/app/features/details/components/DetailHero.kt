@@ -45,6 +45,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.graphicsLayer
 import coil3.compose.AsyncImage
+import com.nuvio.app.core.ui.NuvioImageFilterQuality
+import com.nuvio.app.core.ui.rememberSizedImageRequest
 import com.nuvio.app.features.details.MetaDetails
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -73,6 +75,7 @@ fun DetailHero(
         modifier = modifier.fillMaxWidth(),
     ) {
         val heroHeight = detailHeroHeight(maxWidth, isTablet)
+        val heroWidth = maxWidth
         val trailerAlpha by animateFloatAsState(
             targetValue = if (heroTrailerReady) 1f else 0f,
             animationSpec = tween(durationMillis = 300),
@@ -100,8 +103,14 @@ fun DetailHero(
             ) {
                 val imageUrl = meta.background ?: meta.poster
                 if (imageUrl != null) {
+                    val backdropRequest = rememberSizedImageRequest(
+                        imageUrl = imageUrl,
+                        width = heroWidth,
+                        height = heroHeight,
+                        memoryCacheKeyPrefix = "detail-hero",
+                    )
                     AsyncImage(
-                        model = imageUrl,
+                        model = backdropRequest,
                         contentDescription = meta.name,
                         modifier = Modifier
                             .fillMaxSize()
@@ -112,6 +121,7 @@ fun DetailHero(
                             },
                         alignment = if (isTablet) Alignment.TopCenter else Alignment.Center,
                         contentScale = ContentScale.Crop,
+                        filterQuality = NuvioImageFilterQuality,
                         onSuccess = { state -> onBackdropLoaded(state.painter) },
                     )
                 } else {
