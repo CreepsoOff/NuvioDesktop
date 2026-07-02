@@ -37,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.style.TextAlign
@@ -60,6 +61,8 @@ fun DetailHero(
     heroTrailerReady: Boolean = false,
     heroTrailerPlayWhenReady: Boolean = false,
     heroTrailerMuted: Boolean = true,
+    heroGradientColor: Color? = null,
+    onBackdropLoaded: (Painter) -> Unit = {},
     onHeroTrailerMuteToggle: () -> Unit = {},
     onHeroTrailerReady: () -> Unit = {},
     onHeroTrailerEnded: () -> Unit = {},
@@ -79,6 +82,7 @@ fun DetailHero(
         val heroChromeTopPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() +
             8.dp +
             ((40.dp - muteIconSize) / 2)
+        val bottomGradientColor = heroGradientColor ?: MaterialTheme.colorScheme.background
 
         Box(
             modifier = Modifier
@@ -108,6 +112,7 @@ fun DetailHero(
                             },
                         alignment = if (isTablet) Alignment.TopCenter else Alignment.Center,
                         contentScale = ContentScale.Crop,
+                        onSuccess = { state -> onBackdropLoaded(state.painter) },
                     )
                 } else {
                     Box(
@@ -184,8 +189,8 @@ fun DetailHero(
                             Brush.verticalGradient(
                                 colors = listOf(
                                     Color.Transparent,
-                                    MaterialTheme.colorScheme.background.copy(alpha = 0.7f),
-                                    MaterialTheme.colorScheme.background,
+                                    bottomGradientColor.copy(alpha = 0.7f),
+                                    bottomGradientColor,
                                 ),
                             ),
                         ),

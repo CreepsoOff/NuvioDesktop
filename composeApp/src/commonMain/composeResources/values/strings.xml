@@ -731,6 +731,14 @@
     <string name="settings_meta_cast_description">Principal cast list.</string>
     <string name="settings_meta_cinematic_background">Cinematic Background</string>
     <string name="settings_meta_cinematic_background_description">Blurred backdrop behind content, similar to stream screen.</string>
+    <string name="settings_meta_background_mode">Background Mode</string>
+    <string name="settings_meta_background_mode_description">Choose how artwork appears behind metadata pages.</string>
+    <string name="settings_meta_background_mode_normal">Normal</string>
+    <string name="settings_meta_background_mode_normal_description">Use the standard app background.</string>
+    <string name="settings_meta_background_mode_cinematic">Cinematic</string>
+    <string name="settings_meta_background_mode_cinematic_description">Show a soft blurred backdrop behind the page.</string>
+    <string name="settings_meta_background_mode_dominant">Dominant Color</string>
+    <string name="settings_meta_background_mode_dominant_description">Match the page background to the main color from the backdrop.</string>
     <string name="settings_meta_collection">Collection</string>
     <string name="settings_meta_collection_description">Related collection or franchise rail.</string>
     <string name="settings_meta_comments">Comments</string>

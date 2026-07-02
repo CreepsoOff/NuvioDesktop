@@ -709,6 +709,14 @@
     <string name="settings_meta_cast_description">Liste principale du casting.</string>
     <string name="settings_meta_cinematic_background">Fond cinématographique</string>
     <string name="settings_meta_cinematic_background_description">Fond flou derrière le contenu, similaire à l’écran de streams.</string>
+    <string name="settings_meta_background_mode">Mode d’arrière-plan</string>
+    <string name="settings_meta_background_mode_description">Choisissez comment les visuels apparaissent derrière les pages de détails.</string>
+    <string name="settings_meta_background_mode_normal">Normal</string>
+    <string name="settings_meta_background_mode_normal_description">Utiliser l’arrière-plan standard de l’application.</string>
+    <string name="settings_meta_background_mode_cinematic">Cinématique</string>
+    <string name="settings_meta_background_mode_cinematic_description">Afficher un fond flou léger derrière la page.</string>
+    <string name="settings_meta_background_mode_dominant">Couleur dominante</string>
+    <string name="settings_meta_background_mode_dominant_description">Adapter l’arrière-plan de la page à la couleur principale du visuel.</string>
     <string name="settings_meta_collection">Collection</string>
     <string name="settings_meta_collection_description">Rayon de collection ou de franchise associée.</string>
     <string name="settings_meta_comments">Commentaires</string>
