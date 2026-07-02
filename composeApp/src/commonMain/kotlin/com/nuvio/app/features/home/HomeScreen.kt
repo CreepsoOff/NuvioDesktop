@@ -677,6 +677,7 @@ fun HomeScreen(
                             modifier = Modifier,
                             viewportHeight = maxHeight,
                             mobileBelowSectionHeightHint = mobileHeroBelowSectionHeightHint,
+                            sectionPadding = homeSectionPadding,
                             listState = homeListState,
                             onItemClick = onPosterClick,
                         )
