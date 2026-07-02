@@ -2289,12 +2289,42 @@ fun PlayerScreen(
             lockedOverlayVisible = false
         }
 
-        LaunchedEffect(playbackSnapshot.isPlaying, playbackSnapshot.isLoading, playbackSnapshot.durationMs, errorMessage) {
+        val showPausedMetadataEligible =
+            !playbackSnapshot.isPlaying &&
+                !playbackSnapshot.isLoading &&
+                !playbackSnapshot.isEnded &&
+                playbackSnapshot.durationMs > 0L &&
+                errorMessage == null &&
+                !playerControlsLocked &&
+                !blockingPanelOpen
+
+        LaunchedEffect(
+            hoverDrivenChrome,
+            pointerActivitySerial,
+            controlsVisible,
+            isHovering,
+            showPausedMetadataEligible,
+        ) {
             pausedOverlayVisible = false
-            if (playbackSnapshot.isPlaying || playbackSnapshot.isLoading || playbackSnapshot.durationMs <= 0L || errorMessage != null) {
+            if (!showPausedMetadataEligible) {
                 return@LaunchedEffect
             }
-            delay(5000)
+
+            if (!hoverDrivenChrome) {
+                delay(PlayerControlsAutoHideDelayMs)
+                pausedOverlayVisible = true
+                return@LaunchedEffect
+            }
+
+            if (!controlsVisible || !isHovering) {
+                controlsVisible = false
+                pausedOverlayVisible = true
+                return@LaunchedEffect
+            }
+
+            delay(PlayerControlsAutoHideDelayMs)
+            controlsVisible = false
+            isHovering = false
             pausedOverlayVisible = true
         }
 
@@ -2553,6 +2583,22 @@ fun PlayerScreen(
                 .focusRequester(playerFocusRequester)
                 .focusable()
                 .onSizeChanged { layoutSize = it }
+                .playerSurfacePointerBoundsEvents(
+                    hoverDrivenChrome = hoverDrivenChrome,
+                    onEnter = {
+                        if (!playerControlsLocked) {
+                            revealPlayerChrome()
+                            isHovering = true
+                        }
+                    },
+                    onExit = {
+                        isHovering = false
+                        if (showPausedMetadataEligible) {
+                            controlsVisible = false
+                            pausedOverlayVisible = true
+                        }
+                    },
+                )
                 .pointerInput(hoverDrivenChrome) {
                     if (!hoverDrivenChrome) return@pointerInput
                     awaitEachGesture {
