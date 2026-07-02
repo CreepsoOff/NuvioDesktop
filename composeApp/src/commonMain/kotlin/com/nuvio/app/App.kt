@@ -103,6 +103,7 @@ import com.nuvio.app.core.ui.NuvioToastController
 import com.nuvio.app.core.ui.NuvioFloatingPrompt
 import com.nuvio.app.core.ui.TraktListPickerDialog
 import com.nuvio.app.core.ui.NuvioTheme
+import com.nuvio.app.core.ui.desktopUiScaleForWindow
 import com.nuvio.app.core.ui.LocalNuvioBottomNavigationOverlayPadding
 import com.nuvio.app.core.ui.NativeNavigationTab
 import com.nuvio.app.core.ui.NativeTabBridge
@@ -425,7 +426,13 @@ fun App(
         ThemeSettingsRepository.selectedTheme
     }.collectAsStateWithLifecycle()
     val amoledEnabled by remember { ThemeSettingsRepository.amoledEnabled }.collectAsStateWithLifecycle()
-    NuvioTheme(appTheme = selectedTheme, amoled = amoledEnabled) {
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val desktopUiScale = desktopUiScaleForWindow(maxWidth.value, maxHeight.value)
+        NuvioTheme(
+            appTheme = selectedTheme,
+            amoled = amoledEnabled,
+            desktopUiScale = desktopUiScale,
+        ) {
         LaunchedEffect(Unit) {
             refreshSyncBackendSelection()
             AuthRepository.initialize()
@@ -669,6 +676,7 @@ fun App(
                 }
             }
         }
+    }
     }
 }
 

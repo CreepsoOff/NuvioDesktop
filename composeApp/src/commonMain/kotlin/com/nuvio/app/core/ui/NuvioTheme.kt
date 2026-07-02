@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
+import com.nuvio.app.isDesktop
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.jetbrains_sans_bold
 import nuvio.composeapp.generated.resources.jetbrains_sans_regular
@@ -185,11 +186,28 @@ private val NuvioRippleConfiguration = RippleConfiguration(
     color = Color.Black,
 )
 
+private const val NuvioDesktopFontScale = 1.08f
+private const val NuvioDesktopBaseWidthDp = 1280f
+private const val NuvioDesktopBaseHeightDp = 820f
+private const val NuvioDesktopMinUiScale = 1f
+private const val NuvioDesktopMaxUiScale = 1.18f
+
+internal fun desktopUiScaleForWindow(widthDp: Float, heightDp: Float): Float {
+    if (!isDesktop || widthDp <= 0f || heightDp <= 0f) return NuvioDesktopMinUiScale
+
+    val rawScale = minOf(
+        widthDp / NuvioDesktopBaseWidthDp,
+        heightDp / NuvioDesktopBaseHeightDp,
+    )
+    return rawScale.coerceIn(NuvioDesktopMinUiScale, NuvioDesktopMaxUiScale)
+}
+
 @Composable
 fun NuvioTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     appTheme: AppTheme = AppTheme.WHITE,
     amoled: Boolean = false,
+    desktopUiScale: Float = NuvioDesktopMinUiScale,
     content: @Composable () -> Unit,
 ) {
     val palette = ThemeColors.getColorPalette(appTheme)
@@ -197,10 +215,15 @@ fun NuvioTheme(
     val tokens = defaultNuvioThemeTokens(palette, amoled = amoled, colorScheme = colorScheme)
 
     val density = LocalDensity.current
+    val effectiveDesktopUiScale = if (isDesktop) {
+        desktopUiScale.coerceIn(NuvioDesktopMinUiScale, NuvioDesktopMaxUiScale)
+    } else {
+        NuvioDesktopMinUiScale
+    }
     CompositionLocalProvider(
         LocalDensity provides Density(
-            density = density.density,
-            fontScale = 1f,
+            density = density.density * effectiveDesktopUiScale,
+            fontScale = if (isDesktop) NuvioDesktopFontScale else 1f,
         ),
         LocalNuvioThemeTokens provides tokens,
         LocalNuvioTypeScale provides NuvioTypeTokens,
