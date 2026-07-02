@@ -230,6 +230,12 @@ fun SearchScreen(
         val homeSectionPadding = remember(maxWidth) {
             homeSectionHorizontalPaddingForWidth(maxWidth.value)
         }
+        // The tablet/desktop layout overlays a floating top bar (see
+        // TabletFloatingTopBar, shown at maxWidth >= 768.dp). Without extra
+        // clearance the sticky search header slides under it, so add a top
+        // inset only when that bar is visible. Phone layout keeps 0.
+        val isTabletLayout = maxWidth >= 768.dp
+        val searchHeaderTopClearance = if (isTabletLayout) 52.dp else 0.dp
         val headerTitle = when {
             query.isNotBlank() -> stringResource(Res.string.compose_nav_search)
             discoverInFocus -> stringResource(Res.string.compose_search_discover_title)
@@ -246,7 +252,8 @@ fun SearchScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .nuvioBlockPointerPassthrough()
-                    .background(MaterialTheme.colorScheme.background),
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(top = searchHeaderTopClearance),
             ) {
                 NuvioScreenHeader(
                     title = headerTitle,
