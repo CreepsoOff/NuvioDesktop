@@ -103,6 +103,7 @@ import com.nuvio.app.core.ui.NuvioToastController
 import com.nuvio.app.core.ui.NuvioFloatingPrompt
 import com.nuvio.app.core.ui.TraktListPickerDialog
 import com.nuvio.app.core.ui.NuvioTheme
+import com.nuvio.app.core.ui.ProfileMeshBackground
 import com.nuvio.app.core.ui.desktopUiScaleForWindow
 import com.nuvio.app.core.ui.LocalNuvioBottomNavigationOverlayPadding
 import com.nuvio.app.core.ui.NativeNavigationTab
@@ -615,14 +616,7 @@ fun App(
         ) { currentGate ->
             when (currentGate) {
                 AppGateScreen.Loading.name -> {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.background),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                    }
+                    AppLaunchOverlay(modifier = Modifier.fillMaxSize())
                 }
                 AppGateScreen.Auth.name -> {
                     AuthScreen(modifier = Modifier.fillMaxSize())
@@ -3206,13 +3200,17 @@ private fun TabletTopPillItem(
 @Composable
 private fun AppLaunchOverlay(
     modifier: Modifier = Modifier,
+    profileColor: Color = Color(0xFF1E88E5),
 ) {
     Box(
         modifier = modifier
-            .background(MaterialTheme.colorScheme.background)
             .zIndex(10f),
         contentAlignment = Alignment.Center,
     ) {
+        ProfileMeshBackground(
+            profileColor = profileColor,
+            modifier = Modifier.fillMaxSize(),
+        )
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
