@@ -539,8 +539,8 @@ object TraktLibraryRepository {
         return (movieItems + showItems)
             .mapNotNull(::mapToLibraryItem)
             .sortedWith(
-                compareBy<LibraryItem> { it.traktRank ?: Int.MAX_VALUE }
-                    .thenByDescending { it.savedAtEpochMs },
+                compareByDescending<LibraryItem> { it.savedAtEpochMs }
+                    .thenByDescending { it.traktRank ?: Int.MIN_VALUE },
             )
     }
 
