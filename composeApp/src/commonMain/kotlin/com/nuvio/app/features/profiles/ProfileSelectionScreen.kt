@@ -60,6 +60,7 @@ import coil3.compose.AsyncImage
 import com.nuvio.app.core.auth.AuthRepository
 import com.nuvio.app.core.auth.AuthState
 import com.nuvio.app.core.ui.NuvioImageFilterQuality
+import com.nuvio.app.core.ui.ProfileMeshBackground
 import com.nuvio.app.core.ui.rememberSizedImageRequest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -103,25 +104,23 @@ fun ProfileSelectionScreen(
 
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
+    val backgroundProfileColor = remember(profileState.activeProfile, profileState.profiles) {
+        val sourceProfile = profileState.activeProfile ?: profileState.profiles.firstOrNull()
+        sourceProfile?.avatarColorHex?.let(::parseHexColor) ?: Color(0xFF1E88E5)
+    }
+
     BoxWithConstraints(
         modifier = modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.background,
-                        MaterialTheme.colorScheme.background,
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f),
-                    ),
-                ),
-            )
-            .padding(top = statusBarTop),
+            .fillMaxSize(),
     ) {
         val isTabletLayout = maxWidth >= 768.dp
+
+        ProfileMeshBackground(profileColor = backgroundProfileColor)
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(top = statusBarTop)
                 .then(
                     if (isTabletLayout) {
                         Modifier
