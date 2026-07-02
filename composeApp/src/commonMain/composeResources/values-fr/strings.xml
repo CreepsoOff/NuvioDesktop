@@ -544,6 +544,7 @@
     <string name="settings_account_status">Statut</string>
     <string name="settings_account_status_anonymous">Anonyme</string>
     <string name="settings_account_status_signed_in">Connecté</string>
+    <string name="settings_account_sync_backend">Serveur de synchronisation</string>
     <string name="settings_appearance_amoled_black">Noir AMOLED</string>
     <string name="settings_appearance_amoled_description">Utilise des fonds noirs purs pour les écrans OLED.</string>
     <string name="settings_appearance_app_language">Langue de l’application</string>

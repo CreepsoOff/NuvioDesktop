@@ -527,6 +527,7 @@
     <string name="settings_account_status">Status</string>
     <string name="settings_account_status_anonymous">Anonymous</string>
     <string name="settings_account_status_signed_in">Signed in</string>
+    <string name="settings_account_sync_backend">Sync backend</string>
     <string name="settings_appearance_amoled_black">AMOLED Black</string>
     <string name="settings_appearance_amoled_description">Use pure black backgrounds for OLED screens.</string>
     <string name="settings_appearance_app_language">App Language</string>

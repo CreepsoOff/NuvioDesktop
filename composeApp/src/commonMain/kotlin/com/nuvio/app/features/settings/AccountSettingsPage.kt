@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.core.auth.AuthRepository
 import com.nuvio.app.core.auth.AuthState
+import com.nuvio.app.core.network.SyncBackendRepository
 import com.nuvio.app.core.ui.NuvioPrimaryButton
 import com.nuvio.app.core.ui.NuvioStatusModal
 import com.nuvio.app.core.ui.NuvioSurfaceCard
@@ -36,6 +37,7 @@ import nuvio.composeapp.generated.resources.settings_account_sign_out_confirm_ti
 import nuvio.composeapp.generated.resources.settings_account_status
 import nuvio.composeapp.generated.resources.settings_account_status_anonymous
 import nuvio.composeapp.generated.resources.settings_account_status_signed_in
+import nuvio.composeapp.generated.resources.settings_account_sync_backend
 import org.jetbrains.compose.resources.stringResource
 
 internal fun LazyListScope.accountSettingsContent(
@@ -51,6 +53,7 @@ private fun AccountSettingsBody(
     isTablet: Boolean,
 ) {
     val authState by AuthRepository.state.collectAsStateWithLifecycle()
+    val syncBackendState by SyncBackendRepository.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     var showSignOutConfirm by remember { mutableStateOf(false) }
 
@@ -113,6 +116,24 @@ private fun AccountSettingsBody(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = stringResource(Res.string.settings_account_sync_backend),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = syncBackendState.selectedBackend.displayName,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Medium,
+                )
             }
         }
 
