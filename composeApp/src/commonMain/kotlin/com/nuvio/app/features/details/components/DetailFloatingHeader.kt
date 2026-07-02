@@ -51,6 +51,7 @@ fun DetailFloatingHeader(
     meta: MetaDetails,
     isSaved: Boolean,
     progress: Float,
+    backgroundColor: Color? = null,
     onBack: () -> Unit,
     onToggleSaved: () -> Unit,
     modifier: Modifier = Modifier,
@@ -58,7 +59,7 @@ fun DetailFloatingHeader(
     val safeAreaTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val headerTopPadding = (safeAreaTop - 6.dp).coerceAtLeast(safeAreaTop * 0.8f)
     val interactive = progress > 0.05f
-    val surfaceColor = if (isIos) {
+    val surfaceColor = backgroundColor ?: if (isIos) {
         MaterialTheme.colorScheme.surface.copy(alpha = 1.0f)
     } else {
         MaterialTheme.colorScheme.background
